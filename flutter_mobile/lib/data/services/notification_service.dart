@@ -23,7 +23,7 @@ class NotificationService {
   static const String _donateChannelId = 'captionary_donate';
   static const String _donateChannelName = 'Donation Reminders';
   static const String _donateChannelDesc =
-      'Occasional reminders to support the Captionary project.';
+      'Occasional reminders to donate to the Captionary project.';
 
   static const String _exportChannelId = 'captionary_export';
   static const String _exportChannelName = 'Export Progress';

@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_typography.dart';
+import '../widgets/app_toast.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/ghost_pill_button.dart';
 import '../widgets/circular_progress_painter.dart';
@@ -442,8 +443,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
                 label: 'Preview',
                 icon: Symbols.play_arrow,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Opening preview...')),
+                  AppToast.show(
+                    context,
+                    message: 'Export preview is not wired yet',
+                    variant: AppToastVariant.warning,
                   );
                 },
                 isFullWidth: true,

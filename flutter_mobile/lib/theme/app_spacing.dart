@@ -14,4 +14,8 @@ class AppSpacing {
   static const double marginMobile = 16.0;
   static const double marginTablet = 24.0;
   static const double marginDesktop = 40.0;
+
+  /// Content padding so lists clear the floating bottom nav when
+  /// [Scaffold.extendBody] is true.
+  static const double bottomNavClearance = 120.0;
 }

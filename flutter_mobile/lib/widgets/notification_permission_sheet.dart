@@ -64,14 +64,14 @@ class NotificationPermissionSheet extends StatelessWidget {
           const SizedBox(height: 24),
           // Text
           Text(
-            'Stay Updated & Support Captionary',
+            'Stay Updated & Donate to Captionary',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Text(
-            'Captionary would like to send you occasional reminders to support the project and notify you of background transcription status.',
+            'Captionary would like to send you occasional reminders to donate to the project and notify you of background transcription status.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: AppColors.onSurfaceVariant),

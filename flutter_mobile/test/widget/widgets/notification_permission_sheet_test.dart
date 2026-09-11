@@ -14,7 +14,7 @@ void main() {
         buildTestableWidget(const NotificationPermissionSheet()),
       );
 
-      expect(find.text('Stay Updated & Support Captionary'), findsOneWidget);
+      expect(find.text('Stay Updated & Donate to Captionary'), findsOneWidget);
       expect(
         find.textContaining(
           'Captionary would like to send you occasional reminders',

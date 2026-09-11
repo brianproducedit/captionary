@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/app_colors.dart';
+import 'app_toast.dart';
 import 'ghost_pill_button.dart';
 
 class UrlFallbackDialog extends StatelessWidget {
@@ -74,10 +75,10 @@ class UrlFallbackDialog extends StatelessWidget {
                     color: AppColors.primary,
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: url));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Link copied to clipboard!'),
-                        ),
+                      AppToast.show(
+                        context,
+                        message: 'Link copied to clipboard',
+                        variant: AppToastVariant.success,
                       );
                     },
                     tooltip: 'Copy link',

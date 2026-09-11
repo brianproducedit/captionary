@@ -25,6 +25,8 @@ import '../providers/engagement_provider.dart';
 
 import 'package:video_player/video_player.dart';
 
+import '../theme/app_spacing.dart';
+import '../widgets/app_toast.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/draggable_timeline_chip.dart';
 import '../theme/app_colors_extension.dart';
@@ -97,7 +99,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 padding: const EdgeInsets.only(
                   left: 16.0,
                   right: 16.0,
-                  bottom: 120.0,
+                  bottom: AppSpacing.bottomNavClearance,
                 ),
                 children: [
                   _buildTimelineStudio(context, segments),
@@ -519,10 +521,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
               child: GhostPillButton(
                 label: 'Export .SRT',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('SRT file saved to Downloads'),
-                    ),
+                  AppToast.show(
+                    context,
+                    message: 'SRT file export is not wired yet',
+                    variant: AppToastVariant.warning,
                   );
                 },
                 isFullWidth: true,
@@ -546,8 +548,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   await Future.delayed(const Duration(seconds: 2));
                   if (context.mounted) {
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Re-aligned 4 segments')),
+                    AppToast.show(
+                      context,
+                      message: 'Re-align is not available until the caption pipeline is connected',
+                      variant: AppToastVariant.warning,
                     );
                   }
                 },

@@ -120,10 +120,14 @@ class AppTheme {
         ),
       ),
       snackBarTheme: const SnackBarThemeData(
+        backgroundColor: AppColors.surfaceContainerHighest,
         contentTextStyle: TextStyle(
           fontFamily: 'Lexend',
           fontVariations: [FontVariation('wght', 400)],
+          color: AppColors.onSurface,
         ),
+        actionTextColor: AppColors.primaryFixed,
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }

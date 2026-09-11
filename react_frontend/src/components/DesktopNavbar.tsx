@@ -136,7 +136,7 @@ export const DesktopNavbar: React.FC = () => {
               boxShadow: '0px 4px 20px rgba(33,150,243,0.35)',
             }}
           >
-            Support Us ☕
+            Donate ☕
           </NavLink>
         </div>
       </div>

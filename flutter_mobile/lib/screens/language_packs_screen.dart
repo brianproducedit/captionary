@@ -9,6 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
+import '../theme/app_spacing.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/ghost_pill_button.dart';
 import '../theme/app_typography.dart';
@@ -57,7 +58,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
             left: 16.0,
             right: 16.0,
             top: 24.0,
-            bottom: 120.0,
+            bottom: AppSpacing.bottomNavClearance,
           ),
           children: [
             _buildPageHeader(context),

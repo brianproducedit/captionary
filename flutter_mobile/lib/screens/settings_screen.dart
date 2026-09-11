@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_colors.dart';
+import '../widgets/app_toast.dart';
 import '../widgets/sub_screen_header.dart';
 import '../widgets/donate_banner.dart';
 import '../providers/engagement_provider.dart';
@@ -43,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildListTile(
                     title: 'Donate Reminders',
                     subtitle:
-                        'Help support the project by keeping reminders on',
+                        'Help donate to the project by keeping reminders on',
                     icon: Symbols.favorite,
                     trailing: _buildCustomSwitch(
                       value: ref
@@ -158,8 +159,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Symbols.storage,
                     trailing: OutlinedButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Cache cleared (Mock)')),
+                        AppToast.show(
+                          context,
+                          message: 'Cache clearing is not available yet',
+                          variant: AppToastVariant.warning,
                         );
                       },
                       style: OutlinedButton.styleFrom(

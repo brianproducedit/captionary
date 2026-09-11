@@ -5,10 +5,12 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import '../core/constants/app_constants.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/app_header.dart';
-import '../theme/app_typography.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,11 +24,11 @@ class DonateScreen extends ConsumerWidget {
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: const AppHeader(subtitle: 'Support Captionary'),
+      appBar: const AppHeader(subtitle: 'Donate to Captionary'),
       body: ListView(
         padding: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 64.0 + 24.0,
-          bottom: 120.0,
+          bottom: AppSpacing.bottomNavClearance,
           left: 16.0,
           right: 16.0,
         ),
@@ -197,7 +199,7 @@ class DonateScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Support the project using EcoCash, Paynow, international cards, or Crypto through our secure web portal.',
+            'Donate using EcoCash, Paynow, international cards, or crypto through our web portal.',
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
@@ -206,14 +208,14 @@ class DonateScreen extends ConsumerWidget {
             label: 'Open Web Donation Portal',
             icon: Symbols.open_in_new,
             onTap: () async {
-              const url = 'https://captionary.co.zw/donate';
+              final url = AppConstants.donateWebUrl;
               final uri = Uri.parse(url);
               try {
                 if (!await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
                   if (context.mounted) {
                     showDialog(
                       context: context,
-                      builder: (context) => const UrlFallbackDialog(url: url),
+                      builder: (context) => UrlFallbackDialog(url: url),
                     );
                   }
                 }
@@ -221,7 +223,7 @@ class DonateScreen extends ConsumerWidget {
                 if (context.mounted) {
                   showDialog(
                     context: context,
-                    builder: (context) => const UrlFallbackDialog(url: url),
+                    builder: (context) => UrlFallbackDialog(url: url),
                   );
                 }
               }

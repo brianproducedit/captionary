@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:captionary/core/ad_placement_policy.dart';
 import 'package:captionary/widgets/ad_banner_widget.dart';
 
 void main() {
-  testWidgets('AdBannerWidget renders placeholder with correct text', (
-    tester,
-  ) async {
+  testWidgets('AdBannerWidget renders local placeholder label', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: AdBannerWidget())),
     );
 
-    expect(find.text('Ad Space'), findsOneWidget);
-    expect(find.textContaining('Google AdMob Adaptive Banner'), findsOneWidget);
+    expect(find.text(AdBannerWidget.placeholderLabel), findsOneWidget);
+    expect(find.textContaining('Google AdMob'), findsNothing);
+    expect(find.textContaining('Ad Space'), findsNothing);
   });
 
   testWidgets('AdBannerWidget has correct default height', (tester) async {
@@ -19,9 +19,10 @@ void main() {
       const MaterialApp(home: Scaffold(body: AdBannerWidget())),
     );
 
-    final container = tester.widget<Container>(find.byType(Container).first);
-    final constraints = container.constraints;
-    expect(constraints?.maxHeight, 60.0);
+    final renderBox = tester.renderObject<RenderBox>(
+      find.byType(AdBannerWidget),
+    );
+    expect(renderBox.size.height, AdBannerWidget.defaultHeight);
   });
 
   testWidgets('AdBannerWidget accepts custom height', (tester) async {
@@ -35,5 +36,14 @@ void main() {
       find.byType(AdBannerWidget),
     );
     expect(renderBox.size.height, 90.0);
+  });
+
+  test('AdPlacementPolicy allows only language packs and export', () {
+    expect(AdPlacementPolicy.allows('/languages'), isTrue);
+    expect(AdPlacementPolicy.allows('/export'), isTrue);
+    expect(AdPlacementPolicy.allows('/library'), isFalse);
+    expect(AdPlacementPolicy.allows('/player'), isFalse);
+    expect(AdPlacementPolicy.allows('/studio'), isFalse);
+    expect(AdPlacementPolicy.allows('/donate'), isFalse);
   });
 }

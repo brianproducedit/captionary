@@ -98,14 +98,15 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
 
     final exportSrt = find.text('Export .SRT');
     expect(exportSrt, findsOneWidget);
 
     await tester.tap(exportSrt);
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.text('SRT file saved to Downloads'), findsOneWidget);
+    expect(find.text('SRT file export is not wired yet'), findsOneWidget);
   });
 }

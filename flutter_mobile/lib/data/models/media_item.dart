@@ -22,6 +22,27 @@ class MediaItem {
     this.detectedLanguage,
     required this.importedAt,
   });
+
+  bool get isAudio {
+    final name = fileName.toLowerCase();
+    const extensions = [
+      '.mp3',
+      '.wav',
+      '.m4a',
+      '.aac',
+      '.ogg',
+      '.flac',
+      '.wma',
+    ];
+    return extensions.any(name.endsWith);
+  }
+
+  bool get isExported {
+    final haystack = '${fileName.toLowerCase()} ${filePath.toLowerCase()}';
+    return haystack.contains('_captionary_');
+  }
+
+  bool get isVideo => !isAudio;
 }
 
 enum MediaStatus { newItem, pendingAudioSync, readyToEdit, transcribed }

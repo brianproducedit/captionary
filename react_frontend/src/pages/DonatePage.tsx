@@ -5,6 +5,7 @@ import { DonationAmountSelector } from '../components/DonationAmountSelector';
 import { PaymentMethodSelector } from '../components/PaymentMethodSelector';
 import { PRESET_TIERS, PAYMENT_METHODS } from '../types/donation';
 import type { PaymentMethodId } from '../types/donation';
+import { publicConfig } from '../config/public';
 
 export const DonatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -78,7 +79,11 @@ export const DonatePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto pb-[var(--spacing-space-xl)] flex flex-col relative" style={{ paddingLeft: 'var(--spacing-margin-mobile)', paddingRight: 'var(--spacing-margin-mobile)' }}>
+    <div
+      className="max-w-7xl mx-auto pb-[var(--spacing-space-xl)] flex flex-col relative"
+      data-donate-url={publicConfig.donateWebUrl}
+      style={{ paddingLeft: 'var(--spacing-margin-mobile)', paddingRight: 'var(--spacing-margin-mobile)' }}
+    >
       {/* Mock Payment Processing Overlay Modal */}
       {isProcessing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300">
