@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import '../../core/media_file_name.dart';
+
 class FileImportService {
   Future<String?> pickVideoFile() async {
     PlatformFile? result = await FilePicker.pickFile(type: FileType.video);
@@ -22,7 +24,7 @@ class FileImportService {
       await mediaDir.create(recursive: true);
     }
 
-    final fileName = p.basename(sourcePath);
+    final fileName = sanitizeImportedFileName(p.basename(sourcePath));
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final destinationPath = '${mediaDir.path}/${timestamp}_$fileName';
 

@@ -10,7 +10,16 @@ abstract class MediaPlayerService {
 class VideoPlayerMediaService implements MediaPlayerService {
   @override
   Future<VideoPlayerController> open(String videoPath) async {
-    final controller = VideoPlayerController.file(File(videoPath));
+    if (videoPath.contains('?') || videoPath.contains('#')) {
+      throw const FormatException(
+        'This file name cannot be played. Rename it to remove ? or #.',
+      );
+    }
+    final file = File(videoPath);
+    if (!file.existsSync()) {
+      throw FileSystemException('The video file is missing.', videoPath);
+    }
+    final controller = VideoPlayerController.file(file);
     await controller.initialize();
     return controller;
   }
