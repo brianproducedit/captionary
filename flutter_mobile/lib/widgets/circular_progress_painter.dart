@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'dart:math' as math;
+
 import '../theme/app_colors.dart';
 
 class CircularProgressPainter extends CustomPainter {

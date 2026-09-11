@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 
 class AppGradients {
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [
-      AppColors.primaryContainer,
-      AppColors.secondaryContainer,
-    ],
+    colors: [AppColors.primaryContainer, AppColors.secondaryContainer],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );

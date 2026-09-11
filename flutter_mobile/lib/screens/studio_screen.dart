@@ -22,7 +22,9 @@ import '../data/models/subtitle_segment.dart';
 import '../data/models/caption_style.dart';
 import '../providers/player_provider.dart';
 import '../providers/engagement_provider.dart';
+
 import 'package:video_player/video_player.dart';
+
 import '../widgets/glass_card.dart';
 import '../widgets/draggable_timeline_chip.dart';
 import '../theme/app_colors_extension.dart';
@@ -121,9 +123,11 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
   }
 
   Widget _buildTopToolbar(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorsExtension>() ?? AppColorsExtension.defaultTheme;
+    final colors =
+        Theme.of(context).extension<AppColorsExtension>() ??
+        AppColorsExtension.defaultTheme;
     final subtitleNotifier = ref.watch(subtitleProvider.notifier);
-    
+
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       borderRadius: 9999.0,
@@ -163,9 +167,19 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           ),
           Row(
             children: [
-              _buildIconButton(Symbols.undo, onTap: subtitleNotifier.canUndo ? () => subtitleNotifier.undo() : null),
+              _buildIconButton(
+                Symbols.undo,
+                onTap: subtitleNotifier.canUndo
+                    ? () => subtitleNotifier.undo()
+                    : null,
+              ),
               const SizedBox(width: 8),
-              _buildIconButton(Symbols.redo, onTap: subtitleNotifier.canRedo ? () => subtitleNotifier.redo() : null),
+              _buildIconButton(
+                Symbols.redo,
+                onTap: subtitleNotifier.canRedo
+                    ? () => subtitleNotifier.redo()
+                    : null,
+              ),
               const SizedBox(width: 8),
               _buildIconButton(Symbols.tune),
             ],
@@ -182,10 +196,18 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: onTap != null ? AppColors.surfaceContainerHigh : AppColors.surfaceContainerLow,
+          color: onTap != null
+              ? AppColors.surfaceContainerHigh
+              : AppColors.surfaceContainerLow,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: onTap != null ? AppColors.onSurface : AppColors.onSurfaceVariant),
+        child: Icon(
+          icon,
+          size: 18,
+          color: onTap != null
+              ? AppColors.onSurface
+              : AppColors.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -201,13 +223,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     Widget playerWidget;
     if (controller != null && playerState.isInitialized) {
       playerWidget = AspectRatio(
-        aspectRatio: controller.value.aspectRatio > 0 ? controller.value.aspectRatio : 16 / 9,
+        aspectRatio: controller.value.aspectRatio > 0
+            ? controller.value.aspectRatio
+            : 16 / 9,
         child: VideoPlayer(controller),
       );
     } else {
       playerWidget = const AspectRatio(
         aspectRatio: 16 / 9,
-        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -218,9 +244,13 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
       onDoubleTapDown: (details) {
         final screenWidth = MediaQuery.of(context).size.width;
         if (details.globalPosition.dx < screenWidth / 2) {
-          ref.read(playerProvider.notifier).seekRelative(const Duration(seconds: -10));
+          ref
+              .read(playerProvider.notifier)
+              .seekRelative(const Duration(seconds: -10));
         } else {
-          ref.read(playerProvider.notifier).seekRelative(const Duration(seconds: 10));
+          ref
+              .read(playerProvider.notifier)
+              .seekRelative(const Duration(seconds: 10));
         }
       },
       child: Container(
@@ -242,7 +272,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.transparent, AppColors.baseCanvas.withValues(alpha: 0.87)],
+                    colors: [
+                      Colors.transparent,
+                      AppColors.baseCanvas.withValues(alpha: 0.87),
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -273,7 +306,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             // Subtitles preview
             Positioned.fill(
               child: SubtitleOverlay(
-                segment: _activeEditSegment ?? ref.watch(activeSubtitleProvider),
+                segment:
+                    _activeEditSegment ?? ref.watch(activeSubtitleProvider),
                 style: style,
               ),
             ),
@@ -298,7 +332,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     );
   }
 
-  Widget _buildTimelineStudio(BuildContext context, List<SubtitleSegment> segments) {
+  Widget _buildTimelineStudio(
+    BuildContext context,
+    List<SubtitleSegment> segments,
+  ) {
     final activeSegment = ref.watch(activeSubtitleProvider);
 
     return GlassCard(
@@ -310,115 +347,118 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           borderRadius: BorderRadius.circular(16.0),
           border: Border.all(color: AppColors.surfaceContainerHigh),
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Audio Waveform Track',
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: AppColors.onSurfaceVariant),
-              ),
-              Row(
-                children: [
-                  const Icon(
-                    Symbols.zoom_in,
-                    size: 16,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Symbols.content_cut,
-                    size: 16,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => const SubtitleCorrectionSheet(),
-                      );
-                    },
-                    child: const Icon(
-                      Symbols.edit_note,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Timeline fake UI
-          SizedBox(
-            height: 100,
-            child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Waveforms
-                Positioned.fill(
-                  child: ClipRect(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final barCount = (constraints.maxWidth / 8).floor();
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(barCount, (index) {
-                            return Container(
-                              width: 4,
-                              height: 20 + (index % 5) * 10.0,
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              decoration: BoxDecoration(
-                                color: index < 15
-                                    ? AppColors.primary
-                                    : AppColors.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            );
-                          }),
+                Text(
+                  'Audio Waveform Track',
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: AppColors.onSurfaceVariant),
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Symbols.zoom_in,
+                      size: 16,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Symbols.content_cut,
+                      size: 16,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => const SubtitleCorrectionSheet(),
                         );
                       },
+                      child: const Icon(
+                        Symbols.edit_note,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Timeline fake UI
+            SizedBox(
+              height: 100,
+              child: Stack(
+                children: [
+                  // Waveforms
+                  Positioned.fill(
+                    child: ClipRect(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final barCount = (constraints.maxWidth / 8).floor();
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(barCount, (index) {
+                              return Container(
+                                width: 4,
+                                height: 20 + (index % 5) * 10.0,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: index < 15
+                                      ? AppColors.primary
+                                      : AppColors.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-                // Playhead
-                Positioned(
-                  left: 120,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 2,
-                    color: AppColors.secondary,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.only(top: 4),
-                        decoration: const BoxDecoration(
-                          color: AppColors.secondary,
-                          shape: BoxShape.circle,
-                          boxShadow: [AppShadows.glowSupport],
+                  // Playhead
+                  Positioned(
+                    left: 120,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 2,
+                      color: AppColors.secondary,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(top: 4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.secondary,
+                            shape: BoxShape.circle,
+                            boxShadow: [AppShadows.glowSupport],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                // Subtitle blocks
-                Positioned(
-                  top: 40,
-                  left: 60,
-                  right: 0,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: segments
-                          .map((seg) => DraggableTimelineChip(
+                  // Subtitle blocks
+                  Positioned(
+                    top: 40,
+                    left: 60,
+                    right: 0,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: segments
+                            .map(
+                              (seg) => DraggableTimelineChip(
                                 segment: seg,
                                 isSelected: seg.isSelected,
                                 isActive: activeSegment?.index == seg.index,
@@ -427,22 +467,25 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                                 onDragUpdate: (delta) {
                                   final newStart = seg.startTime + delta;
                                   final newEnd = seg.endTime + delta;
-                                  ref.read(subtitleProvider.notifier).updateTimecodes(
-                                    seg.index,
-                                    startTime: newStart,
-                                    endTime: newEnd,
-                                  );
+                                  ref
+                                      .read(subtitleProvider.notifier)
+                                      .updateTimecodes(
+                                        seg.index,
+                                        startTime: newStart,
+                                        endTime: newEnd,
+                                      );
                                 },
-                              ))
-                          .toList(),
+                              ),
+                            )
+                            .toList(),
+                      ),
                     ),
-                  ),
-                ), // Positioned
-              ],
-            ),
-          ), // Expanded
-        ],
-      ), // Column
+                  ), // Positioned
+                ],
+              ),
+            ), // Expanded
+          ],
+        ), // Column
       ), // Container
     ); // GlassCard
   }
@@ -526,7 +569,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
             final timestamp = DateTime.now().millisecondsSinceEpoch;
             final outputPath = '${widget.videoPath}_captionary_$timestamp.mp4';
-            
+
             final stream = exportService.burnCaptions(
               videoPath: widget.videoPath,
               segments: segments,
@@ -549,13 +592,15 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
               hardwareAcceleration: true,
             );
 
-            ref.read(activeExportJobProvider.notifier).startJob(
-              job,
-              stream,
-              onComplete: () {
-                ref.read(engagementProvider.notifier).onExportCompleted();
-              },
-            );
+            ref
+                .read(activeExportJobProvider.notifier)
+                .startJob(
+                  job,
+                  stream,
+                  onComplete: () {
+                    ref.read(engagementProvider.notifier).onExportCompleted();
+                  },
+                );
             context.push('/export');
           },
           isFullWidth: true,

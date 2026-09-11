@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 
 class GhostPillButton extends StatelessWidget {
@@ -22,19 +23,13 @@ class GhostPillButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[
-          Icon(
-            icon,
-            size: 20,
-            color: AppColors.primary,
-          ),
+          Icon(icon, size: 20, color: AppColors.primary),
           const SizedBox(width: 8),
         ],
         Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(context).textTheme.labelLarge
+              ?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -47,10 +42,7 @@ class GhostPillButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(9999),
-          border: Border.all(
-            color: AppColors.outlineVariant,
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.outlineVariant, width: 1),
         ),
         alignment: Alignment.center,
         child: content,
@@ -58,10 +50,7 @@ class GhostPillButton extends StatelessWidget {
     );
 
     if (isFullWidth) {
-      return SizedBox(
-        width: double.infinity,
-        child: button,
-      );
+      return SizedBox(width: double.infinity, child: button);
     }
     return button;
   }

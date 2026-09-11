@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:go_router/go_router.dart';
+
 import '../theme/app_colors.dart';
 import 'ghost_pill_button.dart';
 
 class UrlFallbackDialog extends StatelessWidget {
   final String url;
-  
+
   const UrlFallbackDialog({super.key, required this.url});
 
   @override
@@ -44,9 +45,8 @@ class UrlFallbackDialog extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'We couldn\'t automatically open the browser. Please visit the following link to continue:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -75,7 +75,9 @@ class UrlFallbackDialog extends StatelessWidget {
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: url));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Link copied to clipboard!')),
+                        const SnackBar(
+                          content: Text('Link copied to clipboard!'),
+                        ),
                       );
                     },
                     tooltip: 'Copy link',

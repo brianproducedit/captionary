@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../widgets/gradient_pill_button.dart';
@@ -47,23 +48,25 @@ class DonateBottomSheet extends StatelessWidget {
               border: Border.all(color: AppColors.tertiary),
               boxShadow: const [AppShadows.tertiaryGlow],
             ),
-            child: const Icon(Symbols.local_cafe, size: 32, color: AppColors.tertiary),
+            child: const Icon(
+              Symbols.local_cafe,
+              size: 32,
+              color: AppColors.tertiary,
+            ),
           ),
           const SizedBox(height: 24),
           // Text
           Text(
             'Fuel Our Mission 🚀',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Text(
             'Your donation keeps Captionary free and ad-light for everyone.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 32),
           // Buttons

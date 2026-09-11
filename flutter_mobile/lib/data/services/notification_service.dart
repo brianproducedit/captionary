@@ -46,8 +46,9 @@ class NotificationService {
     // Initialize timezone database
     tz_data.initializeTimeZones();
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/launcher_icon',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -67,8 +68,10 @@ class NotificationService {
     );
 
     // Create Android notification channels
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
@@ -96,16 +99,20 @@ class NotificationService {
   /// Request notification permission (Android 13+ / iOS).
   Future<bool> requestPermission() async {
     // Android 13+
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       final granted = await androidPlugin.requestNotificationsPermission();
       return granted ?? false;
     }
 
     // iOS
-    final iosPlugin = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final iosPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (iosPlugin != null) {
       final granted = await iosPlugin.requestPermissions(
         alert: true,
@@ -127,8 +134,7 @@ class NotificationService {
     await _plugin.zonedSchedule(
       id: donateReminderId,
       title: '☕ Your video captioning matters!',
-      body:
-          'Fuel Captionary with a small donation to keep our AI language models updated and accessible to everyone.',
+      body: 'Fuel Captionary with a small donation to keep our AI language models updated and accessible to everyone.',
       scheduledDate: scheduledDate,
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
@@ -146,7 +152,8 @@ class NotificationService {
     );
 
     debugPrint(
-        '[NotificationService] Donate reminder scheduled for $scheduledDate.');
+      '[NotificationService] Donate reminder scheduled for $scheduledDate.',
+    );
   }
 
   /// Schedule an inactivity nudge (5-day idle).
@@ -177,7 +184,8 @@ class NotificationService {
     );
 
     debugPrint(
-        '[NotificationService] Inactivity nudge scheduled for $scheduledDate.');
+      '[NotificationService] Inactivity nudge scheduled for $scheduledDate.',
+    );
   }
 
   /// Cancel all scheduled notifications.

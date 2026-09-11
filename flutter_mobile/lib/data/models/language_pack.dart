@@ -70,4 +70,11 @@ class LanguagePack {
   }
 }
 
-enum LanguagePackStatus { notDownloaded, downloading, paused, installed, bundled, error }
+enum LanguagePackStatus {
+  notDownloaded,
+  downloading,
+  paused,
+  installed,
+  bundled,
+  error,
+}

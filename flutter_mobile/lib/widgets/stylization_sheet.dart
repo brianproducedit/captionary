@@ -39,7 +39,9 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
           child: Text(
             title,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: isActive ? AppColors.onSurface : AppColors.onSurfaceVariant,
+              color: isActive
+                  ? AppColors.onSurface
+                  : AppColors.onSurfaceVariant,
               fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
             ),
           ),
@@ -76,7 +78,10 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
               ),
               // Tabs
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   children: [
                     _buildTab('Presets', 0),
@@ -93,10 +98,13 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                   controller: scrollController,
                   child: Column(
                     children: [
-                      if (_activeTabIndex == 0) _buildPresetsPanel(currentStyle),
+                      if (_activeTabIndex == 0)
+                        _buildPresetsPanel(currentStyle),
                       if (_activeTabIndex == 1) _buildTextPanel(currentStyle),
-                      if (_activeTabIndex == 2) _buildAnimationPanel(currentStyle),
-                      if (_activeTabIndex == 3) _buildColorsPanel(context, currentStyle),
+                      if (_activeTabIndex == 2)
+                        _buildAnimationPanel(currentStyle),
+                      if (_activeTabIndex == 3)
+                        _buildColorsPanel(context, currentStyle),
                     ],
                   ),
                 ),
@@ -139,12 +147,17 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
         children: [
           Text(
             'Font Size',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.onSurface),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(color: AppColors.onSurface),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Symbols.format_size, size: 16, color: AppColors.onSurfaceVariant),
+              const Icon(
+                Symbols.format_size,
+                size: 16,
+                color: AppColors.onSurfaceVariant,
+              ),
               Expanded(
                 child: Slider(
                   value: currentStyle.fontSize,
@@ -153,29 +166,49 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                   activeColor: AppColors.primary,
                   inactiveColor: AppColors.surfaceContainerHigh,
                   onChanged: (val) {
-                    ref.read(captionStyleProvider.notifier).updateStyle(currentStyle.copyWith(fontSize: val));
+                    ref
+                        .read(captionStyleProvider.notifier)
+                        .updateStyle(currentStyle.copyWith(fontSize: val));
                   },
                 ),
               ),
               Text(
                 '${currentStyle.fontSize.toInt()}pt',
-                style: AppTypography.captionCode.copyWith(color: AppColors.onSurfaceVariant),
+                style: AppTypography.captionCode.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           Text(
             'Position',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.onSurface),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(color: AppColors.onSurface),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildPositionButton(currentStyle, SubtitlePosition.top, Symbols.vertical_align_top, 'Top'),
+              _buildPositionButton(
+                currentStyle,
+                SubtitlePosition.top,
+                Symbols.vertical_align_top,
+                'Top',
+              ),
               const SizedBox(width: 8),
-              _buildPositionButton(currentStyle, SubtitlePosition.center, Symbols.vertical_align_center, 'Center'),
+              _buildPositionButton(
+                currentStyle,
+                SubtitlePosition.center,
+                Symbols.vertical_align_center,
+                'Center',
+              ),
               const SizedBox(width: 8),
-              _buildPositionButton(currentStyle, SubtitlePosition.bottom, Symbols.vertical_align_bottom, 'Bottom'),
+              _buildPositionButton(
+                currentStyle,
+                SubtitlePosition.bottom,
+                Symbols.vertical_align_bottom,
+                'Bottom',
+              ),
             ],
           ),
         ],
@@ -183,28 +216,47 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
     );
   }
 
-  Widget _buildPositionButton(CaptionStyle currentStyle, SubtitlePosition position, IconData icon, String label) {
+  Widget _buildPositionButton(
+    CaptionStyle currentStyle,
+    SubtitlePosition position,
+    IconData icon,
+    String label,
+  ) {
     final isSelected = currentStyle.position == position;
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          ref.read(captionStyleProvider.notifier).updateStyle(currentStyle.copyWith(position: position));
+          ref
+              .read(captionStyleProvider.notifier)
+              .updateStyle(currentStyle.copyWith(position: position));
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12.0),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : AppColors.surfaceContainerHigh,
-            border: Border.all(color: isSelected ? AppColors.primary : Colors.transparent),
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.2)
+                : AppColors.surfaceContainerHigh,
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.transparent,
+            ),
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: Column(
             children: [
-              Icon(icon, size: 24, color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant),
+              Icon(
+                icon,
+                size: 24,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.onSurfaceVariant,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
@@ -229,13 +281,17 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
             selected: isSelected,
             onSelected: (selected) {
               if (selected) {
-                ref.read(captionStyleProvider.notifier).updateStyle(currentStyle.copyWith(animationType: type));
+                ref
+                    .read(captionStyleProvider.notifier)
+                    .updateStyle(currentStyle.copyWith(animationType: type));
               }
             },
             selectedColor: AppColors.primaryContainer,
             backgroundColor: AppColors.surfaceContainerHigh,
             labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: isSelected ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
+              color: isSelected
+                  ? AppColors.onPrimaryContainer
+                  : AppColors.onSurfaceVariant,
             ),
           );
         }).toList(),
@@ -254,7 +310,8 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
             children: [
               Text(
                 'Accent Color',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.onSurface),
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(color: AppColors.onSurface),
               ),
               Container(
                 width: 24,
@@ -271,7 +328,9 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
           ColorPicker(
             pickerColor: currentStyle.accentColor,
             onColorChanged: (color) {
-              ref.read(captionStyleProvider.notifier).updateStyle(currentStyle.copyWith(accentColor: color));
+              ref
+                  .read(captionStyleProvider.notifier)
+                  .updateStyle(currentStyle.copyWith(accentColor: color));
             },
             colorPickerWidth: 300,
             pickerAreaHeightPercent: 0.7,

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../data/models/subtitle_segment.dart';
 import '../data/mock/seed_data.dart';
 
@@ -35,9 +36,11 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
 
   void updateSegment(SubtitleSegment updatedSegment) {
     _saveState();
-    state = state.map((s) => s.index == updatedSegment.index ? updatedSegment : s).toList();
+    state = state
+        .map((s) => s.index == updatedSegment.index ? updatedSegment : s)
+        .toList();
   }
-  
+
   void selectSegment(int index) {
     // We don't save selection in undo stack as it's just UI state
     state = state.map((s) => s.copyWith(isSelected: s.index == index)).toList();
@@ -64,7 +67,7 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
   }
 }
 
-final subtitleProvider = StateNotifierProvider<SubtitleNotifier, List<SubtitleSegment>>((ref) {
-  return SubtitleNotifier();
-});
-
+final subtitleProvider =
+    StateNotifierProvider<SubtitleNotifier, List<SubtitleSegment>>((ref) {
+      return SubtitleNotifier();
+    });

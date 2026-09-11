@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../data/services/ffmpeg_export_service.dart';
 import '../data/models/export_job.dart';
 import '../data/services/export_service.dart';
@@ -13,8 +14,12 @@ class ActiveExportJobNotifier extends StateNotifier<ExportJob?> {
   void setJob(ExportJob job) {
     state = job;
   }
-  
-  void startJob(ExportJob job, Stream<ExportJob> progressStream, {void Function()? onComplete}) {
+
+  void startJob(
+    ExportJob job,
+    Stream<ExportJob> progressStream, {
+    void Function()? onComplete,
+  }) {
     state = job;
     progressStream.listen((updatedJob) {
       state = updatedJob;
@@ -29,6 +34,7 @@ class ActiveExportJobNotifier extends StateNotifier<ExportJob?> {
   }
 }
 
-final activeExportJobProvider = StateNotifierProvider<ActiveExportJobNotifier, ExportJob?>((ref) {
-  return ActiveExportJobNotifier();
-});
+final activeExportJobProvider =
+    StateNotifierProvider<ActiveExportJobNotifier, ExportJob?>((ref) {
+      return ActiveExportJobNotifier();
+    });

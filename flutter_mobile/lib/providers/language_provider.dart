@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../data/models/language_pack.dart';
 import '../data/models/download_progress.dart';
 import '../data/mock/mock_language_service.dart';
@@ -22,7 +24,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
 
   void updateLanguageState(LanguagePack updatedPack) {
     state = state.whenData((packs) {
-      return packs.map((p) => p.code == updatedPack.code ? updatedPack : p).toList();
+      return packs
+          .map((p) => p.code == updatedPack.code ? updatedPack : p)
+          .toList();
     });
   }
 
@@ -33,44 +37,53 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
         sub.resume();
         state.whenData((packs) {
           final pack = packs.firstWhere((p) => p.code == code);
-          updateLanguageState(pack.copyWith(status: LanguagePackStatus.downloading));
+          updateLanguageState(
+            pack.copyWith(status: LanguagePackStatus.downloading),
+          );
         });
         return;
       }
     }
 
     final service = ref.read(languageServiceProvider);
-    
+
     // Mark as downloading
     state.whenData((packs) {
       final pack = packs.firstWhere((p) => p.code == code);
-      updateLanguageState(pack.copyWith(
-        status: LanguagePackStatus.downloading,
-        downloadProgress: 0.0,
-      ));
+      updateLanguageState(
+        pack.copyWith(
+          status: LanguagePackStatus.downloading,
+          downloadProgress: 0.0,
+        ),
+      );
     });
 
     // Listen to mock stream
     final stream = service.downloadLanguagePack(code);
-    final subscription = stream.listen((progress) {
-      state.whenData((packs) {
-        final pack = packs.firstWhere((p) => p.code == code);
-        updateLanguageState(pack.copyWith(
-          status: progress.state == DownloadState.complete 
-              ? LanguagePackStatus.installed 
-              : pack.status == LanguagePackStatus.paused 
-                  ? LanguagePackStatus.paused 
+    final subscription = stream.listen(
+      (progress) {
+        state.whenData((packs) {
+          final pack = packs.firstWhere((p) => p.code == code);
+          updateLanguageState(
+            pack.copyWith(
+              status: progress.state == DownloadState.complete
+                  ? LanguagePackStatus.installed
+                  : pack.status == LanguagePackStatus.paused
+                  ? LanguagePackStatus.paused
                   : LanguagePackStatus.downloading,
-          downloadProgress: progress.totalBytes > 0 
-              ? progress.downloadedBytes / progress.totalBytes 
-              : 0.0,
-          downloadSpeedMbps: progress.speedBytesPerSec / (1024 * 1024),
-          bytesDownloaded: progress.downloadedBytes,
-        ));
-      });
-    }, onDone: () {
-      _activeDownloads.remove(code);
-    });
+              downloadProgress: progress.totalBytes > 0
+                  ? progress.downloadedBytes / progress.totalBytes
+                  : 0.0,
+              downloadSpeedMbps: progress.speedBytesPerSec / (1024 * 1024),
+              bytesDownloaded: progress.downloadedBytes,
+            ),
+          );
+        });
+      },
+      onDone: () {
+        _activeDownloads.remove(code);
+      },
+    );
 
     _activeDownloads[code] = subscription;
   }
@@ -80,10 +93,12 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
       _activeDownloads[code]!.pause();
       state.whenData((packs) {
         final pack = packs.firstWhere((p) => p.code == code);
-        updateLanguageState(pack.copyWith(
-          status: LanguagePackStatus.paused,
-          downloadSpeedMbps: 0.0, // Clear speed when paused
-        ));
+        updateLanguageState(
+          pack.copyWith(
+            status: LanguagePackStatus.paused,
+            downloadSpeedMbps: 0.0, // Clear speed when paused
+          ),
+        );
       });
     }
   }
@@ -96,28 +111,32 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
 
     final service = ref.read(languageServiceProvider);
     await service.deleteLanguagePack(code);
-    
+
     state.whenData((packs) {
       final pack = packs.firstWhere((p) => p.code == code);
-      updateLanguageState(pack.copyWith(
-        status: LanguagePackStatus.notDownloaded,
-        downloadProgress: 0.0,
-        downloadSpeedMbps: 0.0,
-      ));
+      updateLanguageState(
+        pack.copyWith(
+          status: LanguagePackStatus.notDownloaded,
+          downloadProgress: 0.0,
+          downloadSpeedMbps: 0.0,
+        ),
+      );
     });
   }
 }
 
-final availableLanguagesProvider = AsyncNotifierProvider<AvailableLanguagesNotifier, List<LanguagePack>>(() {
-  return AvailableLanguagesNotifier();
-});
+final availableLanguagesProvider =
+    AsyncNotifierProvider<AvailableLanguagesNotifier, List<LanguagePack>>(() {
+      return AvailableLanguagesNotifier();
+    });
 
 final activeLanguageProvider = FutureProvider<LanguagePack>((ref) async {
   final service = ref.watch(languageServiceProvider);
   return service.getActiveLanguage();
 });
 
-final downloadProgressProvider = StreamProvider.family<DownloadProgress, String>((ref, code) {
-  final service = ref.watch(languageServiceProvider);
-  return service.downloadLanguagePack(code);
-});
+final downloadProgressProvider =
+    StreamProvider.family<DownloadProgress, String>((ref, code) {
+      final service = ref.watch(languageServiceProvider);
+      return service.downloadLanguagePack(code);
+    });

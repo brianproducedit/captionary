@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import 'gradient_pill_button.dart';
@@ -65,17 +66,15 @@ class NotificationPermissionSheet extends StatelessWidget {
           Text(
             'Stay Updated & Support Captionary',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Text(
             'Captionary would like to send you occasional reminders to support the project and notify you of background transcription status.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 32),
           // Buttons

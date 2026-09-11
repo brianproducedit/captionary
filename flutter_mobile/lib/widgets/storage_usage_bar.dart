@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'glass_card.dart';
@@ -17,8 +18,12 @@ class StorageUsageBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mediaPct = totalSpaceBytes == 0 ? 0.0 : mediaCacheBytes / totalSpaceBytes;
-    final modelPct = totalSpaceBytes == 0 ? 0.0 : modelCacheBytes / totalSpaceBytes;
+    final mediaPct = totalSpaceBytes == 0
+        ? 0.0
+        : mediaCacheBytes / totalSpaceBytes;
+    final modelPct = totalSpaceBytes == 0
+        ? 0.0
+        : modelCacheBytes / totalSpaceBytes;
     final freePct = 1.0 - mediaPct - modelPct;
 
     return GlassCard(
@@ -29,10 +34,15 @@ class StorageUsageBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Storage Breakdown', style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                'Storage Breakdown',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               Text(
                 '${(totalSpaceBytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB Total',
-                style: AppTypography.captionCode.copyWith(color: AppColors.onSurfaceVariant),
+                style: AppTypography.captionCode.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -62,7 +72,11 @@ class StorageUsageBar extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildLegendItem('Media Cache', AppColors.primary, mediaCacheBytes),
+              _buildLegendItem(
+                'Media Cache',
+                AppColors.primary,
+                mediaCacheBytes,
+              ),
               const SizedBox(width: 16),
               _buildLegendItem('Models', AppColors.secondary, modelCacheBytes),
             ],
@@ -85,7 +99,9 @@ class StorageUsageBar extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           '$label ($mb MB)',
-          style: AppTypography.captionCode.copyWith(color: AppColors.onSurfaceVariant),
+          style: AppTypography.captionCode.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
         ),
       ],
     );

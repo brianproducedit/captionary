@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../data/services/notification_service.dart';
 
 /// Keys for SharedPreferences
@@ -9,8 +10,10 @@ class EngagementKeys {
   static const String donateRemindersEnabled = 'captionary_donate_reminders';
   static const String reminderFrequency = 'captionary_reminder_frequency';
   static const String hasDonated = 'captionary_has_donated';
-  static const String notificationsOptedOut = 'captionary_notifications_opted_out';
-  static const String notificationPermissionAsked = 'captionary_notification_permission_asked';
+  static const String notificationsOptedOut =
+      'captionary_notifications_opted_out';
+  static const String notificationPermissionAsked =
+      'captionary_notification_permission_asked';
   static const String hasSeenOnboarding = 'captionary_has_seen_onboarding';
 }
 
@@ -20,14 +23,16 @@ class EngagementNotifier extends StateNotifier<EngagementState> {
   final SharedPreferences _prefs;
 
   EngagementNotifier(this._prefs)
-      : super(EngagementState(
+    : super(
+        EngagementState(
           exportCount: 0,
           donateRemindersEnabled: true,
           reminderFrequency: 'Every 8 hours',
           hasDonated: false,
           notificationsOptedOut: false,
           hasSeenOnboarding: false,
-        )) {
+        ),
+      ) {
     _loadFromPrefs();
   }
 
@@ -73,7 +78,9 @@ class EngagementNotifier extends StateNotifier<EngagementState> {
 
     // Cancel any existing inactivity nudge and reschedule for 5 days from now
     if (_shouldScheduleReminder()) {
-      await NotificationService.instance.cancel(NotificationService.inactivityNudgeId);
+      await NotificationService.instance.cancel(
+        NotificationService.inactivityNudgeId,
+      );
       await NotificationService.instance.scheduleInactivityNudge();
     }
   }
@@ -193,6 +200,6 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 /// Provider for engagement tracking.
 final engagementProvider =
     StateNotifierProvider<EngagementNotifier, EngagementState>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return EngagementNotifier(prefs);
-});
+      final prefs = ref.watch(sharedPreferencesProvider);
+      return EngagementNotifier(prefs);
+    });

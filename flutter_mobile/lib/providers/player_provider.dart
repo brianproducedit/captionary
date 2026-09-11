@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
@@ -60,11 +61,11 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     // Clean up old controller if any
     state.controller?.removeListener(_onControllerTick);
     await state.controller?.dispose();
-    
+
     state = PlayerState(); // Reset state
-    
+
     final controller = VideoPlayerController.file(File(videoPath));
-    
+
     try {
       await controller.initialize();
       controller.addListener(_onControllerTick);
@@ -82,7 +83,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     final controller = state.controller;
     if (controller != null && controller.value.isInitialized) {
       // Only emit state changes if needed to reduce rebuilds
-      if (state.position != controller.value.position || state.isPlaying != controller.value.isPlaying) {
+      if (state.position != controller.value.position ||
+          state.isPlaying != controller.value.isPlaying) {
         state = state.copyWith(
           position: controller.value.position,
           isPlaying: controller.value.isPlaying,
@@ -114,11 +116,11 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     if (controller != null && controller.value.isInitialized) {
       final newPos = controller.value.position + offset;
       // Clamp to duration boundaries
-      final clampedPos = newPos < Duration.zero 
-          ? Duration.zero 
-          : newPos > controller.value.duration 
-              ? controller.value.duration 
-              : newPos;
+      final clampedPos = newPos < Duration.zero
+          ? Duration.zero
+          : newPos > controller.value.duration
+          ? controller.value.duration
+          : newPos;
       await controller.seekTo(clampedPos);
     }
   }
@@ -140,6 +142,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   }
 }
 
-final playerProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((ref) {
+final playerProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((
+  ref,
+) {
   return PlayerNotifier();
 });

@@ -1,5 +1,7 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 
 /// CustomPainter that draws an audio waveform visualization.
@@ -18,11 +20,7 @@ class WaveformPainter extends CustomPainter {
   /// Optional seed for deterministic waveform shape.
   final int seed;
 
-  WaveformPainter({
-    required this.progress,
-    this.barCount = 60,
-    this.seed = 42,
-  });
+  WaveformPainter({required this.progress, this.barCount = 60, this.seed = 42});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -33,7 +31,10 @@ class WaveformPainter extends CustomPainter {
     final playheadX = size.width * progress;
 
     // Pre-generate heights so they're deterministic.
-    final heights = List.generate(barCount, (_) => 0.15 + random.nextDouble() * 0.85);
+    final heights = List.generate(
+      barCount,
+      (_) => 0.15 + random.nextDouble() * 0.85,
+    );
 
     for (int i = 0; i < barCount; i++) {
       final x = i * totalBarWidth;

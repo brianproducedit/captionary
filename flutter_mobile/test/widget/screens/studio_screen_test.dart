@@ -5,14 +5,12 @@ import 'package:captionary/screens/studio_screen.dart';
 
 void main() {
   Widget buildTestWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: StudioScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: StudioScreen()));
   }
 
-  testWidgets('Studio Screen style presets update preview text styling', (tester) async {
+  testWidgets('Studio Screen style presets update preview text styling', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -24,9 +22,12 @@ void main() {
     expect(find.text('TikTok Bold'), findsWidgets); // Found in the list
     expect(find.text('IG Highlight'), findsOneWidget);
 
-    // Initial subtitle text "Mhoroi mose, ndinofara kuva pano" or "Nhasi tichataura nezve rwendo rwedu" 
+    // Initial subtitle text "Mhoroi mose, ndinofara kuva pano" or "Nhasi tichataura nezve rwendo rwedu"
     // depending on the seed data selection logic. The second is selected by default in seed data.
-    expect(find.textContaining('Nhasi tichataura', findRichText: true), findsWidgets);
+    expect(
+      find.textContaining('Nhasi tichataura', findRichText: true),
+      findsWidgets,
+    );
 
     // Tap IG Highlight
     await tester.tap(find.text('IG Highlight'));
@@ -47,7 +48,7 @@ void main() {
 
     // Verify font size slider exists
     final textSliders = find.byType(Slider);
-    expect(textSliders, findsOneWidget); 
+    expect(textSliders, findsOneWidget);
 
     // Move first slider
     await tester.drag(textSliders.first, const Offset(100.0, 0.0));
@@ -89,7 +90,9 @@ void main() {
     expect(find.textContaining('Hello there'), findsWidgets);
   });
 
-  testWidgets('Action buttons trigger correct navigation/snackbar', (tester) async {
+  testWidgets('Action buttons trigger correct navigation/snackbar', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);

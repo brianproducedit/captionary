@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:video_player/video_player.dart';
+
 import '../providers/player_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_header.dart';
@@ -9,6 +10,7 @@ import '../widgets/subtitle_overlay.dart';
 import '../providers/subtitle_provider.dart';
 import '../providers/caption_style_provider.dart';
 import '../data/models/subtitle_segment.dart';
+
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String videoPath;
   const VideoPlayerScreen({super.key, required this.videoPath});
@@ -34,7 +36,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final controller = playerState.controller;
     final segments = ref.watch(subtitleProvider);
     final currentStyle = ref.watch(captionStyleProvider);
-    
+
     SubtitleSegment? currentSubtitle;
     if (controller != null && playerState.isInitialized) {
       final currentPosition = controller.value.position;
@@ -50,11 +52,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     Widget playerWidget;
     if (controller != null && playerState.isInitialized) {
       playerWidget = AspectRatio(
-        aspectRatio: controller.value.aspectRatio > 0 ? controller.value.aspectRatio : 16 / 9,
+        aspectRatio: controller.value.aspectRatio > 0
+            ? controller.value.aspectRatio
+            : 16 / 9,
         child: VideoPlayer(controller),
       );
     } else {
-      playerWidget = const Center(child: CircularProgressIndicator(color: AppColors.primary));
+      playerWidget = const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     return Scaffold(
@@ -88,7 +94,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                             color: AppColors.baseCanvas.withValues(alpha: 0.6),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Symbols.play_arrow, size: 40, color: AppColors.onSurface),
+                          child: const Icon(
+                            Symbols.play_arrow,
+                            size: 40,
+                            color: AppColors.onSurface,
+                          ),
                         ),
                     ],
                   ),

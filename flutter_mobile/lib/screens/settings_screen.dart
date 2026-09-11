@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../widgets/sub_screen_header.dart';
 import '../widgets/donate_banner.dart';
 import '../providers/engagement_provider.dart';
+
 import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -45,9 +46,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         'Help support the project by keeping reminders on',
                     icon: Symbols.favorite,
                     trailing: _buildCustomSwitch(
-                      value: ref.watch(engagementProvider).donateRemindersEnabled,
+                      value: ref
+                          .watch(engagementProvider)
+                          .donateRemindersEnabled,
                       onChanged: (value) {
-                        ref.read(engagementProvider.notifier).setDonateRemindersEnabled(value);
+                        ref
+                            .read(engagementProvider.notifier)
+                            .setDonateRemindersEnabled(value);
                       },
                     ),
                   ),
@@ -59,7 +64,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Symbols.schedule,
                       trailing: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: ref.watch(engagementProvider).reminderFrequency,
+                          value: ref
+                              .watch(engagementProvider)
+                              .reminderFrequency,
                           dropdownColor: AppColors.surfaceContainerHigh,
                           items: _frequencies.where((f) => f != 'Never').map((
                             String value,
@@ -74,7 +81,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           }).toList(),
                           onChanged: (newValue) {
                             if (newValue != null) {
-                              ref.read(engagementProvider.notifier).setReminderFrequency(newValue);
+                              ref
+                                  .read(engagementProvider.notifier)
+                                  .setReminderFrequency(newValue);
                             }
                           },
                         ),

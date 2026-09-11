@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+
 import '../models/media_item.dart';
 import 'media_service.dart';
 import 'file_import_service.dart';
@@ -7,7 +8,7 @@ import 'ffmpeg_metadata_service.dart';
 class LocalMediaService implements MediaService {
   final FileImportService _importService = FileImportService();
   final FFmpegMetadataService _metadataService = FFmpegMetadataService();
-  
+
   final List<MediaItem> _cache = [];
 
   @override

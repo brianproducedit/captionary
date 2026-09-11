@@ -13,10 +13,12 @@ class SubtitleCorrectionSheet extends ConsumerStatefulWidget {
   const SubtitleCorrectionSheet({super.key});
 
   @override
-  ConsumerState<SubtitleCorrectionSheet> createState() => _SubtitleCorrectionSheetState();
+  ConsumerState<SubtitleCorrectionSheet> createState() =>
+      _SubtitleCorrectionSheetState();
 }
 
-class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionSheet> {
+class _SubtitleCorrectionSheetState
+    extends ConsumerState<SubtitleCorrectionSheet> {
   final Map<int, TextEditingController> _controllers = {};
 
   @override
@@ -37,7 +39,10 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
   String _formatDuration(Duration d) {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    final ms = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(2, '0');
+    final ms = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(
+      2,
+      '0',
+    );
     return '$m:$s.$ms';
   }
 
@@ -69,15 +74,17 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
               ),
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Subtitle Correction',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '${segments.length} segments',
@@ -99,7 +106,7 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
                   itemBuilder: (context, index) {
                     final segment = segments[index];
                     final controller = _getController(segment);
-                    
+
                     // Sync controller text if segment text changed externally
                     if (controller.text != segment.text) {
                       controller.text = segment.text;
@@ -107,8 +114,12 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
 
                     return GestureDetector(
                       onTap: () {
-                        ref.read(subtitleProvider.notifier).selectSegment(segment.index);
-                        ref.read(playerProvider.notifier).seekTo(segment.startTime);
+                        ref
+                            .read(subtitleProvider.notifier)
+                            .selectSegment(segment.index);
+                        ref
+                            .read(playerProvider.notifier)
+                            .seekTo(segment.startTime);
                       },
                       child: GlassCard(
                         padding: const EdgeInsets.all(12.0),
@@ -119,9 +130,14 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.15),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -133,7 +149,11 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Icon(Symbols.schedule, size: 14, color: AppColors.onSurfaceVariant),
+                                Icon(
+                                  Symbols.schedule,
+                                  size: 14,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${_formatDuration(segment.startTime)} → ${_formatDuration(segment.endTime)}',
@@ -148,15 +168,19 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
                             TextField(
                               controller: controller,
                               onChanged: (text) {
-                                ref.read(subtitleProvider.notifier).updateSegmentText(segment.index, text);
+                                ref
+                                    .read(subtitleProvider.notifier)
+                                    .updateSegmentText(segment.index, text);
                               },
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.onSurface,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.onSurface),
                               maxLines: null,
                               decoration: InputDecoration(
                                 isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 8,
+                                ),
                                 filled: true,
                                 fillColor: AppColors.surfaceContainerHigh,
                                 border: OutlineInputBorder(
@@ -165,7 +189,10 @@ class _SubtitleCorrectionSheetState extends ConsumerState<SubtitleCorrectionShee
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(color: AppColors.primary, width: 1),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.primary,
+                                    width: 1,
+                                  ),
                                 ),
                               ),
                             ),

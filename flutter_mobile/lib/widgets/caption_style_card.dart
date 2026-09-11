@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/models/caption_style.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
@@ -26,7 +27,9 @@ class CaptionStyleCard extends StatelessWidget {
           color: AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.transparent : AppColors.surfaceContainerHigh,
+            color: isSelected
+                ? Colors.transparent
+                : AppColors.surfaceContainerHigh,
             width: 2,
           ),
           gradient: isSelected ? AppGradients.primaryGradient : null,
@@ -61,9 +64,11 @@ class CaptionStyleCard extends StatelessWidget {
               Text(
                 style.name,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
+                  color: isSelected
+                      ? AppColors.onSurface
+                      : AppColors.onSurfaceVariant,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -71,7 +76,11 @@ class CaptionStyleCard extends StatelessWidget {
               if (isSelected)
                 const Padding(
                   padding: EdgeInsets.only(top: 8.0),
-                  child: Icon(Icons.check_circle, color: AppColors.primary, size: 16),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: AppColors.primary,
+                    size: 16,
+                  ),
                 ),
             ],
           ),

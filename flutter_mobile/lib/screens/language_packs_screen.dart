@@ -285,20 +285,25 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                 Symbols.lock,
                 color: AppColors.onSurfaceVariant,
               );
-            } else if (lang.status == LanguagePackStatus.downloading || lang.status == LanguagePackStatus.paused) {
+            } else if (lang.status == LanguagePackStatus.downloading ||
+                lang.status == LanguagePackStatus.paused) {
               final isPaused = lang.status == LanguagePackStatus.paused;
-              statusStr = isPaused 
-                  ? 'Paused ${(lang.downloadProgress * 100).toInt()}%' 
+              statusStr = isPaused
+                  ? 'Paused ${(lang.downloadProgress * 100).toInt()}%'
                   : 'Downloading ${(lang.downloadProgress * 100).toInt()}%';
-              statusColor = isPaused ? AppColors.onSurfaceVariant : AppColors.attentionYellow;
-              
+              statusColor = isPaused
+                  ? AppColors.onSurfaceVariant
+                  : AppColors.attentionYellow;
+
               actionWidget = Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     icon: const Icon(Symbols.close, color: AppColors.error),
                     onPressed: () {
-                      ref.read(availableLanguagesProvider.notifier).simulateDelete(lang.code);
+                      ref
+                          .read(availableLanguagesProvider.notifier)
+                          .simulateDelete(lang.code);
                     },
                   ),
                   const SizedBox(width: 8),
@@ -312,16 +317,25 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                           value: lang.downloadProgress,
                           strokeWidth: 3,
                           backgroundColor: AppColors.surfaceContainerHighest,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.attentionYellow),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.attentionYellow,
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(isPaused ? Symbols.play_arrow : Symbols.pause, color: AppColors.onSurface),
+                        icon: Icon(
+                          isPaused ? Symbols.play_arrow : Symbols.pause,
+                          color: AppColors.onSurface,
+                        ),
                         onPressed: () {
                           if (isPaused) {
-                             ref.read(availableLanguagesProvider.notifier).simulateDownload(lang.code);
+                            ref
+                                .read(availableLanguagesProvider.notifier)
+                                .simulateDownload(lang.code);
                           } else {
-                             ref.read(availableLanguagesProvider.notifier).pauseDownload(lang.code);
+                            ref
+                                .read(availableLanguagesProvider.notifier)
+                                .pauseDownload(lang.code);
                           }
                         },
                       ),
@@ -329,10 +343,12 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                   ),
                 ],
               );
-              
+
               // We remove the linear progress bar properties
               progress = null;
-              progressText = isPaused ? 'Paused' : '${lang.downloadSpeedMbps?.toStringAsFixed(1) ?? 0} MB/s';
+              progressText = isPaused
+                  ? 'Paused'
+                  : '${lang.downloadSpeedMbps?.toStringAsFixed(1) ?? 0} MB/s';
               etaText = isPaused ? '' : 'Downloading...';
             }
 

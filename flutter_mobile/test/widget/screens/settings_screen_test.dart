@@ -12,19 +12,16 @@ void main() {
           path: '/',
           builder: (_, _) => const Scaffold(body: Text('Home')),
         ),
-        GoRoute(
-          path: '/settings',
-          builder: (_, _) => const SettingsScreen(),
-        ),
+        GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       ],
     );
 
-    return MaterialApp.router(
-      routerConfig: router,
-    );
+    return MaterialApp.router(routerConfig: router);
   }
 
-  testWidgets('Settings Screen renders sections and dropdown updates', (tester) async {
+  testWidgets('Settings Screen renders sections and dropdown updates', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
@@ -57,7 +54,9 @@ void main() {
     expect(find.text('High (6GB+)'), findsWidgets);
   });
 
-  testWidgets('Settings Screen notification toggle updates state', (tester) async {
+  testWidgets('Settings Screen notification toggle updates state', (
+    tester,
+  ) async {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 

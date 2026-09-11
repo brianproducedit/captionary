@@ -5,22 +5,22 @@ import 'package:captionary/screens/language_packs_screen.dart';
 
 void main() {
   Widget buildTestWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: LanguagePacksScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: LanguagePacksScreen()));
   }
 
-  testWidgets('LanguagePacksScreen renders and filters properly', (tester) async {
+  testWidgets('LanguagePacksScreen renders and filters properly', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600)); // wait for Provider data
-    
+    await tester.pump(
+      const Duration(milliseconds: 600),
+    ); // wait for Provider data
+
     // Check if initial items are rendered
     expect(find.text('English (English)'), findsOneWidget);
     expect(find.text('Shona (chiShona)'), findsOneWidget);
@@ -44,11 +44,13 @@ void main() {
 
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600)); // wait for Provider data
+    await tester.pump(
+      const Duration(milliseconds: 600),
+    ); // wait for Provider data
 
     // Swahili should be available to download
     final downloadButton = find.textContaining('Download').first;
-    expect(downloadButton, findsWidgets); 
+    expect(downloadButton, findsWidgets);
 
     // Tap "Download" button for the first not-downloaded pack
     await tester.tap(downloadButton);
@@ -56,10 +58,10 @@ void main() {
 
     // The state changes to downloading
     await tester.pump(const Duration(milliseconds: 300));
-    
+
     // Check if "Abort" button appears indicating downloading state
     expect(find.text('Abort'), findsWidgets);
-    
+
     // Fast forward to complete the download mock (takes about 4 seconds mock time)
     for (int i = 0; i < 25; i++) {
       await tester.pump(const Duration(milliseconds: 200));
@@ -73,31 +75,35 @@ void main() {
 
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600)); // wait for Provider data
+    await tester.pump(
+      const Duration(milliseconds: 600),
+    ); // wait for Provider data
 
     // Let's trigger a long press on the Shona card.
     await tester.longPress(find.text('Shona (chiShona)'));
     await tester.pumpAndSettle();
-    
+
     // Verify dialog shows
     expect(find.text('Delete Shona?'), findsOneWidget);
-    
+
     // Tap cancel
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    
+
     // Tap delete button icon directly
     final deleteIconBtn = find.byType(IconButton).first;
     await tester.tap(deleteIconBtn);
     await tester.pumpAndSettle();
-    
+
     expect(find.text('Delete Shona?'), findsOneWidget);
-    
+
     // Tap Delete
     await tester.tap(find.text('Delete'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400)); // Wait for mock delete
-    
+    await tester.pump(
+      const Duration(milliseconds: 400),
+    ); // Wait for mock delete
+
     // Shona is now deleted and shows a download button again
     expect(find.textContaining('Download'), findsWidgets);
   });

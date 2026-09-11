@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../theme/app_colors.dart';
 
 /// A mock AdMob banner placeholder widget.
@@ -39,16 +40,16 @@ class AdBannerWidget extends StatelessWidget {
           Text(
             'Ad Space',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: AppColors.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(width: 8),
           Text(
             '• Google AdMob Adaptive Banner',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-                ),
+              color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
           ),
         ],
       ),

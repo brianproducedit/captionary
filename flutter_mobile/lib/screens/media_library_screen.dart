@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import '../widgets/donate_banner.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../widgets/empty_state_widget.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
@@ -46,7 +49,11 @@ class MediaLibraryScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           _buildQuickStats(context),
           const SizedBox(height: 16),
-          const StorageUsageBar(mediaCacheBytes: 251658240, modelCacheBytes: 524288000, totalSpaceBytes: 10737418240), // dummy data
+          const StorageUsageBar(
+            mediaCacheBytes: 251658240,
+            modelCacheBytes: 524288000,
+            totalSpaceBytes: 10737418240,
+          ), // dummy data
           const SizedBox(height: 24),
           DonateBanner(onTap: () {}),
           const SizedBox(height: 32),
@@ -372,7 +379,10 @@ class MediaLibraryScreen extends ConsumerWidget {
                 }
               },
               gradient: const LinearGradient(
-                colors: [AppColors.surfaceContainerHigh, AppColors.surfaceVariant],
+                colors: [
+                  AppColors.surfaceContainerHigh,
+                  AppColors.surfaceVariant,
+                ],
               ),
             );
           },

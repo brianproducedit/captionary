@@ -4,7 +4,7 @@
 >
 > **Project:** Captionary, an offline-first Android captioning and creator suite for devices with 4 GB RAM.
 >
-> **Scope:** Replace mock backend behavior with real local media, transcription, model-download, export, notification, payment, and release integrations. GitHub Releases are the only distribution target in this roadmap. Play Store distribution is explicitly out of scope.
+> **Scope:** Replace mock backend behavior with real local media, transcription, model-download, export, notification, and release integrations. The Flutter app contains the complete application backend and must work without a hosted API. Cloudflare R2 is the only permitted remote dependency, and is used only to host downloadable language models and the public manifest. GitHub Releases are the only mobile distribution target. Play Store distribution is explicitly out of scope.
 >
 > **Execution rule:** Work top to bottom. Every checkbox is an independently verifiable task. Preserve the existing service contracts unless a contract-preserving adapter is added. Keep every mock implementation and select real versus mock implementations at Riverpod provider seams.
 
@@ -12,10 +12,17 @@
 
 - [ ] Use `whisper_flutter_new`; do not evaluate or add another Whisper wrapper.
 - [ ] Use GitHub Releases with signed APK artifacts; do not produce an AAB for this roadmap.
-- [ ] Register Paynow as an individual merchant. Keep merchant credentials server-side in the Worker environment, not in the mobile APK.
-- [ ] Use Firebase Cloud Messaging for server-initiated push. Use `flutter_local_notifications` for foreground display and local reminders.
+- [ ] Keep donations external and non-critical: use `url_launcher` links, static payment instructions, Ko-fi/Buy Me a Coffee, or a Paynow-hosted checkout link. Do not implement a Paynow API client or payment webhook without a permitted backend.
+- [ ] Use `flutter_local_notifications` for all reminders and app-generated notifications. Do not add push messaging or any server-initiated notification service.
 - [ ] Use Cloudflare R2's S3-compatible API for upload tooling. The Flutter client downloads public model objects with `dio`.
-- [ ] Treat all values embedded in a Flutter asset, including `.env`, as extractable public configuration. Never put a Paynow key, R2 secret, FCM server credential, or other server-only secret in a mobile `.env` asset.
+- [ ] Treat all values embedded in a Flutter asset, including `.env`, as extractable public configuration. Never put R2 upload credentials, Paynow API keys, or other private credentials in the mobile app.
+
+### Non-negotiable backend boundary
+
+- [ ] Implement business logic, persistence, orchestration, notifications, and payment UI state inside the Flutter app or static React bundle.
+- [ ] Do not create, deploy, or require Cloudflare Workers, Cloudflare Pages Functions, Firebase, Supabase, Appwrite, a hosted Node/Python API, or any other backend hosting service.
+- [ ] Permit outbound network access only for public R2 model/manifest downloads, browser navigation to external donation/payment pages, and normal package/build tooling.
+- [ ] Define an offline mode that disables R2 refreshes and all external donation links while keeping local captioning functional.
 
 ## 0. Preconditions and Codebase Snapshot
 
@@ -94,7 +101,7 @@ Flutter package versions read from `flutter_mobile/pubspec.yaml`:
 - [ ] Create a root `.gitignore`; none was present at inspection time.
 - [ ] Create `.env.example`; no root environment template was present.
 - [ ] Create `.github/workflows/`; no workflow directory was present.
-- [ ] Add `flutter_dotenv`, `dio`, `crypto`, `permission_handler`, `firebase_core`, `firebase_messaging`, and `google_mobile_ads` only in the phases that require them.
+- [ ] Add `flutter_dotenv`, `dio`, `crypto`, and `permission_handler` only in the phases that require them. Do not add Firebase, push, hosted-backend, or live-ad SDK dependencies.
 - [ ] Resolve the placeholder `https://pub-xxxx.r2.dev` in `AppConstants`; load the public URL from non-secret configuration.
 - [ ] Resolve the difference between `https://captionary.co.zw/donate` in Flutter constants and the React portal's actual deployment URL. Use one canonical `DONATE_WEB_URL`.
 - [ ] Replace the comment and user-facing wording that say “support” where the product decision is “donate”.
@@ -119,21 +126,21 @@ Flutter package versions read from `flutter_mobile/pubspec.yaml`:
 - [ ] Protect `main`; require pull requests, passing required checks, and no direct pushes.
 - [ ] Create `develop` as the integration branch.
 - [ ] Use `feature/<short-name>` for features, `fix/<short-name>` for fixes, and `release/<semver>` for release preparation.
-- [ ] Use Conventional Commits: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, and `perf` with optional scopes such as `flutter`, `react`, `r2`, `paynow`, and `fcm`.
+- [ ] Use Conventional Commits: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, and `perf` with optional scopes such as `flutter`, `react`, `r2`, `payments`, and `offline`.
 - [ ] Add `.github/pull_request_template.md` containing summary, tests, screenshots/device matrix, environment changes, migration notes, and rollback notes.
 - [ ] Add `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml`.
-- [ ] Add a root `.gitignore` covering `.env`, `.env.*` except `.env.example`, Flutter `.dart_tool/`, `build/`, Android local properties/keystores, Node `node_modules/`, React `dist/`, logs, IDE files, and generated Firebase secrets.
+- [ ] Add a root `.gitignore` covering `.env`, `.env.*` except `.env.example`, Flutter `.dart_tool/`, `build/`, Android local properties/keystores, Node `node_modules/`, React `dist/`, logs, and IDE files.
 - [ ] Add `.env` to `.gitignore` before creating any real environment file.
 - [ ] Add `.env.example` with placeholders and comments for every key in Appendix B.
 - [ ] Add a CI guard that fails when a staged or changed file is named `.env` or matches a private key/credential pattern.
 - [ ] Add a local pre-commit hook or documented `pre-commit` configuration running the same secret guard.
 - [ ] Decide and document Git LFS status: never commit Whisper `.bin` models larger than 50 MB; store them in R2.
-- [ ] Add labels: `feature`, `bug`, `backend`, `flutter`, `react`, `ci-cd`, `r2`, `transcription`, `video`, `ffmpeg`, `notifications`, `fcm`, `payments`, `security`, `performance`, `documentation`, and `blocked`.
+- [ ] Add labels: `feature`, `bug`, `backend`, `flutter`, `react`, `ci-cd`, `r2`, `transcription`, `video`, `ffmpeg`, `notifications`, `payments`, `security`, `performance`, `offline`, `documentation`, and `blocked`.
 
 ### Environment policy
 
-- [ ] Keep client-safe values such as a public R2 base URL, manifest URL, donation URL, feature flags, and AdMob application/unit IDs in build configuration.
-- [ ] Keep Paynow integration keys, R2 access keys, FCM HTTP v1 service-account credentials, and Worker secrets in GitHub/Cloudflare secrets only.
+- [ ] Keep client-safe values such as a public R2 base URL, manifest URL, donation URL, and feature flags in build configuration.
+- [ ] Keep R2 upload keys outside the mobile app in local developer environment variables or a controlled upload-only CI job. Do not add any runtime server credentials to the app.
 - [ ] Do not add `.env` as a Flutter asset when it contains a secret. If `flutter_dotenv` is used for public configuration, document that it is not a secret store.
 - [ ] For local scripts, load `.env` from the repository root with a Node/Python dotenv library and fail if a required upload secret is missing.
 
@@ -155,7 +162,7 @@ Use the Flutter package root `flutter_mobile/` as the working directory and `rea
 - [ ] Upload `flutter_mobile/coverage/lcov.info` as an artifact.
 - [ ] Run the `.env` and credential scan.
 - [ ] Run `npm ci`, `npm run build`, and `npm run lint` in `react_frontend/`.
-- [ ] Do not require live Paynow, R2, Firebase, or AdMob credentials for pull-request checks.
+- [ ] Do not require live R2 upload, Paynow, or donation credentials for pull-request checks.
 
 ### 2.2 Debug APK: `.github/workflows/build-debug.yml`
 
@@ -186,12 +193,12 @@ Use the Flutter package root `flutter_mobile/` as the working directory and `rea
 - [ ] Change the release signing configuration from the current debug signing config.
 - [ ] Verify the release APK signature with `apksigner verify --verbose <apk>`.
 
-### 2.5 React portal CI and Cloudflare Pages
+### 2.5 React portal CI and static distribution
 
 - [ ] Run `npm ci` and `npm run build` for every React pull request.
-- [ ] Add a production workflow on pushes to `main` or manual dispatch.
-- [ ] Deploy `react_frontend/dist` to Cloudflare Pages using the chosen Cloudflare Pages/Wrangler action.
-- [ ] Store `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_PAGES_PROJECT` as GitHub secrets/variables.
+- [ ] Add a production workflow on pushes to `main` or manual dispatch that only builds the static React bundle.
+- [ ] Keep the portal usable with `npm run dev` and `npm run preview` locally without any API server.
+- [ ] If public hosting is later needed, publish only static files through a repository-approved static host; do not add functions, API routes, or server-side rendering.
 - [ ] Configure SPA fallback so `/donate`, `/about`, and `/payment-confirmation` resolve to the app entry point.
 - [ ] Run a post-deploy smoke check against the canonical portal URL.
 
@@ -285,18 +292,19 @@ The manifest is a public, versioned JSON document. Unknown fields may be added o
 - [ ] Add `--dry-run`, `--manifest-only`, and `--verify` modes.
 - [ ] Add unit tests for hashing, path mapping, and missing credentials.
 
-### 3.5 Plain public bucket versus Worker
+### 3.5 R2 is the only remote runtime dependency
 
-- [ ] Use plain public object delivery for model downloads and the public manifest. This keeps downloads cacheable and avoids putting an unnecessary Worker in the hot path.
-- [ ] Use a Cloudflare Worker only for Paynow initiation/webhook handling, FCM sending, optional signed admin operations, or a future controlled model API.
-- [ ] Do not use a Worker to hide public model files; public files are intentionally public.
+- [ ] Use plain public object delivery for model downloads and the public manifest. The app must call only public `GET`/`HEAD` URLs.
+- [ ] Do not use a Worker, Pages Function, proxy API, signed-download service, or hosted model API.
+- [ ] Run the R2 upload script only from a developer machine or a controlled upload-only build job; it is not part of the app runtime.
+- [ ] Do not use R2 for user data, telemetry, payment state, accounts, or notification state.
 
 ### 3.6 Budget guardrails
 
 - [ ] Record the R2 storage and operation allowance currently applicable to the account; do not hard-code historical free-tier numbers without checking the billing page.
 - [ ] Add a monthly script that reports object count, total model bytes, and estimated operation volume.
 - [ ] Fail CI if the published catalog exceeds the project storage budget agreed in an issue.
-- [ ] Configure Cloudflare billing/usage alerts where available.
+- [ ] Configure Cloudflare billing/usage alerts where available, without adding a runtime monitoring service to the app.
 - [ ] Keep at least 20 percent storage headroom for replacement models and manifests.
 
 ### Sources
@@ -304,7 +312,6 @@ The manifest is a public, versioned JSON document. Unknown fields may be added o
 - [ ] Review https://developers.cloudflare.com/r2/buckets/public-buckets/ for public access and `r2.dev` limitations.
 - [ ] Review https://developers.cloudflare.com/r2/buckets/cors/ for exact CORS rules and origin syntax.
 - [ ] Review https://developers.cloudflare.com/r2/api/s3/api/ for S3 compatibility, `auto` region, range reads, and multipart behavior.
-- [ ] Review https://developers.cloudflare.com/workers/ for Worker deployment and secret bindings.
 
 ## 4. Phase B1: Real Video Player
 
@@ -461,19 +468,14 @@ The existing export service currently burns SRT with the `subtitles` filter. Thi
 - [ ] Add golden tests that open in a strict parser or compare exact expected output.
 - [ ] Test empty segments, Unicode text, long durations, overlapping segments, and invalid intervals.
 
-## 11. Phase B8: AdMob Live Ads
+## 11. Phase B8: Local Ad Placeholder Policy
 
-- [ ] Add the current compatible `google_mobile_ads` version after checking pub.dev and the Flutter SDK constraint. ⚠️ VERIFY ONLINE before pinning; the old roadmap's `^5.3.0` is not current.
-- [ ] Initialize `MobileAds.instance.initialize()` once before the first ad request.
-- [ ] Add test and production application/unit IDs in a configuration layer; never use production IDs in tests.
-- [ ] Add the Android AdMob application ID metadata only after the real ID is available.
-- [ ] Implement adaptive banner sizing from available width.
-- [ ] Dispose each `BannerAd` when the widget leaves the tree.
-- [ ] Collapse the layout on `onAdFailedToLoad`; do not leave a permanent blank card.
-- [ ] Enforce placements with a single `AdPlacement` enum: language-pack manager and export encoding only.
+Live ad networks are outside the local-only backend boundary. Keep the existing placeholder UI and do not add `google_mobile_ads`.
+
+- [ ] Keep `AdBannerWidget` as a deterministic local placeholder on the language-pack and export screens only.
+- [ ] Add no ad SDK, ad network initialization, ad identifier, network callback, or hosted ad configuration.
 - [ ] Verify no ad widget is created in player, studio, media library, or donate routes.
-- [ ] Add tests for mock mode, loading, loaded, failed, disposed, and placement policy.
-- [ ] Use test IDs on emulator and physical development devices.
+- [ ] Add tests for placeholder rendering, fixed height, and placement policy.
 
 ## 12. Phase B9: Local Donate Reminder Scheduler
 
@@ -508,90 +510,47 @@ The existing `NotificationService` is partly implemented. This phase hardens it 
 - [ ] Add tests around the launcher abstraction, including URL and external launch mode.
 - [ ] Add an Android manual test with and without a browser available.
 
-## 14. Phase B11: Paynow and Alternative Payment Gateways
+## 14. Phase B11: Local Donation Portal and Payment Links
 
-### Architecture
+No payment backend is part of Captionary. A client-only app cannot safely hold Paynow integration keys or verify Paynow callbacks. The portal therefore provides links and instructions only; it must never claim that a donation succeeded based on a browser redirect.
 
-The React browser must not receive Paynow integration keys. The flow is:
-
-```text
-React portal -> Cloudflare Worker /initiate -> Paynow
-Paynow -> return URL (browser UX)
-Paynow -> result URL (server webhook) -> verify signature -> durable status
-React portal -> /status?id=... -> confirmed/pending/failed
-```
-
-- [ ] Confirm Paynow's current individual merchant onboarding requirements directly with Paynow support/documentation; do not state undocumented requirements as fact.
-- [ ] Obtain the individual merchant's Integration ID and Integration Key.
-- [ ] Store them as Cloudflare Worker secrets, not in React source, Flutter `.env`, GitHub artifacts, or public Pages variables.
-- [ ] Create a Worker with `POST /api/paynow/initiate`, `POST /api/paynow/result`, and `GET /api/paynow/status/:reference`.
-- [ ] Generate a server-side unique reference and validate amount/currency bounds server-side.
-- [ ] Use Paynow's documented Express Checkout or Redirect API after verifying exact current request/response fields. ⚠️ VERIFY ONLINE against https://developers.paynow.co.zw/docs/paynow/quickstart/ before implementation.
-- [ ] Verify result/webhook signatures using the documented algorithm and constant-time comparison where applicable.
-- [ ] Make webhook processing idempotent by reference and transaction ID.
-- [ ] Return only a public status and reference to the browser.
-- [ ] Configure `PAYNOW_RETURN_URL` and `PAYNOW_RESULT_URL` as Worker environment values.
-- [ ] Add CORS allowing only the production portal and explicitly configured local development origins.
-- [ ] Do not trust a browser “success” query parameter as payment confirmation.
-- [ ] Add sandbox/test matrix for accepted, cancelled, failed, duplicate, malformed, delayed, and replayed results.
-- [ ] Add React loading, pending, success, failure, retry, and expired-reference states.
-- [ ] Keep Ko-fi, Buy Me a Coffee, and crypto links as independent fallback methods with no fake confirmation.
-- [ ] Add manual EcoCash instructions only after the merchant has supplied an approved public number.
-- [ ] Document privacy, retention, and refund handling before production payments.
-- [ ] Deploy the Worker separately from Cloudflare Pages and test from the deployed portal origin.
+- [ ] Keep the React portal static and client-only.
+- [ ] Use `url_launcher` from Flutter to open the portal or a merchant-hosted checkout page in the external browser.
+- [ ] If Paynow is used, use only a Paynow-hosted public checkout URL or manually supplied merchant payment instructions. Do not implement Paynow API calls, callbacks, webhooks, transaction status, or credentials in Flutter or React.
+- [ ] Register as an individual merchant only if needed to obtain a public payment link; do not add the Integration ID or Integration Key to any app or static bundle.
+- [ ] Keep Ko-fi, Buy Me a Coffee, crypto public addresses, and manual EcoCash instructions as independent alternatives.
+- [ ] Label all manual methods as pending/unverified until the donor confirms externally; never display a fabricated receipt.
+- [ ] Validate donation amount inputs locally for usability, but state clearly that payment validation occurs on the external provider page.
+- [ ] Add local success, cancelled, and unable-to-open states based only on browser-launch results, not payment confirmation.
+- [ ] Test the portal with no network connection and verify the app remains usable for local captioning.
+- [ ] Document that refunds, receipts, payment disputes, and confirmation are handled by the external payment provider or manually by the maintainer.
 
 ### React portal corrections
 
 - [ ] Preserve the current Vite/React/TypeScript setup: React `^19.2.8`, React Router `^7.18.3`, Vite `^8.2.2`, TypeScript `~6.0.2`, Tailwind 4, and Oxlint.
 - [ ] Keep the current `/`, `/donate`, `/support`, `/about`, and `/payment-confirmation` routes during migration; mark `/support` as a compatibility redirect, then remove it only in a planned breaking change.
-- [ ] Do not add the old roadmap's unverified `paynow` npm package without checking whether it is maintained and browser-safe; the Worker should own Paynow protocol calls.
-- [ ] Add a typed API client under `react_frontend/src/` for initiate/status calls with runtime response validation.
-- [ ] Add `VITE_PAYNOW_API_BASE_URL` as public configuration only; never put Paynow keys in `VITE_*` variables.
-- [ ] Add React tests for amount validation, method selection, route states, and API error handling.
-- [ ] Add `react_frontend/wrangler.toml` only if the chosen Pages deployment requires it.
-- [ ] Add a Pages SPA fallback configuration and verify deep links in production.
+- [ ] Remove any planned payment API client; React must have no backend URL or API route.
+- [ ] Store only public donation URLs and public wallet addresses in typed local configuration.
+- [ ] Add React tests for amount validation, method selection, external-link rendering, and offline/error states.
+- [ ] Keep SPA fallback configuration local to the chosen static host, if one is later approved.
 
 ### Sources
 
-- [ ] Review https://developers.paynow.co.zw/ and the Paynow quickstart linked there.
-- [ ] Review Cloudflare Workers and Pages deployment documentation before writing the Worker workflow.
+- [ ] Review the payment provider's public checkout documentation only to verify the public link format. Do not implement private API integration.
 
-## 15. Phase B12: Firebase Cloud Messaging
+## 15. Phase B12: Local Notifications and Offline Scheduling
 
-- [ ] Add `firebase_core` and `firebase_messaging` at mutually compatible current versions after checking the FlutterFire compatibility matrix.
-- [ ] Create a Firebase project and register Android package `com.captionary.captionary`.
-- [ ] Add `google-services.json` locally and ignore it if project policy treats it as generated configuration; never commit service-account private keys.
-- [ ] Configure the Google services Gradle plugin according to the current FlutterFire setup.
-- [ ] Initialize Firebase before using `FirebaseMessaging`.
-- [ ] Request notification permission on Android 13+ through FCM and track whether the request was made.
-- [ ] Retrieve the FCM token, store it in `shared_preferences` only if the product has a privacy-approved token policy, and handle `onTokenRefresh`.
-- [ ] Register a top-level `@pragma('vm:entry-point')` background handler.
-- [ ] Keep background handlers short; do not perform transcription or long processing there.
-- [ ] On foreground `FirebaseMessaging.onMessage`, display a local notification through the existing notification service.
-- [ ] Create a high-importance Android channel for visible foreground messages if required by the Android behavior.
-- [ ] Handle `FirebaseMessaging.onMessageOpenedApp` for background taps.
-- [ ] Handle `getInitialMessage()` for terminated-app taps.
-- [ ] Route a typed data field such as `route: /donate` through GoRouter after app startup.
-- [ ] Define message payload schema with `message_id`, `type`, `route`, and optional safe display fields.
-- [ ] Create a Worker/admin sender using FCM HTTP v1 OAuth/service-account credentials stored only in Worker secrets. Do not use the deprecated legacy server key unless current Firebase documentation explicitly requires it.
-- [ ] Add token deletion/opt-out behavior and a privacy notice.
-- [ ] Test foreground, background, terminated, denied permission, token refresh, malformed route, duplicate message, and force-quit behavior.
+This phase is strictly device-local. There is no server sender, device token, remote campaign, or push service.
 
-### Message flow
-
-```text
-Admin/Worker -> FCM HTTP v1 -> Android FCM SDK ->
-  foreground: onMessage -> flutter_local_notifications
-  background: system notification -> onMessageOpenedApp on tap
-  terminated: system notification -> getInitialMessage on launch
--> typed route -> GoRouter -> relevant screen
-```
-
-### Sources
-
-- [ ] Review https://pub.dev/packages/firebase_messaging.
-- [ ] Review https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages.
-- [ ] Review https://firebase.google.com/docs/cloud-messaging/send-message.
+- [ ] Keep `flutter_local_notifications` and `timezone`; do not add Firebase or another push SDK.
+- [ ] Request Android 13+ notification permission only after the user opts into local reminders.
+- [ ] Schedule daily/inexact donate reminders on the device using the existing `NotificationService`.
+- [ ] Persist reminder preference, frequency, last-scheduled time, and opt-out state with `shared_preferences`.
+- [ ] Route local notification payloads to `/donate` through the local GoRouter instance.
+- [ ] Handle cold-start notification taps with `getNotificationAppLaunchDetails()`.
+- [ ] Cancel all local reminders when the user disables them.
+- [ ] Explain that Android OEM battery policies can delay local reminders.
+- [ ] Test first launch, permission denied, opt-in, opt-out, reboot, timezone change, tap routing, and offline operation.
 
 ## 16. Phase B13: RAM and Performance Hardening
 
@@ -616,8 +575,8 @@ Admin/Worker -> FCM HTTP v1 -> Android FCM SDK ->
 - [ ] Test offline playback and transcription with an installed model and cached manifest.
 - [ ] Test offline failure when no model is installed with a clear download instruction.
 - [ ] Test interrupted model download, resume, corrupt checksum, deletion, and storage accounting.
-- [ ] Test notification scheduler and FCM tap routing on Android 13+.
-- [ ] Test Paynow sandbox or merchant-approved test environment without exposing credentials.
+- [ ] Test local notification scheduling and tap routing on Android 13+.
+- [ ] Test external donation links without exposing credentials or claiming payment confirmation.
 - [ ] Test React portal production build and deployed SPA deep links.
 - [ ] Run `flutter analyze`.
 - [ ] Run `flutter test --coverage`.
@@ -639,7 +598,7 @@ Every phase B1-B14 is complete only when all applicable items below are checked:
 - [ ] Offline behavior is defined and tested.
 - [ ] Android 13+ permission behavior is tested where relevant.
 - [ ] A manual emulator smoke test passes.
-- [ ] A physical-device test passes when native playback, FFmpeg, notifications, FCM, ads, or memory is involved.
+- [ ] A physical-device test passes when native playback, FFmpeg, local notifications, or memory is involved.
 - [ ] React `npm run build` and `npm run lint` pass for portal changes.
 - [ ] Documentation and source URLs are updated in `docs/`.
 - [ ] A Conventional Commit is created and the PR is merged to `develop`.
@@ -655,10 +614,9 @@ Every phase B1-B14 is complete only when all applicable items below are checked:
 | 4 GB device OOM during model load/burn-in | High | High | Tiny model default, sequential pipeline, measured memory gate, unload in `finally`. | Performance |
 | R2 public URL/range/CORS behavior differs from local assumptions | Medium | High | Test HEAD/range/CORS in CI or staging; cache validated manifest. | R2 |
 | R2 development URL is rate-limited | Medium | Medium | Use custom production domain; reserve `r2.dev` for development. | R2 |
-| Android OEM kills scheduled notifications | High | Medium | Inexact scheduling, user guidance, FCM for server messages, physical OEM tests. | Mobile |
-| FCM background behavior differs after force-quit | Medium | Medium | Document Android behavior; test reopen/token lifecycle; never promise delivery after force-quit. | Mobile |
-| Paynow result is spoofed or replayed | Medium | High | Worker-side signature verification, idempotency, server-side status authority. | Payments |
-| Paynow credentials leak through React/Vite or Flutter assets | Medium | Critical | Keep secrets in Worker/GitHub secrets; secret scan; review built artifacts. | Security |
+| Android OEM delays scheduled notifications | High | Medium | Inexact local scheduling, user guidance, physical OEM tests, and no promise of exact delivery. | Mobile |
+| External payment link changes or is unavailable | Medium | Medium | Keep multiple static donation links, clear fallback text, and no false success state. | Payments |
+| Payment credentials leak through React/Vite or Flutter assets | Medium | Critical | Do not implement private payment APIs; secret scan and review built artifacts. | Security |
 | React route alias conflicts with old `/support` links | Medium | Low | Keep compatibility route during migration and add redirect tests. | React |
 | Release signing material is lost | Low | Critical | Secure backup and documented key custody; never store in Git. | Release |
 | `media_kit` package versions mismatch | Medium | Medium | Keep video_player initially; verify current media-kit package set before migration. | Flutter |
@@ -671,9 +629,9 @@ Every phase B1-B14 is complete only when all applicable items below are checked:
 - [ ] Roll back real R2 downloads by disabling the real language provider and serving cached/seed data.
 - [ ] Roll back Whisper by disabling real transcription and preserving imported media/subtitle editing.
 - [ ] Roll back ASS burn-in by selecting the current SRT burn-in path or export-only mode if styling fails.
-- [ ] Roll back FCM independently from local notifications; local reminders must continue to work without FCM.
-- [ ] Roll back AdMob by returning the placeholder widget and production-safe no-ad state.
-- [ ] Roll back Paynow by disabling the Paynow method and leaving alternative donation links available; never show success for an unconfirmed payment.
+- [ ] Keep local notifications independent from all external services; disable reminders without affecting captioning.
+- [ ] Keep the local ad placeholder as the production-safe no-ad state.
+- [ ] Roll back a broken payment link by disabling that link and leaving alternative static donation links available; never show success for an unconfirmed payment.
 - [ ] Roll back a release by publishing a corrected GitHub Release and marking the affected version as withdrawn; do not rewrite already-published tags.
 - [ ] Document the feature flag, affected version, data migration, and user-visible behavior for every rollback.
 
@@ -689,20 +647,9 @@ Names only; never commit values.
 | `ANDROID_KEY_ALIAS` | Release key alias. |
 | `ANDROID_KEY_PASSWORD` | Key password. |
 | `ANDROID_STORE_PASSWORD` | Keystore password. |
-| `CLOUDFLARE_API_TOKEN` | Pages/Worker deployment token with least privilege. |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account identifier. |
-| `CLOUDFLARE_PAGES_PROJECT` | Pages project name. |
 | `R2_ACCOUNT_ID` | Upload script account identifier. |
 | `R2_ACCESS_KEY_ID` | R2 S3 upload key. |
 | `R2_SECRET_ACCESS_KEY` | R2 S3 upload secret. |
-| `PAYNOW_INTEGRATION_ID` | Worker-only Paynow integration ID. |
-| `PAYNOW_INTEGRATION_KEY` | Worker-only Paynow integration key. |
-| `PAYNOW_RETURN_URL` | Browser return URL. |
-| `PAYNOW_RESULT_URL` | Paynow server result/webhook URL. |
-| `FCM_SERVICE_ACCOUNT_JSON` | Worker/admin sender credential, if a Worker sends FCM HTTP v1 messages. |
-| `FCM_PROJECT_ID` | Firebase project ID for the sender. |
-| `FCM_CLIENT_EMAIL` | Service-account client email if stored as split secrets. |
-| `FCM_PRIVATE_KEY` | Service-account private key if stored separately. |
 | `R2_PUBLIC_BASE_URL` | Public model delivery URL; not a secret. |
 | `DONATE_WEB_URL` | Canonical portal URL; not a secret. |
 
@@ -717,23 +664,12 @@ MANIFEST_URL=https://models.example.com/manifest.json
 DONATE_WEB_URL=https://captionary.example/donate
 APP_ENV=development
 BACKEND_MODE=mock
-ADMOB_APP_ID=ca-app-pub-0000000000000000~0000000000
-ADMOB_BANNER_UNIT_ID=ca-app-pub-0000000000000000/0000000000
-
-# Local upload/Worker configuration. Never bundle these into Flutter or React.
+# Local upload configuration. Never bundle these into Flutter or React.
 R2_ACCOUNT_ID=replace-with-account-id
 R2_ACCESS_KEY_ID=replace-with-r2-access-key
 R2_SECRET_ACCESS_KEY=replace-with-r2-secret
 R2_BUCKET=captionary-models
 R2_PUBLIC_BASE_URL=https://models.example.com/
-PAYNOW_INTEGRATION_ID=replace-with-paynow-id
-PAYNOW_INTEGRATION_KEY=replace-with-paynow-key
-PAYNOW_RETURN_URL=https://captionary.example/payment-confirmation
-PAYNOW_RESULT_URL=https://captionary-payments.example/api/paynow/result
-FCM_PROJECT_ID=replace-with-firebase-project
-FCM_CLIENT_EMAIL=replace-with-service-account-email
-FCM_PRIVATE_KEY=replace-with-service-account-private-key
-FCM_SERVICE_ACCOUNT_JSON=replace-with-server-only-service-account-json
 
 # Optional server-side alternatives; do not place private wallet secrets here.
 DONATE_KOFI_URL=https://ko-fi.com/replace
@@ -751,16 +687,14 @@ DONATE_CRYPTO_USDT_ADDRESS=replace-with-public-address
 
 | Permission/declaration | Why | Condition |
 |---|---|---|
-| `INTERNET` | R2, FCM, Paynow portal, remote configuration. | Required for network features. |
-| `POST_NOTIFICATIONS` | Android 13+ local/FCM notifications. | Required for notifications. |
+| `INTERNET` | Public R2 model/manifest downloads and external donation links. | Required for those network features. |
+| `POST_NOTIFICATIONS` | Android 13+ local notifications. | Required for local reminders. |
 | `RECEIVE_BOOT_COMPLETED` | Re-schedule local notifications after reboot. | Required only when using plugin scheduled-notification receiver. |
 | `SCHEDULE_EXACT_ALARM` | Exact local alarm delivery. | Avoid unless product requires exact timing; request at runtime. |
 | `READ_MEDIA_VIDEO` | Direct media-library reads on Android 13+. | Only if bypassing SAF/file picker. |
 | `READ_MEDIA_AUDIO` | Direct audio reads on Android 13+. | Only if needed by the chosen flow. |
 | `READ_EXTERNAL_STORAGE` | Legacy Android media access. | Only for supported pre-33 behavior. |
 | `WRITE_EXTERNAL_STORAGE` | Legacy writes. | Do not rely on it for Android 10+. |
-| AdMob application metadata | AdMob SDK initialization. | Required only when live ads ship. |
-| Firebase services/plugin config | FCM registration. | Required only after Firebase setup. |
 | `<queries>` for `https` | Browser/package visibility checks. | Add only if the launcher calls `canLaunchUrl`. |
 
 - [ ] Confirm `compileSdk` meets the current notification plugin requirement; the current app delegates to Flutter's compile SDK and must be checked in CI.
@@ -781,7 +715,7 @@ DONATE_CRYPTO_USDT_ADDRESS=replace-with-public-address
 | `scripts/upload_models.js` or `.py` | Create R2 uploader/manifest generator. |
 | `scripts/check-secrets.*` | Create `.env`/credential guard. |
 | `flutter_mobile/pubspec.yaml` | Add only verified dependencies and assets. |
-| `flutter_mobile/lib/main.dart` | Firebase/media initialization and lifecycle wiring. |
+| `flutter_mobile/lib/main.dart` | Media initialization and local lifecycle wiring. |
 | `flutter_mobile/lib/app.dart` | Router/tap/deep-link handling. |
 | `flutter_mobile/lib/core/constants/app_constants.dart` | Public configuration source. |
 | `flutter_mobile/lib/data/services/*.dart` | Add adapters while preserving contracts. |
@@ -789,15 +723,12 @@ DONATE_CRYPTO_USDT_ADDRESS=replace-with-public-address
 | `flutter_mobile/lib/providers/*.dart` | Add real/mock provider selection and disposal. |
 | `flutter_mobile/lib/screens/video_player_screen.dart` | Real player and overlay. |
 | `flutter_mobile/lib/widgets/ad_banner_widget.dart` | Live/mock/failure ad states. |
-| `flutter_mobile/android/app/build.gradle.kts` | Signing, Firebase/AdMob/plugin configuration as required. |
+| `flutter_mobile/android/app/build.gradle.kts` | Signing and local plugin configuration as required. |
 | `flutter_mobile/android/app/src/main/AndroidManifest.xml` | Conditional permissions, receivers, metadata, queries. |
-| `flutter_mobile/android/app/google-services.json` | Local/generated Firebase config; ignore according to policy. |
 | `flutter_mobile/test/unit/` | Service, parser, checksum, state-machine tests. |
 | `flutter_mobile/integration_test/` | End-to-end device tests. |
 | `react_frontend/src/` | Typed payment client and portal states. |
 | `react_frontend/package.json` | Only verified dependencies/scripts. |
-| `react_frontend/wrangler.toml` | Optional Pages/Worker deployment config. |
-| `worker/` or `cloudflare/worker/` | Paynow/FCM serverless endpoints. |
 
 ### Appendix E: Model catalog template
 
@@ -820,12 +751,10 @@ Do not invent sizes or checksums. Fill each row only after downloading and hashi
 - **ASS:** Advanced SubStation Alpha subtitle format with styling.
 - **CI/CD:** Continuous integration and continuous delivery automation.
 - **CORS:** Browser policy controlling permitted cross-origin requests.
-- **FCM:** Firebase Cloud Messaging for server-initiated push notifications.
 - **FFmpeg:** Media processing toolkit used for audio extraction and video encoding.
 - **FFI:** Foreign Function Interface used to call native code.
 - **GGML:** Binary model format used by whisper.cpp model files.
 - **GitHub Actions:** GitHub-hosted workflow automation.
-- **HMAC/signature:** Cryptographic verification that a callback was generated by a trusted sender.
 - **Manifest:** Public JSON catalog describing models and checksums.
 - **OOM:** Out of memory; the process is killed or fails allocation.
 - **R2:** Cloudflare object storage with an S3-compatible API.
@@ -833,7 +762,6 @@ Do not invent sizes or checksums. Fill each row only after downloading and hashi
 - **SAF:** Android Storage Access Framework for user-selected files.
 - **S3 API:** Object-storage API compatible with Amazon S3 requests.
 - **SRT/VTT:** Common subtitle file formats.
-- **Worker:** Cloudflare's serverless JavaScript/TypeScript runtime.
 - **Q5_0/Q8_0:** Whisper model quantization formats trading size and precision.
 
 ## Sources Index
@@ -844,8 +772,6 @@ Do not invent sizes or checksums. Fill each row only after downloading and hashi
 - [ ] Video player: https://pub.dev/packages/video_player
 - [ ] Media Kit: https://pub.dev/packages/media_kit
 - [ ] Media Kit video: https://pub.dev/packages/media_kit_video
-- [ ] Firebase Messaging: https://pub.dev/packages/firebase_messaging
-- [ ] Firebase receive messages: https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages
 - [ ] Local notifications: https://pub.dev/packages/flutter_local_notifications
 - [ ] Dotenv: https://pub.dev/packages/flutter_dotenv
 - [ ] Dio: https://pub.dev/packages/dio
@@ -853,16 +779,14 @@ Do not invent sizes or checksums. Fill each row only after downloading and hashi
 - [ ] R2 public buckets: https://developers.cloudflare.com/r2/buckets/public-buckets/
 - [ ] R2 CORS: https://developers.cloudflare.com/r2/buckets/cors/
 - [ ] R2 S3 compatibility: https://developers.cloudflare.com/r2/api/s3/api/
-- [ ] Cloudflare Workers: https://developers.cloudflare.com/workers/
 - [ ] GitHub Actions: https://docs.github.com/en/actions
 - [ ] Flutter Action: https://github.com/subosito/flutter-action
-- [ ] Paynow Developer Hub: https://developers.paynow.co.zw/
 
 ## Final Acceptance Summary
 
 - [ ] All fourteen backend phases B1-B14 are complete.
-- [ ] Existing roadmap B1-B13 coverage is preserved as follows: old B1 is expanded with a video-player decision; old B2-B7 remain focused on media processing/export; old B8-B10 remain ads/local notifications/URL launching; old B11 is expanded into React plus Worker Paynow; old B12 becomes B13 performance; old B13 becomes B14 release verification.
-- [ ] New standalone phases cover R2/CI setup, FCM as a distinct phase, and explicit preconditions/rollback/documentation.
+- [ ] Existing roadmap B1-B13 coverage is preserved as follows: old B1 is expanded with a video-player decision; old B2-B7 remain focused on local media processing/export; old B8 is local ad placeholders; old B9-B10 remain local notifications/URL launching; old B11 is static donation links; old B12 becomes B13 performance; old B13 becomes B14 release verification.
+- [ ] New standalone phases cover R2/CI setup, the local-only backend boundary, and explicit preconditions/rollback/documentation. No push phase or hosted backend phase exists.
 - [ ] Flutter mock providers remain usable in tests and offline UI mode.
 - [ ] React portal builds, lint passes, deep links work, and no payment secret appears in its bundle.
 - [ ] The final player decision is `video_player` first, with a measured migration gate to current `media_kit` packages only if acceptance tests show that `video_player` cannot meet codec, seeking, hardware, or subtitle requirements. 

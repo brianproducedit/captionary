@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+
 import '../data/models/caption_style.dart';
 import '../data/mock/seed_data.dart';
 
@@ -9,7 +10,7 @@ class CaptionStyleNotifier extends StateNotifier<CaptionStyle> {
   void setStyle(CaptionStyle style) {
     state = style;
   }
-  
+
   void updateStyle(CaptionStyle style) {
     state = style;
   }
@@ -27,6 +28,7 @@ class CaptionStyleNotifier extends StateNotifier<CaptionStyle> {
   }
 }
 
-final captionStyleProvider = StateNotifierProvider<CaptionStyleNotifier, CaptionStyle>((ref) {
-  return CaptionStyleNotifier();
-});
+final captionStyleProvider =
+    StateNotifierProvider<CaptionStyleNotifier, CaptionStyle>((ref) {
+      return CaptionStyleNotifier();
+    });

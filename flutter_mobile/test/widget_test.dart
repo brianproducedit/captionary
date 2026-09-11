@@ -6,7 +6,7 @@ void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const ProviderScope(child: CaptionaryApp()));
-    
+
     // Use pump instead of pumpAndSettle to avoid infinite animation timeouts
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/models/subtitle_segment.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -39,9 +40,11 @@ class DraggableTimelineChip extends StatelessWidget {
         height: 60,
         margin: const EdgeInsets.only(right: 2),
         decoration: BoxDecoration(
-          color: isActive 
+          color: isActive
               ? AppColors.primary
-              : (isSelected ? AppColors.secondary : AppColors.surfaceContainerHigh),
+              : (isSelected
+                    ? AppColors.secondary
+                    : AppColors.surfaceContainerHigh),
           borderRadius: BorderRadius.circular(8.0),
           border: Border.all(
             color: isSelected ? AppColors.onSurface : Colors.transparent,

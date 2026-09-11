@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../theme/app_colors.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/notification_permission_sheet.dart';
@@ -60,7 +61,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _finishOnboarding() async {
     // Show notification permission sheet
     await showNotificationPermissionSheet(context);
-    
+
     // Mark onboarding as complete and go to library
     if (mounted) {
       await ref.read(engagementProvider.notifier).completeOnboarding();
@@ -99,7 +100,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.surfaceContainerLow,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.surfaceContainerHigh),
+                            border: Border.all(
+                              color: AppColors.surfaceContainerHigh,
+                            ),
                           ),
                           child: Icon(
                             page['icon'],
@@ -110,7 +113,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         const SizedBox(height: 48),
                         Text(
                           page['title'],
-                          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.onSurface,
                               ),
@@ -118,7 +122,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         Text(
                           page['subtitle'],
-                          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.w300,
                                 color: AppColors.onSurfaceVariant,
                               ),
@@ -127,7 +132,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         const SizedBox(height: 24),
                         Text(
                           page['body'],
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
                                 color: AppColors.onSurfaceVariant,
                                 height: 1.5,
                               ),
@@ -150,7 +156,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   height: 8.0,
                   width: _currentPage == index ? 24.0 : 8.0,
                   decoration: BoxDecoration(
-                    color: _currentPage == index ? AppColors.primary : AppColors.surfaceContainerHigh,
+                    color: _currentPage == index
+                        ? AppColors.primary
+                        : AppColors.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(4.0),
                   ),
                 ),
@@ -159,9 +167,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             const SizedBox(height: 32),
             // Action Button
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 24.0,
+              ),
               child: GradientPillButton(
-                label: _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
+                label: _currentPage == _pages.length - 1
+                    ? 'Get Started'
+                    : 'Next',
                 onTap: _nextPage,
                 isFullWidth: true,
               ),

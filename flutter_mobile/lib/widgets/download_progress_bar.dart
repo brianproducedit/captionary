@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/models/language_pack.dart';
 import '../theme/app_colors.dart';
 
@@ -29,14 +30,14 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    
+
     // Check if test environment before repeating animation
     bool isTest = false;
     assert(() {
       isTest = true;
       return true;
     }());
-    
+
     if (!isTest) {
       _shimmerController.repeat();
     }
@@ -51,12 +52,13 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
   @override
   Widget build(BuildContext context) {
     final totalBytes = widget.totalStorageGB * 1000 * 1000 * 1000;
-    
+
     double installedBytes = 0;
     double downloadingBytes = 0;
-    
+
     for (var pack in widget.packs) {
-      if (pack.status == LanguagePackStatus.installed || pack.status == LanguagePackStatus.bundled) {
+      if (pack.status == LanguagePackStatus.installed ||
+          pack.status == LanguagePackStatus.bundled) {
         installedBytes += pack.sizeBytes;
       } else if (pack.status == LanguagePackStatus.downloading) {
         downloadingBytes += pack.sizeBytes * pack.downloadProgress;
@@ -71,15 +73,11 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Storage',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('Storage', style: Theme.of(context).textTheme.titleMedium),
             Text(
               '${((baseStorageBytes + installedBytes + downloadingBytes) / 1000000000).toStringAsFixed(1)} GB / ${widget.totalStorageGB.toStringAsFixed(1)} GB',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.onSurfaceVariant),
             ),
           ],
         ),
@@ -93,10 +91,11 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final maxWidth = constraints.maxWidth;
-                
+
                 final baseWidth = (baseStorageBytes / totalBytes) * maxWidth;
                 final installedWidth = (installedBytes / totalBytes) * maxWidth;
-                final downloadingWidth = (downloadingBytes / totalBytes) * maxWidth;
+                final downloadingWidth =
+                    (downloadingBytes / totalBytes) * maxWidth;
 
                 return Stack(
                   children: [
@@ -124,13 +123,18 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  AppColors.attentionYellow.withValues(alpha: 0.5),
+                                  AppColors.attentionYellow.withValues(
+                                    alpha: 0.5,
+                                  ),
                                   AppColors.attentionYellow,
-                                  AppColors.attentionYellow.withValues(alpha: 0.5),
+                                  AppColors.attentionYellow.withValues(
+                                    alpha: 0.5,
+                                  ),
                                 ],
                                 stops: const [0.0, 0.5, 1.0],
                                 transform: GradientRotation(
-                                    _shimmerController.value * 2 * 3.14159),
+                                  _shimmerController.value * 2 * 3.14159,
+                                ),
                               ),
                             ),
                           );
@@ -151,10 +155,14 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
             _buildLegendItem(context, AppColors.surfaceVariant, 'System'),
             _buildLegendItem(context, AppColors.tertiary, 'Language Packs'),
             if (downloadingBytes > 0)
-              _buildLegendItem(context, AppColors.attentionYellow, 'Downloading'),
+              _buildLegendItem(
+                context,
+                AppColors.attentionYellow,
+                'Downloading',
+              ),
             _buildLegendItem(context, AppColors.surfaceContainerHigh, 'Free'),
           ],
-        )
+        ),
       ],
     );
   }
@@ -166,17 +174,13 @@ class _DownloadProgressBarState extends State<DownloadProgressBar>
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: AppColors.onSurfaceVariant),
         ),
       ],
     );

@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
-enum StatusChipVariant {
-  ready,
-  processing,
-  pending,
-  newVariant,
-}
+enum StatusChipVariant { ready, processing, pending, newVariant }
 
 class StatusChip extends StatelessWidget {
   final String label;
@@ -25,7 +21,7 @@ class StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bgColor;
     Color textColor;
-    
+
     switch (variant) {
       case StatusChipVariant.ready:
         bgColor = AppColors.tertiaryContainer;
@@ -55,19 +51,15 @@ class StatusChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(
-              icon,
-              size: 14,
-              color: textColor,
-            ),
+            Icon(icon, size: 14, color: textColor),
             const SizedBox(width: 4),
           ],
           Text(
             label,
             style: AppTypography.captionCode.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: textColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

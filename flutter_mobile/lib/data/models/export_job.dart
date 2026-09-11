@@ -47,7 +47,8 @@ class ExportJob {
       resolution: resolution ?? this.resolution,
       codec: codec ?? this.codec,
       bitrateMbps: bitrateMbps ?? this.bitrateMbps,
-      estimatedTimeRemaining: estimatedTimeRemaining ?? this.estimatedTimeRemaining,
+      estimatedTimeRemaining:
+          estimatedTimeRemaining ?? this.estimatedTimeRemaining,
       outputSizeBytes: outputSizeBytes ?? this.outputSizeBytes,
       hardwareAcceleration: hardwareAcceleration ?? this.hardwareAcceleration,
     );

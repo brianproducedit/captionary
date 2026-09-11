@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/media_item.dart';
 import '../models/language_pack.dart';
 import '../models/subtitle_segment.dart';
@@ -320,7 +321,7 @@ class SeedData {
     outputSizeBytes: 35000000,
     hardwareAcceleration: true,
   );
-  
+
   static final ExportJob sampleCompletedJob = ExportJob(
     id: 'job_2',
     sourceFileName: 'Podcast_Ep14_Raw.mp4',

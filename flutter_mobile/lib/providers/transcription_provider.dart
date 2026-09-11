@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../data/mock/mock_transcription_service.dart';
 import '../data/services/transcription_service.dart';
 import '../data/services/audio_preprocessor.dart';
@@ -28,7 +30,8 @@ class TranscriptionState {
     return TranscriptionState(
       status: status ?? this.status,
       progress: progress ?? this.progress,
-      errorMessage: errorMessage, // We allow clearing error message by just passing it
+      errorMessage:
+          errorMessage, // We allow clearing error message by just passing it
       currentAction: currentAction ?? this.currentAction,
     );
   }
@@ -80,37 +83,44 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
     );
 
     final service = ref.read(transcriptionServiceProvider);
-    
+
     // Simulate some artificial delay for UX and to test abort
     await Future.delayed(const Duration(seconds: 1));
     if (_isAborted) return;
 
-    _transcriptionSubscription = service.transcribeAudioStream(
-      audioPath: audioPath, 
-      languageCode: 'en',
-      modelPath: 'dummy_model.bin'
-    ).listen((segment) {
-      double currentProgress = state.progress + 0.1;
-      if (currentProgress > 0.95) currentProgress = 0.95;
-      state = state.copyWith(
-        status: TranscriptionStatus.transcribing,
-        progress: currentProgress,
-        currentAction: "Transcribing (${(currentProgress * 100).toInt()}%)...",
-      );
-    }, onError: (e) {
-      state = state.copyWith(
-        status: TranscriptionStatus.error,
-        errorMessage: e.toString(),
-      );
-    }, onDone: () {
-      if (!_isAborted && state.status != TranscriptionStatus.error) {
-        state = state.copyWith(
-          status: TranscriptionStatus.success,
-          progress: 1.0,
-          currentAction: "Transcription Complete",
+    _transcriptionSubscription = service
+        .transcribeAudioStream(
+          audioPath: audioPath,
+          languageCode: 'en',
+          modelPath: 'dummy_model.bin',
+        )
+        .listen(
+          (segment) {
+            double currentProgress = state.progress + 0.1;
+            if (currentProgress > 0.95) currentProgress = 0.95;
+            state = state.copyWith(
+              status: TranscriptionStatus.transcribing,
+              progress: currentProgress,
+              currentAction:
+                  "Transcribing (${(currentProgress * 100).toInt()}%)...",
+            );
+          },
+          onError: (e) {
+            state = state.copyWith(
+              status: TranscriptionStatus.error,
+              errorMessage: e.toString(),
+            );
+          },
+          onDone: () {
+            if (!_isAborted && state.status != TranscriptionStatus.error) {
+              state = state.copyWith(
+                status: TranscriptionStatus.success,
+                progress: 1.0,
+                currentAction: "Transcription Complete",
+              );
+            }
+          },
         );
-      }
-    });
   }
 
   void abortTranscription() {
@@ -122,7 +132,7 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   void retryTranscription(String videoPath) {
     startTranscription(videoPath);
   }
-  
+
   void simulateError() {
     _transcriptionSubscription?.cancel();
     state = state.copyWith(
@@ -132,6 +142,7 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   }
 }
 
-final transcriptionProvider = NotifierProvider<TranscriptionNotifier, TranscriptionState>(() {
-  return TranscriptionNotifier();
-});
+final transcriptionProvider =
+    NotifierProvider<TranscriptionNotifier, TranscriptionState>(() {
+      return TranscriptionNotifier();
+    });

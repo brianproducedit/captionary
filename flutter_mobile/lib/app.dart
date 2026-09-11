@@ -29,10 +29,10 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize router with initial location based on onboarding state
     final hasSeenOnboarding = ref.read(engagementProvider).hasSeenOnboarding;
-    
+
     _router = GoRouter(
       initialLocation: hasSeenOnboarding ? '/library' : '/onboarding',
       routes: [
@@ -40,27 +40,30 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
           path: '/onboarding',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const OnboardingScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
         GoRoute(
           path: '/library',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const MediaLibraryScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
         GoRoute(
           path: '/languages',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const LanguagePacksScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
         GoRoute(
@@ -69,9 +72,10 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
             final videoPath = state.extra as String? ?? '';
             return CustomTransitionPage(
               child: StudioScreen(videoPath: videoPath),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
             );
           },
         ),
@@ -81,9 +85,10 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
             final videoPath = state.extra as String? ?? '';
             return CustomTransitionPage(
               child: VideoPlayerScreen(videoPath: videoPath),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
             );
           },
         ),
@@ -91,9 +96,10 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
           path: '/donate',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const DonateScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
         GoRoute(
@@ -107,18 +113,20 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
           path: '/export',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const ExportScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
         GoRoute(
           path: '/settings',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const SettingsScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         ),
         GoRoute(
@@ -127,9 +135,10 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
             final videoPath = state.extra as String? ?? '';
             return CustomTransitionPage(
               child: TranscriptionScreen(videoPath: videoPath),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
             );
           },
         ),

@@ -9,7 +9,9 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/app_header.dart';
 import '../theme/app_typography.dart';
+
 import 'package:url_launcher/url_launcher.dart';
+
 import '../widgets/url_fallback_dialog.dart';
 
 class DonateScreen extends ConsumerWidget {

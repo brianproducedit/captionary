@@ -11,14 +11,16 @@ import '../providers/transcription_provider.dart';
 
 class TranscriptionScreen extends ConsumerStatefulWidget {
   final String videoPath;
-  
+
   const TranscriptionScreen({super.key, required this.videoPath});
 
   @override
-  ConsumerState<TranscriptionScreen> createState() => _TranscriptionScreenState();
+  ConsumerState<TranscriptionScreen> createState() =>
+      _TranscriptionScreenState();
 }
 
-class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with SingleTickerProviderStateMixin {
+class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -29,14 +31,16 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
+
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
     // Start transcription after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(transcriptionProvider.notifier).startTranscription(widget.videoPath);
+      ref
+          .read(transcriptionProvider.notifier)
+          .startTranscription(widget.videoPath);
     });
   }
 
@@ -53,7 +57,10 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
     // Listen for success state to navigate away
     ref.listen<TranscriptionState>(transcriptionProvider, (previous, next) {
       if (next.status == TranscriptionStatus.success) {
-        context.pushReplacement('/studio', extra: widget.videoPath); // Proceed to studio
+        context.pushReplacement(
+          '/studio',
+          extra: widget.videoPath,
+        ); // Proceed to studio
       }
     });
 
@@ -103,14 +110,15 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
         const SizedBox(height: 48),
         Text(
           state.currentAction ?? "Processing...",
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 16),
         LinearProgressIndicator(
-          value: state.status == TranscriptionStatus.extractingAudio ? null : state.progress,
+          value: state.status == TranscriptionStatus.extractingAudio
+              ? null
+              : state.progress,
           backgroundColor: AppColors.surfaceContainerHigh,
           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
           borderRadius: BorderRadius.circular(9999),
@@ -124,7 +132,9 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
             },
             child: Text(
               'Simulate Error',
-              style: AppTypography.captionCode.copyWith(color: AppColors.onSurfaceVariant),
+              style: AppTypography.captionCode.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
             ),
           ),
         const SizedBox(height: 16),
@@ -135,9 +145,8 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
           },
           child: Text(
             'Cancel',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.error,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.error),
           ),
         ),
       ],
@@ -150,18 +159,12 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Symbols.error,
-            color: AppColors.error,
-            size: 48,
-          ),
+          const Icon(Symbols.error, color: AppColors.error, size: 48),
           const SizedBox(height: 16),
           Text(
             'Transcription Failed',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.error,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -174,7 +177,9 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
             label: 'Retry',
             icon: Symbols.refresh,
             onTap: () {
-              ref.read(transcriptionProvider.notifier).retryTranscription(widget.videoPath);
+              ref
+                  .read(transcriptionProvider.notifier)
+                  .retryTranscription(widget.videoPath);
             },
           ),
           const SizedBox(height: 12),
@@ -185,9 +190,8 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen> with 
             },
             child: Text(
               'Abort',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.onSurfaceVariant),
             ),
           ),
         ],

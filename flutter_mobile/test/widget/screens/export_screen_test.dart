@@ -24,11 +24,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          activeExportJobProvider.overrideWith((ref) => _MockExportJobNotifier(activeJob)),
+          activeExportJobProvider.overrideWith(
+            (ref) => _MockExportJobNotifier(activeJob),
+          ),
         ],
-        child: const MaterialApp(
-          home: ExportScreen(),
-        ),
+        child: const MaterialApp(home: ExportScreen()),
       ),
     );
 
@@ -60,11 +60,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          activeExportJobProvider.overrideWith((ref) => _MockExportJobNotifier(completeJob)),
+          activeExportJobProvider.overrideWith(
+            (ref) => _MockExportJobNotifier(completeJob),
+          ),
         ],
-        child: const MaterialApp(
-          home: ExportScreen(),
-        ),
+        child: const MaterialApp(home: ExportScreen()),
       ),
     );
 
@@ -81,7 +81,7 @@ void main() {
 
 class _MockExportJobNotifier extends ActiveExportJobNotifier {
   final ExportJob mockJob;
-  
+
   _MockExportJobNotifier(this.mockJob) : super() {
     state = mockJob;
   }

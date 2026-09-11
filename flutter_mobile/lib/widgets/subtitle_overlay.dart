@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../data/models/subtitle_segment.dart';
 import '../data/models/caption_style.dart';
 import '../theme/app_colors.dart';
@@ -50,7 +51,10 @@ class SubtitleOverlay extends StatelessWidget {
           ? Align(
               alignment: getAlignment(),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24.0,
+                  horizontal: 16.0,
+                ),
                 child: _buildOverlay(context),
               ),
             )

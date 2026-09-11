@@ -1,10 +1,12 @@
 import 'dart:io';
+
 import 'package:ffmpeg_kit_flutter_new_min_gpl/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_min_gpl/media_information_session.dart';
 
 class FFmpegMetadataService {
   Future<Map<String, dynamic>?> extractMetadata(String filePath) async {
-    final MediaInformationSession session = await FFprobeKit.getMediaInformation(filePath);
+    final MediaInformationSession session =
+        await FFprobeKit.getMediaInformation(filePath);
     final information = session.getMediaInformation();
 
     if (information == null) {
