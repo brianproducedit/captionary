@@ -1,0 +1,49 @@
+name: React Portal
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-portal:
+    name: Build static React portal
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react_frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: react_frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static portal
+        run: npm run build
+
+      - name: Lint static portal
+        run: npm run lint
+
+      - name: Upload static build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-portal-dist-${{ github.sha }}
+          path: react_frontend/dist
+          if-no-files-found: error

@@ -1,0 +1,105 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  release-apk:
+    name: Build signed release APKs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter_mobile
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Validate tag version
+        shell: bash
+        run: |
+          VERSION="$(sed -n "s/^version:[[:space:]]*//p" pubspec.yaml | tr -d "'\"" | cut -d '+' -f 1)"
+          EXPECTED_TAG="v${VERSION}"
+          if [ "$RELEASE_TAG" != "$EXPECTED_TAG" ]; then
+            echo "Release tag $RELEASE_TAG does not match pubspec version $EXPECTED_TAG"
+            exit 1
+          fi
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Prepare Android signing
+        shell: bash
+        working-directory: .
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          mkdir -p flutter_mobile/android
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > flutter_mobile/android/captionary-release.jks
+          cat > flutter_mobile/android/key.properties <<EOF
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=captionary-release.jks
+          EOF
+
+      - name: Build signed split APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Generate APK checksums
+        shell: bash
+        working-directory: .
+        run: sha256sum flutter_mobile/build/app/outputs/flutter-apk/*.apk > flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt
+
+      - name: Verify APK signatures
+        shell: bash
+        working-directory: .
+        run: |
+          for apk in flutter_mobile/build/app/outputs/flutter-apk/*.apk; do
+            "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | tail -n 1)/apksigner" verify --verbose "$apk"
+          done
+
+      - name: Publish GitHub Release
+        shell: bash
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            flutter_mobile/build/app/outputs/flutter-apk/*.apk \
+            flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt \
+            --generate-notes \
+            --title "Captionary $RELEASE_TAG"
+
+      - name: Remove signing files
+        if: always()
+        shell: bash
+        working-directory: .
+        run: rm -f flutter_mobile/android/key.properties flutter_mobile/android/captionary-release.jks

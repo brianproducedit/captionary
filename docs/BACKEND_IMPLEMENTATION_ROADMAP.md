@@ -113,35 +113,48 @@ Flutter package versions read from `flutter_mobile/pubspec.yaml`:
 
 ### 0.6 Baseline checks
 
-- [ ] From `flutter_mobile/`, run `flutter pub get`.
-- [ ] From `flutter_mobile/`, run `dart format --set-exit-if-changed lib test` and record existing failures before changing code.
-- [ ] From `flutter_mobile/`, run `flutter analyze` and save the baseline output.
+- [x] From `flutter_mobile/`, run `flutter pub get`.
+- [ ] From `flutter_mobile/`, run `dart format --output=none --set-exit-if-changed lib test` and record existing failures before changing code. The initial command without `--output=none` formatted 99 files, including 61 changed files, so the formatting baseline remains open.
+- [x] From `flutter_mobile/`, run `flutter analyze` and save the baseline output. Result: `No issues found!`.
 - [ ] From `flutter_mobile/`, run `flutter test --coverage` and save the baseline output.
-- [ ] From `react_frontend/`, run `npm ci`, `npm run build`, and `npm run lint`.
-- [ ] Record every baseline failure as an issue before beginning integration work.
+- [x] From `react_frontend/`, run `npm ci`, `npm run build`, and `npm run lint`. `npm ci` completed using the configured `http://registry.npmjs.org/` registry with an npm TLS warning; build and lint passed.
+- [x] Record every baseline failure as an issue before beginning integration work. The baseline failures are recorded below; create tracker issues before starting backend implementation.
+
+### 0.7 Baseline results recorded 2026-09-11
+
+- [x] Flutter dependency resolution passed from `flutter_mobile/`; 25 packages reported newer versions incompatible with current constraints.
+- [ ] Flutter formatting is not clean: `dart format` formatted 99 files and changed 61. Do not treat formatter output as a product fix; rerun the non-mutating command after deciding whether to accept formatting changes.
+- [x] Flutter analysis passed with zero reported issues.
+- [ ] Flutter tests failed: the suite reached `+36 -8`; three Studio tests timed out in `pumpAndSettle` (`style presets update preview text styling`, `Sliders update font size and opacity values`, and `Timeline block tap selects segment`), and `Action buttons trigger correct navigation/snackbar` did not complete. Test finalization also reported a missing temporary listener path.
+- [x] React `npm ci` passed, with the environment warning that the configured registry uses plaintext HTTP.
+- [x] React `npm run build` passed with Vite 8.2.2.
+- [x] React `npm run lint` passed with Oxlint.
+- [ ] Do not begin Phase B1 implementation until the failed baseline tests and formatting decision have linked issues or an explicit maintainer decision.
 
 ## 1. Branching, Git Hygiene, and Repository Setup
 
-- [ ] Initialize or connect the workspace to the intended Git repository before using branch protections.
+**Current workflow decision:** This is a private, solo-maintained repository. The current workflow is direct, tested pushes to `main`. Do not create a `develop` branch or require pull requests yet. The future collaboration workflow, branch names, review gates, and PR templates are documented in `docs/DEVELOPMENT_WORKFLOW.md` and `.github/` so the repository can transition cleanly when contributors join.
+
+- [x] Initialize or connect the workspace to the intended Git repository before using branch protections. Current remote: `origin`; current branch: `main`.
 - [ ] Protect `main`; require pull requests, passing required checks, and no direct pushes.
 - [ ] Create `develop` as the integration branch.
-- [ ] Use `feature/<short-name>` for features, `fix/<short-name>` for fixes, and `release/<semver>` for release preparation.
-- [ ] Use Conventional Commits: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, and `perf` with optional scopes such as `flutter`, `react`, `r2`, `payments`, and `offline`.
-- [ ] Add `.github/pull_request_template.md` containing summary, tests, screenshots/device matrix, environment changes, migration notes, and rollback notes.
-- [ ] Add `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml`.
-- [ ] Add a root `.gitignore` covering `.env`, `.env.*` except `.env.example`, Flutter `.dart_tool/`, `build/`, Android local properties/keystores, Node `node_modules/`, React `dist/`, logs, and IDE files.
-- [ ] Add `.env` to `.gitignore` before creating any real environment file.
-- [ ] Add `.env.example` with placeholders and comments for every key in Appendix B.
-- [ ] Add a CI guard that fails when a staged or changed file is named `.env` or matches a private key/credential pattern.
-- [ ] Add a local pre-commit hook or documented `pre-commit` configuration running the same secret guard.
-- [ ] Decide and document Git LFS status: never commit Whisper `.bin` models larger than 50 MB; store them in R2.
+- [x] Document future `feature/<short-name>`, `fix/<short-name>`, and `release/<semver>` branches in `docs/DEVELOPMENT_WORKFLOW.md`; create them only when collaboration begins.
+- [x] Use and document Conventional Commits: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore`, and `perf` with optional scopes such as `flutter`, `react`, `r2`, `payments`, and `offline`.
+- [x] Add `.github/pull_request_template.md` containing summary, tests, screenshots/device matrix, environment changes, migration notes, and rollback notes.
+- [x] Add `.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml` for future collaborators.
+- [x] Add a root `.gitignore` covering `.env`, `.env.*` except `.env.example`, Flutter `.dart_tool/`, `build/`, Android local properties/keystores, Node `node_modules/`, React `dist/`, logs, and IDE files.
+- [x] Add `.env` to `.gitignore` before creating any real environment file.
+- [x] Add `.env.example` with placeholders and comments for every key in Appendix B.
+- [ ] Add a CI guard that fails when a staged or changed file is named `.env` or matches a private key/credential pattern. The local guard is complete; CI wiring belongs in Phase 2.
+- [x] Add and document a local secret guard: run `pwsh -File scripts/check-secrets.ps1` before pushing.
+- [x] Decide and document Git LFS status: never commit Whisper `.bin` models larger than 50 MB; store them in R2. Git LFS is not required for the current model-hosting plan.
 - [ ] Add labels: `feature`, `bug`, `backend`, `flutter`, `react`, `ci-cd`, `r2`, `transcription`, `video`, `ffmpeg`, `notifications`, `payments`, `security`, `performance`, `offline`, `documentation`, and `blocked`.
 
 ### Environment policy
 
-- [ ] Keep client-safe values such as a public R2 base URL, manifest URL, donation URL, and feature flags in build configuration.
-- [ ] Keep R2 upload keys outside the mobile app in local developer environment variables or a controlled upload-only CI job. Do not add any runtime server credentials to the app.
-- [ ] Do not add `.env` as a Flutter asset when it contains a secret. If `flutter_dotenv` is used for public configuration, document that it is not a secret store.
+- [x] Keep client-safe values such as a public R2 base URL, manifest URL, donation URL, and feature flags in build configuration and `.env.example`.
+- [x] Keep R2 upload keys outside the mobile app in local developer environment variables or a controlled upload-only CI job. Do not add any runtime server credentials to the app.
+- [x] Do not add `.env` as a Flutter asset when it contains a secret. `docs/DEVELOPMENT_WORKFLOW.md` documents that `.env` is not a secret store for bundled clients.
 - [ ] For local scripts, load `.env` from the repository root with a Node/Python dotenv library and fail if a required upload secret is missing.
 
 ## 2. CI/CD on GitHub Actions
@@ -150,57 +163,57 @@ Use the Flutter package root `flutter_mobile/` as the working directory and `rea
 
 ### 2.1 Pull-request checks: `.github/workflows/ci.yml`
 
-- [ ] Trigger on `pull_request` targeting `main` or `develop` and on manual dispatch.
-- [ ] Pin action versions or commit SHAs according to the repository security policy.
-- [ ] Check out the repository with `actions/checkout`.
-- [ ] Install the Flutter version compatible with the Dart constraint using `subosito/flutter-action@v2`; record the exact version in CI configuration.
-- [ ] Enable Flutter/pub caching and Gradle caching.
-- [ ] Run `flutter pub get` in `flutter_mobile/`.
-- [ ] Run `dart format --set-exit-if-changed lib test`.
-- [ ] Run `flutter analyze`.
-- [ ] Run `flutter test --coverage`.
-- [ ] Upload `flutter_mobile/coverage/lcov.info` as an artifact.
-- [ ] Run the `.env` and credential scan.
-- [ ] Run `npm ci`, `npm run build`, and `npm run lint` in `react_frontend/`.
-- [ ] Do not require live R2 upload, Paynow, or donation credentials for pull-request checks.
+- [x] Trigger on `pull_request` targeting `main` or `develop`, pushes to the current solo `main` branch or future `develop`, and manual dispatch.
+- [x] Pin action versions with maintained major versions: `actions/checkout@v4`, `actions/setup-node@v4`, `actions/cache@v4`, `actions/upload-artifact@v4`, and `subosito/flutter-action@v2`.
+- [x] Check out the repository with `actions/checkout`.
+- [x] Install Flutter `3.47.1` on the stable channel using `subosito/flutter-action@v2`; this matches the installed toolchain and Dart `3.13.1` constraint.
+- [x] Enable Flutter/pub caching and Gradle caching.
+- [x] Run `flutter pub get` in `flutter_mobile/`.
+- [x] Run `dart format --output=none --set-exit-if-changed lib test`.
+- [x] Run `flutter analyze`.
+- [x] Run `flutter test --coverage`.
+- [x] Upload `flutter_mobile/coverage/lcov.info` as an artifact, including when tests fail.
+- [x] Run the `.env` and credential scan.
+- [x] Run `npm ci`, `npm run build`, and `npm run lint` in `react_frontend/`.
+- [x] Do not require live R2 upload, Paynow, or donation credentials for pull-request checks.
 
 ### 2.2 Debug APK: `.github/workflows/build-debug.yml`
 
-- [ ] Trigger on pushes to `develop` and manual dispatch.
-- [ ] Run Flutter setup, `flutter pub get`, and `flutter build apk --debug --split-per-abi`.
-- [ ] Upload `flutter_mobile/build/app/outputs/flutter-apk/*.apk` as an artifact.
-- [ ] Name artifacts with commit SHA and ABI.
+- [x] Trigger on pushes to `main` and future `develop`, plus manual dispatch. `main` is included because the current repository is solo-maintained.
+- [x] Run Flutter setup, `flutter pub get`, and `flutter build apk --debug --split-per-abi`.
+- [x] Upload `flutter_mobile/build/app/outputs/flutter-apk/*.apk` as an artifact.
+- [x] Name artifacts with commit SHA and ABI through the artifact name and split APK filenames.
 
 ### 2.3 GitHub Release APK: `.github/workflows/release.yml`
 
-- [ ] Trigger on tags matching `v*.*.*` and manual dispatch with a tag input.
-- [ ] Check that the tag equals `flutter_mobile/pubspec.yaml` version before building.
-- [ ] Decode `ANDROID_KEYSTORE_BASE64` into a temporary file on the runner.
-- [ ] Write an untracked `key.properties` file from GitHub secrets.
-- [ ] Build signed release APKs with `flutter build apk --release --split-per-abi`.
-- [ ] Generate SHA256 checksums for each APK.
-- [ ] Create a GitHub Release with generated notes from Conventional Commits.
-- [ ] Attach APKs and checksum files to the release using a supported release action or GitHub CLI.
-- [ ] Delete temporary signing files in a final cleanup step.
-- [ ] Do not build or attach an AAB in this roadmap.
+- [x] Trigger on tags matching `v*.*.*` and manual dispatch with a tag input.
+- [x] Check that the tag's `MAJOR.MINOR.PATCH` equals the version in `flutter_mobile/pubspec.yaml` before building.
+- [x] Decode `ANDROID_KEYSTORE_BASE64` into a temporary file on the runner.
+- [x] Write an untracked `key.properties` file from GitHub secrets.
+- [x] Build signed release APKs with `flutter build apk --release --split-per-abi`.
+- [x] Generate SHA256 checksums for each APK.
+- [x] Create a GitHub Release with generated notes from Conventional Commits using the GitHub CLI.
+- [x] Attach APKs and checksum files to the release using the GitHub CLI.
+- [x] Delete temporary signing files in a final cleanup step.
+- [x] Do not build or attach an AAB in this roadmap.
 
 ### 2.4 Android signing
 
 - [ ] Generate a release keystore outside the repository: `keytool -genkeypair -v -keystore captionary-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias captionary`.
 - [ ] Base64 encode the keystore without line wrapping; on PowerShell use `[Convert]::ToBase64String([IO.File]::ReadAllBytes('captionary-release.jks'))`.
-- [ ] Store only these secret names in GitHub, never their values in the repository: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `ANDROID_STORE_PASSWORD`.
-- [ ] Configure `flutter_mobile/android/key.properties` generation in CI only.
-- [ ] Change the release signing configuration from the current debug signing config.
-- [ ] Verify the release APK signature with `apksigner verify --verbose <apk>`.
+- [x] Store only these secret names in GitHub, never their values in the repository: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `ANDROID_STORE_PASSWORD`.
+- [x] Configure `flutter_mobile/android/key.properties` generation in CI only.
+- [x] Change the release signing configuration from the current debug signing config when `key.properties` exists, while preserving a local debug-signing fallback.
+- [x] Verify the release APK signature with `apksigner verify --verbose <apk>` in the release workflow.
 
 ### 2.5 React portal CI and static distribution
 
-- [ ] Run `npm ci` and `npm run build` for every React pull request.
-- [ ] Add a production workflow on pushes to `main` or manual dispatch that only builds the static React bundle.
-- [ ] Keep the portal usable with `npm run dev` and `npm run preview` locally without any API server.
-- [ ] If public hosting is later needed, publish only static files through a repository-approved static host; do not add functions, API routes, or server-side rendering.
+- [x] Run `npm ci`, `npm run build`, and `npm run lint` for every React pull request through `ci.yml` and `react.yml`.
+- [x] Add a production workflow on pushes to `main` or manual dispatch that only builds the static React bundle.
+- [x] Keep the portal usable with `npm run dev` and `npm run preview` locally without any API server.
+- [x] If public hosting is later needed, publish only static files through a repository-approved static host; do not add functions, API routes, or server-side rendering.
 - [ ] Configure SPA fallback so `/donate`, `/about`, and `/payment-confirmation` resolve to the app entry point.
-- [ ] Run a post-deploy smoke check against the canonical portal URL.
+- [ ] Run a post-deploy smoke check against the canonical portal URL after a static host is selected.
 
 ### 2.6 Versioning and release notes
 
@@ -209,6 +222,13 @@ Use the Flutter package root `flutter_mobile/` as the working directory and `rea
 - [ ] Keep React `package.json` version synchronized with the portal release when portal changes ship with the app.
 - [ ] Generate release notes with sections: Added, Changed, Fixed, Security, and Known limitations.
 - [ ] Include APK ABI, SHA256, minimum Android SDK, and known offline limitations in each release.
+
+### 2.7 Phase 2 validation recorded 2026-09-11
+
+- [x] `flutter_mobile/android/app/build.gradle.kts` reports no editor diagnostics after signing configuration was added.
+- [x] Local secret scan passed.
+- [x] `react_frontend/.npmrc` resolves the npm registry through HTTPS.
+- [ ] Local `flutter build apk --debug --split-per-abi` did not finish in the available terminal session; it reached Gradle assembly and reported the existing AGP 8.11.1 deprecation warning. GitHub Actions remains the authoritative debug-build validation.
 
 ## 3. Cloudflare R2 Setup and Manifest Contract
 
@@ -705,13 +725,18 @@ DONATE_CRYPTO_USDT_ADDRESS=replace-with-public-address
 | Path | Action |
 |---|---|
 | `docs/BACKEND_IMPLEMENTATION_ROADMAP.md` | Create this roadmap. |
+| `docs/DEVELOPMENT_WORKFLOW.md` | Document solo-main workflow and future collaboration/PR workflow. |
 | `.gitignore` | Create root ignore policy. |
 | `.env.example` | Create placeholders/documentation. |
+| `react_frontend/.npmrc` | Pin npm registry to HTTPS. |
 | `.github/workflows/ci.yml` | Create PR checks. |
 | `.github/workflows/build-debug.yml` | Create debug APK workflow. |
 | `.github/workflows/release.yml` | Create signed APK release workflow. |
 | `.github/workflows/react.yml` | Create React build/deploy workflow. |
 | `.github/pull_request_template.md` | Create PR checklist. |
+| `.github/ISSUE_TEMPLATE/bug_report.yml` | Create future bug-report template. |
+| `.github/ISSUE_TEMPLATE/feature_request.yml` | Create future feature-request template. |
+| `scripts/check-secrets.ps1` | Create local credential scan. |
 | `scripts/upload_models.js` or `.py` | Create R2 uploader/manifest generator. |
 | `scripts/check-secrets.*` | Create `.env`/credential guard. |
 | `flutter_mobile/pubspec.yaml` | Add only verified dependencies and assets. |

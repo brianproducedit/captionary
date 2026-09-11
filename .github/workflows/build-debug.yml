@@ -1,0 +1,42 @@
+name: Debug APK
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-debug-apk:
+    name: Build debug APKs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter_mobile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build split debug APKs
+        run: flutter build apk --debug --split-per-abi
+
+      - name: Upload debug APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: captionary-debug-apks-${{ github.sha }}
+          path: flutter_mobile/build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
