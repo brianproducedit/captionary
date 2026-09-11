@@ -131,6 +131,122 @@ Flutter package versions read from `flutter_mobile/pubspec.yaml`:
 - [x] React `npm run lint` passed with Oxlint.
 - [ ] Do not begin Phase B1 implementation until the failed baseline tests and formatting decision have linked issues or an explicit maintainer decision.
 
+## Frontend UI Adaptation and Completion Workstream
+
+The original roadmap overemphasized backend wiring and did not provide an executable plan for the unfinished Flutter UI and React portal. Complete this workstream alongside backend phases. These tasks are local/static UI work and must not introduce a hosted backend, Firebase, live ad SDK, or payment API.
+
+### F1. Shared layout, bottom ad space, and feedback surfaces
+
+- [ ] Define one reusable `BottomAdSpace`/`AdBannerWidget` layout wrapper with a stable height, safe-area padding, and the current local placeholder policy.
+- [ ] Add the bottom ad space consistently to every applicable Flutter screen: media library, language packs, studio, player, transcription, export, donate, settings, and onboarding where a bottom navigation bar is not present.
+- [ ] Keep ad space non-invasive: never cover navigation, transport controls, subtitle editing, keyboards, modal sheets, or primary actions.
+- [ ] Keep the placeholder visually quiet and label it as local placeholder space; do not add `google_mobile_ads`.
+- [ ] Create a reusable `AppToast`/`ToastService` or themed `SnackBar` helper with success, info, warning, error, and progress variants.
+- [ ] Ensure toast text uses readable dark-theme contrast, never default light grey on white, and supports an optional action.
+- [ ] Replace direct `ScaffoldMessenger.of(context).showSnackBar` calls in export, studio, settings, URL fallback, and notification flows with the shared feedback helper.
+- [ ] Add widget tests for bottom spacing, safe-area behavior, toast variants, long messages, and action buttons.
+
+### F2. Media library layout, thumbnails, filters, and ordering
+
+- [ ] Replace the current fixed gradient thumbnail block with a thumbnail provider that generates/caches a single frame from the actual media file through FFmpeg.
+- [ ] Store the generated thumbnail path in `MediaItem.thumbnailPath` and invalidate it when the source file changes or is deleted.
+- [ ] Show a deterministic loading placeholder, image-error fallback, and video-type icon when thumbnail generation fails.
+- [ ] Fix the media library vertical spacing so filters sit immediately above the media results with one intentional gap; remove the excessive empty area between filters and exported videos.
+- [ ] Make the view toggle functional: ordered list and fixed-size grid modes must use the same data source and selection state.
+- [ ] Make sort functional for Recent, Name, and Duration with stable tie-breaking by import time.
+- [ ] Make All, Video, Audio, and Exported filters functional and preserve the active filter in local state.
+- [ ] Use stable grid card dimensions and consistent aspect ratios so thumbnails and text cannot resize the layout.
+- [ ] Define empty, loading, error, and filtered-empty states with useful actions.
+- [ ] Persist media metadata and ordering locally so imported media survives an app restart.
+- [ ] Add tests for thumbnail fallback, sort/filter combinations, list/grid mode, spacing/overflow, and deletion.
+
+### F3. Studio style sheet redesign
+
+- [ ] Redesign `StylizationSheet` as a polished draggable sheet with a textured/patterned header, clear active-tab indicator, compact section labels, and a visible current-style preview.
+- [ ] Keep all preset cards exactly the same size using explicit width, height, aspect ratio, and internal constraints.
+- [ ] Extend `CaptionStyle` with a local preview asset/texture reference or deterministic visual treatment; never use remote image URLs for editor-critical UI.
+- [ ] Add locally bundled preset imagery/textures that communicate TikTok Bold, IG Highlight, Classic Movie, and Neon Flow without reducing text contrast.
+- [ ] Add selected, pressed, disabled, and hover/focus states to every preset card.
+- [ ] Improve the Text tab with font preview, size stepper/slider, line spacing, alignment, safe-area preview, and readable value labels.
+- [ ] Improve the Animation tab with visual mini-previews, duration/intensity controls, and explicit “None” behavior.
+- [ ] Improve the Colors tab with swatches, opacity controls, outline/shadow controls, and a live subtitle preview.
+- [ ] Keep all controls connected to `captionStyleProvider`; no tab may be decorative-only.
+- [ ] Add golden/widget tests proving every tab changes state and every preset card has identical dimensions.
+
+### F4. Waveform and subtitle timeline editing
+
+- [ ] Replace the synthetic repeating bar waveform with audio-derived waveform data from the extracted audio or a cached waveform file.
+- [ ] Render played/unplayed regions, a draggable playhead, current-time marker, and visible time ruler.
+- [ ] Add zoom in/out, horizontal pan, snap-to-segment, and reset-zoom behavior.
+- [ ] Keep subtitle chips aligned to their actual timestamps and prevent overlap when the timeline is zoomed.
+- [ ] Add drag handles for segment start/end trimming with minimum duration and non-overlap validation.
+- [ ] Add split, merge, duplicate, delete, undo, redo, and text-edit actions with keyboard-safe behavior.
+- [ ] Add waveform loading, no-audio, extraction-error, and low-memory fallback states.
+- [ ] Add tests for time conversion, drag bounds, split/merge, undo/redo, zoom, and selected-segment synchronization.
+
+### F5. Video player controls and accessibility
+
+- [ ] Add explicit transport controls: play/pause, skip backward 10 seconds, skip forward 10 seconds, volume/mute, playback speed, and fullscreen.
+- [ ] Add current time/duration labels and a stable scrubber with buffered/played progress.
+- [ ] Preserve subtitle overlay above the video and ensure controls do not occlude subtitle safe areas.
+- [ ] Add orientation/fullscreen lifecycle handling and restore the previous orientation on exit.
+- [ ] Add loading, buffering, missing-file, unsupported-format, and initialization-error states.
+- [ ] Add semantic labels/tooltips for unfamiliar icon-only controls and ensure minimum touch targets.
+- [ ] Add widget tests for every control and manual device tests for fullscreen, rotation, seek, speed, volume, and lifecycle.
+
+### F6. Real subtitle export UX
+
+- [ ] Replace the Studio “Export .SRT” mock snackbar with the real `ExportService` output flow.
+- [ ] Add export choices for SRT, VTT, and ASS; keep generation pure and spec-compliant.
+- [ ] Write the generated file to a user-accessible location through SAF/file picker or a temporary share file.
+- [ ] Invoke `share_plus` with the correct file URI, filename, and MIME type.
+- [ ] Show progress, success, failure, cancellation, and “copied path” feedback through the shared toast helper.
+- [ ] Disable export while segments are invalid and show actionable validation errors.
+- [ ] Add golden tests for SRT/VTT/ASS content and widget tests for format selection/share/error states.
+
+### F7. Settings integration and preferences
+
+- [ ] Move RAM tier, playback defaults, export defaults, notification frequency, and UI preferences into a typed local preferences model.
+- [ ] Persist settings through the existing `shared_preferences` provider and load them before dependent screens render.
+- [ ] Connect RAM tier to model recommendations and transcription limits.
+- [ ] Connect notification settings to the local scheduler; changing frequency must reschedule/cancel reminders.
+- [ ] Connect default playback speed, autoplay, volume, export format, and quality controls to their owning providers.
+- [ ] Implement Clear Cache with real model/temp/thumbnail cleanup and a confirmation dialog.
+- [ ] Replace mock version/license/rating rows with real app metadata and links; keep Play Store actions out of scope until distribution changes.
+- [ ] Add settings reset-to-defaults and persistence tests.
+
+### F8. Icon and interaction completion audit
+
+- [ ] Inventory every `Symbols.*`, `Icons.*`, `IconButton`, `GestureDetector`, `TextButton`, and commented-out action in Flutter and React.
+- [ ] For each icon, classify it as functional action, status decoration, navigation, or unused.
+- [ ] Implement missing actions such as studio tune, zoom, cut, export formats, media view toggle, settings rows, player controls, and donation fallback.
+- [ ] Remove or replace decorative icons that imply functionality but have no handler.
+- [ ] Add tooltips/semantic labels to icon-only controls and verify contrast against the dark theme.
+- [ ] Add an interaction audit test/list that fails when required controls have no callback.
+
+### F9. React portal UI hardening
+
+- [ ] Preserve the current Vite/React/TypeScript/static architecture; do not add a backend API.
+- [ ] Replace the current fake “Payment authorized” flow with honest external-link/pending instructions and no fabricated receipt or transaction confirmation.
+- [ ] Add resilient loading, offline, unavailable-link, and return-from-external-browser states.
+- [ ] Make `/support` a compatibility redirect to `/donate` and keep deep links working in the static build.
+- [ ] Audit all React buttons, Material Icons, navbar links, footer links, and payment method cards for real handlers or explicit disabled states.
+- [ ] Add consistent toast/inline feedback for copied addresses, selected amounts, external-link launch, and validation errors.
+- [ ] Verify responsive layouts at mobile, tablet, and desktop widths; prevent clipped text and overlapping controls.
+- [ ] Add tests for donation amount selection, static payment links, route redirects, offline state, and no-backend behavior.
+
+### F10. Frontend acceptance gate
+
+- [ ] Run Flutter widget tests for every touched screen and `flutter analyze`.
+- [ ] Run React `npm run build` and `npm run lint`.
+- [ ] Verify every Flutter screen has intentional bottom spacing and no control is hidden behind navigation or ad placeholder space.
+- [ ] Verify imported media has thumbnails or a clear fallback and stable ordering.
+- [ ] Verify studio presets, Text, Animation, and Colors tabs are functional and visually consistent.
+- [ ] Verify SRT/VTT/ASS export files open in representative players/parsers.
+- [ ] Verify player controls, waveform editing, toasts, settings persistence, and icon actions on emulator and physical device where applicable.
+- [ ] Verify the React portal never claims payment success without external confirmation and works as a static app with no API server.
+- [ ] Record screenshots and remaining visual issues in `docs/` before moving to the next backend phase.
+
 ## 1. Branching, Git Hygiene, and Repository Setup
 
 **Current workflow decision:** This is a private, solo-maintained repository. The current workflow is direct, tested pushes to `main`. Do not create a `develop` branch or require pull requests yet. The future collaboration workflow, branch names, review gates, and PR templates are documented in `docs/DEVELOPMENT_WORKFLOW.md` and `.github/` so the repository can transition cleanly when contributors join.
@@ -237,9 +353,9 @@ Use the Flutter package root `flutter_mobile/` as the working directory and `rea
 - [ ] Create an R2 bucket named `captionary-models`.
 - [ ] Use a custom production domain for production model delivery; treat `r2.dev` as development-only because Cloudflare documents rate limiting and non-production intent for public development URLs.
 - [ ] Enable public read access only for model objects and `manifest.json`.
-- [ ] Do not expose the S3 endpoint or upload credentials to the mobile app.
-- [ ] Configure CORS for the actual React/portal origins and local development origins; avoid `AllowedOrigins: ["*"]` for browser uploads.
-- [ ] Permit `GET` and `HEAD` for public client downloads and expose `Content-Length`, `ETag`, and checksum headers only if the client needs them.
+- [x] Do not expose the S3 endpoint or upload credentials to the mobile app.
+- [x] Add the initial CORS policy in `r2/cors.json` for explicit origins, `GET`/`HEAD`, range requests, and required response headers. Apply it after the bucket exists.
+- [ ] Permit `GET` and `HEAD` for public client downloads and expose `Content-Length`, `ETag`, and checksum headers only if the client needs them; verify this against the live bucket.
 - [ ] Verify `HEAD`, full `GET`, and byte-range `GET` responses using `curl`.
 
 ### 3.2 Object layout
@@ -256,8 +372,8 @@ captionary-models/
     <language-specific files only after validation>
 ```
 
+- [x] Define the object layout in `r2/manifest.example.json` and keep model files out of Git and out of the Flutter asset bundle except the intentionally bundled tiny model.
 - [ ] Never publish a model until it has a source URL, exact byte size, SHA256, license, engine compatibility, and tested device tier.
-- [ ] Keep model files out of Git and out of the Flutter asset bundle except the intentionally bundled tiny model.
 
 ### 3.3 Frozen `manifest.json` contract
 
@@ -290,34 +406,34 @@ The manifest is a public, versioned JSON document. Unknown fields may be added o
 }
 ```
 
-- [ ] Validate `schema_version` before parsing.
-- [ ] Require non-empty `id`, `engine`, `file`, `language_codes`, `size_bytes`, `sha256`, and `source_url`.
-- [ ] Require exactly 64 lowercase hexadecimal SHA256 characters.
-- [ ] Reject negative or implausibly large `size_bytes` values.
-- [ ] Reject path traversal and absolute paths in `file`.
+- [x] Validate `schema_version` before parsing through the upload tool's frozen schema checks.
+- [x] Require non-empty `id`, `engine`, `file`, `language_codes`, `size_bytes`, `sha256`, and `source_url`; sidecar metadata is required for every model.
+- [x] Require exactly 64 lowercase hexadecimal SHA256 characters.
+- [x] Reject negative or implausibly large `size_bytes` values.
+- [x] Reject path traversal and absolute paths in `file`.
 - [ ] Cache the last valid manifest and use it offline when the network fails.
 - [ ] Show a stale-catalog state rather than silently treating an unavailable model as installed.
 
 ### 3.4 Upload script
 
-- [ ] Create `scripts/upload_models.js` or `scripts/upload_models.py`; prefer Node if the React tooling is the maintained scripting environment.
-- [ ] Read `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, and `R2_PUBLIC_BASE_URL` from a local untracked `.env` or CI environment.
-- [ ] Use the S3 endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
-- [ ] Walk a local `models/` input directory without following unsafe symlinks.
-- [ ] Compute SHA256 and byte size before upload.
-- [ ] Upload to a temporary key, verify the upload with `HEAD`, then publish/update `manifest.json`.
-- [ ] Set `Content-Type: application/octet-stream` for models and `application/json` for the manifest.
-- [ ] Generate `checksums.sha256` in stable sorted order.
-- [ ] Abort rather than overwrite a model whose checksum differs unless `--replace` is explicitly passed.
-- [ ] Add `--dry-run`, `--manifest-only`, and `--verify` modes.
+- [x] Create `scripts/upload_models.js` with `scripts/package.json`; use the AWS S3-compatible SDK only from the local upload tool.
+- [x] Read `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, and `R2_PUBLIC_BASE_URL` from a local untracked `.env` or CI environment.
+- [x] Use the S3 endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
+- [x] Walk a local `models/` input directory without following unsafe symlinks.
+- [x] Compute SHA256 and byte size before upload.
+- [x] Check existing objects before upload and verify them with `HEAD`; publish `manifest.json` and `checksums.sha256` after model uploads.
+- [x] Set `Content-Type: application/octet-stream` for models and `application/json` for the manifest.
+- [x] Generate `checksums.sha256` in stable sorted order.
+- [x] Abort rather than overwrite an existing model unless `--replace` is explicitly passed.
+- [x] Add `--dry-run`, `--manifest-only`, `--verify`, and `--help` modes.
 - [ ] Add unit tests for hashing, path mapping, and missing credentials.
 
 ### 3.5 R2 is the only remote runtime dependency
 
-- [ ] Use plain public object delivery for model downloads and the public manifest. The app must call only public `GET`/`HEAD` URLs.
-- [ ] Do not use a Worker, Pages Function, proxy API, signed-download service, or hosted model API.
-- [ ] Run the R2 upload script only from a developer machine or a controlled upload-only build job; it is not part of the app runtime.
-- [ ] Do not use R2 for user data, telemetry, payment state, accounts, or notification state.
+- [x] Use plain public object delivery for model downloads and the public manifest. The app must call only public `GET`/`HEAD` URLs.
+- [x] Do not use a Worker, Pages Function, proxy API, signed-download service, or hosted model API.
+- [x] Run the R2 upload script only from a developer machine or a controlled upload-only build job; it is not part of the app runtime.
+- [x] Do not use R2 for user data, telemetry, payment state, accounts, or notification state.
 
 ### 3.6 Budget guardrails
 
@@ -326,6 +442,15 @@ The manifest is a public, versioned JSON document. Unknown fields may be added o
 - [ ] Fail CI if the published catalog exceeds the project storage budget agreed in an issue.
 - [ ] Configure Cloudflare billing/usage alerts where available, without adding a runtime monitoring service to the app.
 - [ ] Keep at least 20 percent storage headroom for replacement models and manifests.
+
+### 3.7 Phase 3 validation recorded 2026-09-11
+
+- [x] `r2/manifest.example.json`, `r2/model-metadata.example.json`, and `r2/cors.json` parse successfully.
+- [x] `scripts/upload_models.js` passes `node --check` and its `--help` path runs without credentials.
+- [x] The isolated R2 tool dependency installs through HTTPS with zero reported vulnerabilities.
+- [x] Generated `r2/manifest.json`, `r2/checksums.sha256`, and `scripts/node_modules/` are ignored; public contract examples remain available.
+- [ ] Create/configure the actual Cloudflare bucket, custom domain, public access, CORS policy, and live `curl` range checks when Cloudflare account access and the production domain are available.
+- [ ] Publish a real English model and language packs only after licensed model files, sidecar metadata, SHA256 values, and device measurements are available.
 
 ### Sources
 
@@ -339,23 +464,29 @@ The manifest is a public, versioned JSON document. Unknown fields may be added o
 
 `video_player` 2.14.0 is already present, maintained by Flutter, and uses ExoPlayer on Android. It covers local playback, play/pause, seeking, speed, volume, and a Flutter `Stack` can provide the subtitle overlay. `media_kit` offers broader codecs, hardware acceleration, custom controls, external subtitle tracks, and subtitle styling, but its current package set is version-sensitive and increases native surface area. Therefore:
 
-- [ ] Keep `video_player` for the first real-player implementation to minimize migration risk.
+- [x] Keep `video_player` for the first real-player implementation to minimize migration risk.
 - [ ] Build an acceptance matrix for required containers/codecs, frame-accurate seeking, hardware decoding, subtitle overlay, and 4 GB memory use.
 - [ ] Migrate to `media_kit` only if `video_player` fails a required acceptance test on a target device.
 - [ ] If migration is approved, use the current compatible versions from pub.dev: `media_kit: ^1.2.6`, `media_kit_video: ^2.0.1`, and the current Android video library package recommended by the media-kit installation page. ⚠️ VERIFY ONLINE the exact Android package/version before editing `pubspec.yaml`; the old roadmap's `media_kit_libs_android_video: ^1.3.8` is not the current video installation snippet.
 
 ### Implementation
 
-- [ ] Add a `MediaPlayerService` abstraction separate from `MediaService` so the existing media import contract does not become a player contract.
-- [ ] For `video_player`, create and dispose `VideoPlayerController.file` only for the active video.
-- [ ] Expose play, pause, seek, playback speed, volume, position, duration, buffering, and error state through a Riverpod notifier.
-- [ ] Pause and dispose the controller when the player screen is removed or app lifecycle becomes paused.
-- [ ] Use a stable `AspectRatio` and a `Stack` containing the video, subtitle overlay, and controls.
-- [ ] Wire `file_picker` selection through the existing `FileImportService`, then persist/copy the selected file before opening it.
-- [ ] Reject missing, unreadable, zero-byte, and unsupported files with user-visible retry states.
+- [x] Add `flutter_mobile/lib/data/services/media_player_service.dart` as a `MediaPlayerService` abstraction separate from `MediaService`.
+- [x] For `video_player`, create and dispose `VideoPlayerController.file` only for the active video.
+- [x] Expose play, pause, seek, playback speed, volume, position, duration, buffering, and error state through the existing Riverpod notifier.
+- [x] Pause playback when the app becomes inactive/paused and dispose the controller when the player screen is removed.
+- [x] Use a stable `AspectRatio` and a `Stack` containing the video, subtitle overlay, and controls.
+- [x] Verify existing file-picker/import wiring: `LocalMediaService` copies the selected file to cache, and `MediaLibraryScreen` routes the cached `item.filePath` to `/player`.
+- [x] Show a visible initialization error instead of leaving the player indefinitely loading when the file cannot be opened.
 - [ ] Add a file import test using a small fixture or a fake `MediaPlayerService`; do not require a real platform texture in unit tests.
 - [ ] Add a manual device test for local MP4 playback, pause, seek, speed, volume, rotation/lifecycle, and subtitle overlay.
 - [ ] Remove `video_player` only after the migration acceptance suite passes on at least one physical target device.
+
+### 4.1 Phase B1 validation recorded 2026-09-11
+
+- [x] Focused diagnostics pass for the new service, notifier, and player screen.
+- [x] `dart format --output=none --set-exit-if-changed` and `flutter analyze` pass for the touched player files.
+- [ ] Physical-device acceptance tests remain open; no device fixture is available in the current workspace.
 
 ### Sources
 
@@ -364,18 +495,25 @@ The manifest is a public, versioned JSON document. Unknown fields may be added o
 
 ## 5. Phase B2: FFmpeg Audio Extraction
 
-- [ ] Keep `ffmpeg_kit_flutter_new_min_gpl: ^2.6.2`; do not add the nonexistent generic package name from the old roadmap.
-- [ ] Rename or wrap `AudioPreprocessor` as the implementation behind a new `AudioExtractionService` if a clearer abstraction is needed.
-- [ ] Use the exact command: `-y -i "<input>" -vn -acodec pcm_s16le -ar 16000 -ac 1 "<output.wav>"`.
-- [ ] Quote/escape paths through a dedicated argument builder; do not interpolate untrusted filenames without escaping.
-- [ ] Store output below `getTemporaryDirectory()/audio/` with a UUID-based filename.
-- [ ] Support a `Duration` limit for the 30-second language-detection sample using `-t 30`.
-- [ ] Add cancellation using FFmpeg session cancellation and a cancellation token owned by the pipeline.
-- [ ] Run long extraction work asynchronously and never block the UI isolate with file reads or large buffers.
-- [ ] Delete temporary audio in `finally`, including failure and cancellation paths.
+- [x] Keep `ffmpeg_kit_flutter_new_min_gpl: ^2.6.2`; do not add the nonexistent generic package name from the old roadmap.
+- [x] Add `AudioExtractionService` and keep `AudioPreprocessor.transcodeToMono()` as a compatibility method for the existing transcription provider.
+- [x] Use the command: `-y -i "<input>" -vn -t <seconds> -acodec pcm_s16le -ar 16000 -ac 1 "<output.wav>"`; omit `-t` for full extraction.
+- [x] Escape double quotes in paths through the tested `buildCommand` helper; do not interpolate unescaped paths.
+- [x] Store output below `getTemporaryDirectory()/audio/` with a UUID-based filename to prevent concurrent-run collisions.
+- [x] Support a `Duration` limit for the 30-second language-detection sample using `-t 30`.
+- [x] Add cancellation using `FFmpegSession.cancel()` and the package's asynchronous `FFmpegKit.executeAsync` API.
+- [x] Run extraction asynchronously and return a completion future without blocking the UI isolate.
+- [x] Delete partial output on FFmpeg failure, cancellation, or startup exception.
 - [ ] Add a WAV header/sample-rate/channel validation test using a generated fixture.
 - [ ] Add a physical-device test for MP4, MOV, no-audio, corrupt-input, and long-video cases.
 - [ ] Document that Android media access uses SAF/file picker URIs; do not add obsolete broad storage permissions solely for picker-selected files.
+
+### 5.1 Phase B2 validation recorded 2026-09-11
+
+- [x] `test/unit/services/audio_preprocessor_test.dart` covers full extraction command construction, 30-second limiting, and quote escaping.
+- [x] Focused `dart format --output=none --set-exit-if-changed` and `flutter analyze` pass for the B2 implementation and tests.
+- [x] Focused B2 tests pass: `flutter test test/unit/services/audio_preprocessor_test.dart`.
+- [ ] Run extraction against licensed MP4/MOV fixtures on a physical Android device and validate the generated WAV header.
 
 ## 6. Phase B3: Whisper On-Device Transcription (`whisper_flutter_new`)
 
@@ -737,8 +875,13 @@ DONATE_CRYPTO_USDT_ADDRESS=replace-with-public-address
 | `.github/ISSUE_TEMPLATE/bug_report.yml` | Create future bug-report template. |
 | `.github/ISSUE_TEMPLATE/feature_request.yml` | Create future feature-request template. |
 | `scripts/check-secrets.ps1` | Create local credential scan. |
-| `scripts/upload_models.js` or `.py` | Create R2 uploader/manifest generator. |
+| `scripts/upload_models.js` | Create R2 uploader/manifest generator. |
+| `scripts/package.json` | Pin the local R2 upload tool dependency. |
+| `scripts/package-lock.json` | Lock the local R2 upload tool dependency. |
 | `scripts/check-secrets.*` | Create `.env`/credential guard. |
+| `r2/manifest.example.json` | Define the public model manifest contract. |
+| `r2/model-metadata.example.json` | Define required per-model upload metadata. |
+| `r2/cors.json` | Define explicit R2 read CORS policy. |
 | `flutter_mobile/pubspec.yaml` | Add only verified dependencies and assets. |
 | `flutter_mobile/lib/main.dart` | Media initialization and local lifecycle wiring. |
 | `flutter_mobile/lib/app.dart` | Router/tap/deep-link handling. |

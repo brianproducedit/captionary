@@ -19,15 +19,32 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   ConsumerState<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
+class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.videoPath.isNotEmpty) {
         ref.read(playerProvider.notifier).initPlayer(widget.videoPath);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ref.read(playerProvider.notifier).disposePlayer();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      ref.read(playerProvider.notifier).pause();
+    }
   }
 
   @override
@@ -50,7 +67,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     }
 
     Widget playerWidget;
-    if (controller != null && playerState.isInitialized) {
+    if (playerState.error != null) {
+      playerWidget = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Unable to open video.\n${playerState.error}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.onSurface),
+          ),
+        ),
+      );
+    } else if (controller != null && playerState.isInitialized) {
       playerWidget = AspectRatio(
         aspectRatio: controller.value.aspectRatio > 0
             ? controller.value.aspectRatio

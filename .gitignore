@@ -8,7 +8,7 @@
 *.jks
 *.keystore
 key.properties
-**/docs
+
 
 # Flutter and Dart
 **/.dart_tool/
@@ -41,8 +41,12 @@ key.properties
 
 # Generated model files and local model staging
 models/
+r2/manifest.json
+r2/checksums.sha256
+scripts/node_modules/
 **/assets/models/*.bin
 *.bin
+docs/
 
 # IDE and OS files
 .idea/

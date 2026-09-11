@@ -1,0 +1,11 @@
+{
+  "name": "captionary-r2-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "upload-models": "node upload_models.js --help"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.883.0"
+  }
+}

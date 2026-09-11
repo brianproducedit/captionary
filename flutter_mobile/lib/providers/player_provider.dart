@@ -1,7 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
+
+import '../data/services/media_player_service.dart';
 
 class PlayerState {
   final VideoPlayerController? controller;
@@ -48,7 +48,9 @@ class PlayerState {
 }
 
 class PlayerNotifier extends StateNotifier<PlayerState> {
-  PlayerNotifier() : super(PlayerState());
+  final MediaPlayerService _mediaPlayerService;
+
+  PlayerNotifier(this._mediaPlayerService) : super(PlayerState());
 
   @override
   void dispose() {
@@ -60,14 +62,14 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   Future<void> initPlayer(String videoPath) async {
     // Clean up old controller if any
     state.controller?.removeListener(_onControllerTick);
-    await state.controller?.dispose();
+    if (state.controller != null) {
+      await _mediaPlayerService.dispose(state.controller!);
+    }
 
     state = PlayerState(); // Reset state
 
-    final controller = VideoPlayerController.file(File(videoPath));
-
     try {
-      await controller.initialize();
+      final controller = await _mediaPlayerService.open(videoPath);
       controller.addListener(_onControllerTick);
       state = state.copyWith(
         controller: controller,
@@ -77,6 +79,15 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
+  }
+
+  Future<void> disposePlayer() async {
+    final controller = state.controller;
+    if (controller == null) return;
+
+    controller.removeListener(_onControllerTick);
+    await _mediaPlayerService.dispose(controller);
+    state = PlayerState();
   }
 
   void _onControllerTick() {
@@ -101,6 +112,13 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       } else {
         await controller.play();
       }
+    }
+  }
+
+  Future<void> pause() async {
+    final controller = state.controller;
+    if (controller?.value.isPlaying == true) {
+      await controller!.pause();
     }
   }
 
@@ -145,5 +163,9 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 final playerProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((
   ref,
 ) {
-  return PlayerNotifier();
+  return PlayerNotifier(ref.watch(mediaPlayerServiceProvider));
+});
+
+final mediaPlayerServiceProvider = Provider<MediaPlayerService>((ref) {
+  return VideoPlayerMediaService();
 });

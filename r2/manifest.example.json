@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog_version": 1,
+  "updated_at": "2026-09-11T00:00:00Z",
+  "base_url": "https://models.example.com/",
+  "default_language": "en",
+  "models": [
+    {
+      "id": "tiny.en",
+      "engine": "whisper_flutter_new",
+      "file": "models/ggml-tiny.en.bin",
+      "language_codes": ["en"],
+      "display_name": "English Tiny",
+      "size_bytes": 75300000,
+      "sha256": "64-lowercase-hex-characters",
+      "quantization": "none",
+      "bundled": true,
+      "min_android_sdk": 21,
+      "recommended_ram_gb": 4,
+      "license": "MIT",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp"
+    }
+  ]
+}
