@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/ghost_pill_button.dart';
@@ -87,12 +88,15 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   _buildTimelineStudio(context),
                   const SizedBox(height: 16),
                   _buildActionButtons(context),
+                  const SizedBox(height: 42),
+                  const AdBannerWidget(),
                 ],
               ),
             ),
           ],
         ),
       ),
+
       // floatingActionButton: FloatingActionButton(
       //   onPressed: () {
       //     // Mock add segment

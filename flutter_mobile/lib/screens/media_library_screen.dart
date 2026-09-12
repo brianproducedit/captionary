@@ -14,6 +14,7 @@ import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../widgets/app_header.dart';
 import '../widgets/bento_grid.dart';
 import '../widgets/bottom_nav_bar.dart';
@@ -67,10 +68,12 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
           ),
           const SizedBox(height: AppSpacing.spaceMd),
           DonateBanner(onTap: () => context.go('/donate')),
-          const SizedBox(height: AppSpacing.spaceLg),
+          const SizedBox(height: AppSpacing.spaceMd),
           _buildSectionHeader(context, recentMediaAsync),
           const SizedBox(height: AppSpacing.spaceSm),
           _buildMediaResults(context, recentMediaAsync),
+          const SizedBox(height: 16),
+          const AdBannerWidget(),
         ],
       ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 0),
@@ -394,6 +397,13 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
               _buildMediaCard(context, item, isGrid: false),
               const SizedBox(height: 12),
             ],
+
+            //TODO: the add more media floating button needs review cause it not working
+            FloatingActionButton(
+              onPressed: _importMedia,
+              backgroundColor: AppColors.onSecondaryFixed,
+              child: const Icon(Symbols.add, color: AppColors.allWhite),
+            ),
           ],
         );
       },

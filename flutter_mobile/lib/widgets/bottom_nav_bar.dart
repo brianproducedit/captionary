@@ -84,16 +84,6 @@ class BottomNavBar extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Home indicator (iOS style)
-                Container(
-                  width: 128,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 6),
-                  // decoration: BoxDecoration(
-                  //   color: AppColors.surfaceVariant.withValues(alpha: 0.6),
-                  //   borderRadius: BorderRadius.circular(9999),
-                  // ),
-                ),
               ],
             ),
           ),

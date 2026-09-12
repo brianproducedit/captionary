@@ -127,7 +127,7 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
               Coffee Supporter
             </h3>
             <div className="flex items-baseline gap-[var(--spacing-space-xxs)] mb-[var(--spacing-space-md)]">
-              <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-display-lg)', color: 'var(--color-on-surface)' }}>
+              <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-headline-md)', color: 'var(--color-on-surface)' }}>
                 $3
               </span>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-on-surface-variant)' }}>
@@ -193,7 +193,7 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
               Language Champion
             </h3>
             <div className="flex items-baseline gap-[var(--spacing-space-xxs)] mb-[var(--spacing-space-md)]">
-              <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-display-lg)', color: 'var(--color-primary)' }}>
+              <span className="font-bold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-headline-md)', color: 'var(--color-primary)' }}>
                 $10
               </span>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-on-surface-variant)' }}>

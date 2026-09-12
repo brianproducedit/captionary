@@ -44,7 +44,7 @@ export const Footer: React.FC = () => {
           }}
         >
           <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-on-surface-variant)' }}>
-            Offline-first Android app · static donate page
+            Offline-first Android app · Captionary Website
           </span>
         </div>
 

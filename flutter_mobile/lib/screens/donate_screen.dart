@@ -8,6 +8,7 @@ import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../core/constants/app_constants.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/app_header.dart';
@@ -47,6 +48,8 @@ class DonateScreen extends ConsumerWidget {
           const SizedBox(height: 32),
           const SizedBox(height: 48),
           _buildSignOffBadge(context),
+          const SizedBox(height: 16),
+          const AdBannerWidget(),
         ],
       ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 3),

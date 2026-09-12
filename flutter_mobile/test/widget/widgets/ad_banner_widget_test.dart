@@ -4,7 +4,9 @@ import 'package:captionary/core/ad_placement_policy.dart';
 import 'package:captionary/widgets/ad_banner_widget.dart';
 
 void main() {
-  testWidgets('AdBannerWidget renders local placeholder label', (tester) async {
+  testWidgets('AdBannerWidget renders local placeholder for Ads label', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: AdBannerWidget())),
     );

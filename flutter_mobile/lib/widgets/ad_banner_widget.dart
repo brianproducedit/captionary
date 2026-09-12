@@ -8,7 +8,7 @@ import '../theme/app_colors.dart';
 /// Do not add a live ad SDK. Allowed only on language packs and export.
 class AdBannerWidget extends StatelessWidget {
   static const double defaultHeight = 60.0;
-  static const String placeholderLabel = 'Local placeholder space';
+  static const String placeholderLabel = 'Local placeholder space for Ads';
 
   final double bannerHeight;
 

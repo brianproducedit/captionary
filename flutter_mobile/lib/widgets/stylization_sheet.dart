@@ -228,7 +228,7 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                     ? null
                     : () => _update(
                         currentStyle.copyWith(
-                          fontSize: (currentStyle.fontSize + 2).clamp(14, 48),
+                          fontSize: (currentStyle.fontSize + 2).clamp(2, 32),
                         ),
                       ),
                 icon: const Icon(Symbols.add),
@@ -308,6 +308,8 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
               ),
             ],
           ),
+
+          //Position
           const SizedBox(height: 24),
           Text(
             'Position',
@@ -367,7 +369,9 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
               child: Icon(
                 icon,
                 semanticLabel: tooltip,
-                color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.onSurfaceVariant,
               ),
             ),
           ),
@@ -410,7 +414,9 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                     color: isSelected
                         ? AppColors.primary
                         : AppColors.onSurfaceVariant,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -441,10 +447,8 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
               'Not applied at burn-in yet. These motion styles are a studio '
               'preview only. Export still burns static styled text until the '
               'ASS engine supports bounce, karaoke, and highlight.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurface,
-                height: 1.4,
-              ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.onSurface, height: 1.4),
             ),
           ),
           const SizedBox(height: 16),
@@ -530,13 +534,15 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
             spacing: 8,
             runSpacing: 8,
             children: _swatches.map((color) {
-              final selected = color.toARGB32() == currentStyle.accentColor.toARGB32();
+              final selected =
+                  color.toARGB32() == currentStyle.accentColor.toARGB32();
               return Semantics(
                 button: true,
                 label: 'Accent swatch ${color.toARGB32().toRadixString(16)}',
                 child: InkWell(
                   key: ValueKey('swatch-${color.toARGB32()}'),
-                  onTap: () => _update(currentStyle.copyWith(accentColor: color)),
+                  onTap: () =>
+                      _update(currentStyle.copyWith(accentColor: color)),
                   customBorder: const CircleBorder(),
                   child: Container(
                     width: 36,
@@ -545,7 +551,9 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                       color: color,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: selected ? AppColors.primary : AppColors.allWhite,
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.allWhite,
                         width: selected ? 3 : 2,
                       ),
                     ),
