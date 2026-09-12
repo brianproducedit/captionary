@@ -35,7 +35,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     {
       'title': 'Ready to Share.',
       'subtitle': 'In Seconds.',
-      'body': 'Export in 1080p and share directly to your favorite platforms with a single tap.',
+      'body': 'Export and share directly to your favorite platforms with a single tap.',
       'icon': Symbols.rocket_launch,
     },
   ];
