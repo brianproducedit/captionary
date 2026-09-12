@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
 import '../data/services/media_player_service.dart';
+import '../core/user_preferences.dart';
+import 'preferences_provider.dart';
 
 class PlayerState {
   final VideoPlayerController? controller;
@@ -62,11 +64,13 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
   final MediaPlayerService _mediaPlayerService;
   final Duration initTimeout;
+  final UserPreferences Function()? readPreferences;
   double _volumeBeforeMute = 1.0;
 
   PlayerNotifier(
     this._mediaPlayerService, {
     this.initTimeout = defaultInitTimeout,
+    this.readPreferences,
   }) : super(PlayerState());
 
   @override
@@ -94,11 +98,19 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
           .open(videoPath)
           .timeout(initTimeout);
       controller.addListener(_onControllerTick);
+      final prefs = readPreferences?.call() ?? UserPreferences.defaults;
+      await controller.setVolume(prefs.volume);
+      await controller.setPlaybackSpeed(prefs.playbackSpeed);
+      if (prefs.autoPlay) {
+        await controller.play();
+      }
       state = state.copyWith(
         controller: controller,
         isInitialized: true,
         duration: controller.value.duration,
-        volume: controller.value.volume,
+        volume: prefs.volume,
+        playbackSpeed: prefs.playbackSpeed,
+        isPlaying: prefs.autoPlay,
         isBuffering: controller.value.isBuffering,
       );
     } on TimeoutException {
@@ -156,9 +168,16 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   }
 
   Future<void> seekTo(Duration position) async {
+    var target = position;
+    if (target.isNegative) target = Duration.zero;
+    if (state.duration > Duration.zero && target > state.duration) {
+      target = state.duration;
+    }
     final controller = state.controller;
     if (controller != null && controller.value.isInitialized) {
-      await controller.seekTo(position);
+      await controller.seekTo(target);
+    } else {
+      state = state.copyWith(position: target);
     }
   }
 
@@ -217,7 +236,16 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 final playerProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((
   ref,
 ) {
-  return PlayerNotifier(ref.watch(mediaPlayerServiceProvider));
+  return PlayerNotifier(
+    ref.watch(mediaPlayerServiceProvider),
+    readPreferences: () {
+      try {
+        return ref.read(preferencesProvider);
+      } catch (_) {
+        return UserPreferences.defaults;
+      }
+    },
+  );
 });
 
 final mediaPlayerServiceProvider = Provider<MediaPlayerService>((ref) {

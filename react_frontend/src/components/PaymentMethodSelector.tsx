@@ -1,55 +1,73 @@
 import React, { useState } from 'react';
 import { MaterialIcon } from './MaterialIcon';
+import { publicConfig } from '../config/public';
+import { copyText, isMethodEnabled } from '../lib/donate';
 import { PAYMENT_METHODS } from '../types/donation';
 import type { PaymentMethodId } from '../types/donation';
 
 export interface PaymentMethodSelectorProps {
   selectedMethod: PaymentMethodId;
   onSelectMethod: (method: PaymentMethodId) => void;
-  ecoCashPhone: string;
-  onEcoCashPhoneChange: (phone: string) => void;
 }
 
 export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   selectedMethod,
   onSelectMethod,
-  ecoCashPhone,
-  onEcoCashPhoneChange
 }) => {
-  const [walletCopied, setWalletCopied] = useState(false);
-  const walletAddress = '0x71CB4e29A88fF7094A0E189C67B9E9B49F98AA51';
+  const [copied, setCopied] = useState(false);
+  const selected = PAYMENT_METHODS.find((m) => m.id === selectedMethod);
+  const cryptoLive = isMethodEnabled('crypto');
 
-  const handleCopyWallet = (e: React.MouseEvent) => {
+  const handleCopyAddress = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(walletAddress).then(() => {
-      setWalletCopied(true);
-      setTimeout(() => setWalletCopied(false), 2400);
-    });
+    if (!publicConfig.cryptoAddress) return;
+    const ok = await copyText(publicConfig.cryptoAddress);
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2400);
+    }
   };
 
   return (
     <div className="w-full flex flex-col gap-[var(--spacing-space-lg)]">
-      {/* 2x2 or 4-col Responsive Grid of Selectable Methods */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[var(--spacing-gutter-desktop)] items-stretch">
         {PAYMENT_METHODS.map((method) => {
+          const enabled = isMethodEnabled(method.id);
           const isSelected = selectedMethod === method.id;
 
           return (
             <div
               key={method.id}
-              onClick={() => onSelectMethod(method.id)}
-              className={`group relative cursor-pointer p-[var(--spacing-space-lg)] rounded-lg transition-all duration-300 flex flex-col justify-between shadow-xl ${
-                isSelected
+              role="button"
+              tabIndex={enabled ? 0 : -1}
+              aria-disabled={!enabled}
+              onClick={() => {
+                if (enabled) onSelectMethod(method.id);
+              }}
+              onKeyDown={(e) => {
+                if (enabled && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  onSelectMethod(method.id);
+                }
+              }}
+              className={`group relative p-[var(--spacing-space-lg)] rounded-lg transition-all duration-300 flex flex-col justify-between shadow-xl ${
+                enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-55'
+              } ${
+                isSelected && enabled
                   ? 'ring-2 -translate-y-1 shadow-2xl'
-                  : 'hover:-translate-y-1 hover:bg-[var(--color-surface-container)]'
+                  : enabled
+                    ? 'hover:-translate-y-1 hover:bg-[var(--color-surface-container)]'
+                    : ''
               }`}
               style={{
                 backgroundColor: 'var(--color-surface-container-low)',
-                borderColor: isSelected ? method.accentColor : 'transparent',
-                boxShadow: isSelected ? `0 8px 30px rgba(0, 0, 0, 0.4), 0 0 15px ${method.badgeBg}` : undefined
+                borderColor: isSelected && enabled ? method.accentColor : 'transparent',
+                boxShadow:
+                  isSelected && enabled
+                    ? `0 8px 30px rgba(0, 0, 0, 0.4), 0 0 15px ${method.badgeBg}`
+                    : undefined,
               }}
             >
-              {/* Top Row: Icon + Badge */}
               <div>
                 <div className="flex items-center justify-between mb-[var(--spacing-space-md)]">
                   <div
@@ -58,17 +76,16 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                   >
                     <MaterialIcon icon={method.icon} className="text-[24px]" />
                   </div>
-
                   <span
                     className="px-[var(--spacing-space-xs)] py-[var(--spacing-space-xxs)] rounded-full font-semibold uppercase tracking-wider"
                     style={{
-                      backgroundColor: method.badgeBg,
-                      color: method.badgeColor,
+                      backgroundColor: enabled ? method.badgeBg : 'var(--color-surface-container-high)',
+                      color: enabled ? method.badgeColor : 'var(--color-on-surface-variant)',
                       fontFamily: 'var(--font-body)',
-                      fontSize: 'var(--text-caption-code)'
+                      fontSize: 'var(--text-caption-code)',
                     }}
                   >
-                    {method.badge}
+                    {enabled ? method.badge : 'Not configured'}
                   </span>
                 </div>
 
@@ -77,7 +94,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: 'var(--text-headline-sm)',
-                    color: isSelected ? method.accentColor : 'var(--color-on-surface)'
+                    color: isSelected && enabled ? method.accentColor : 'var(--color-on-surface)',
                   }}
                 >
                   {method.name}
@@ -85,158 +102,69 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
 
                 <p
                   className="mb-[var(--spacing-space-sm)]"
-                  style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-on-surface-variant)' }}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-caption-code)',
+                    color: 'var(--color-on-surface-variant)',
+                  }}
                 >
                   {method.subtitle}
                 </p>
 
                 <p
                   className="leading-relaxed mb-[var(--spacing-space-md)]"
-                  style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-body-sm)',
+                    color: 'var(--color-on-surface-variant)',
+                  }}
                 >
-                  {method.description}
+                  {enabled
+                    ? method.description
+                    : 'No public checkout URL or address is set for this rail yet. Cards stay disabled until one is published in client config.'}
                 </p>
-
-                {/* Micro Feature Bullet Points */}
-                <ul className="flex flex-col gap-1 mb-[var(--spacing-space-md)]">
-                  {method.features.map((feat, idx) => (
-                    <li key={idx} className="flex items-center gap-1.5" style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-on-surface-variant)' }}>
-                      <MaterialIcon icon="check" className="text-[14px]" style={{ color: method.accentColor }} />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
 
-              {/* Selection Indicator Pill / Button */}
               <button
                 type="button"
-                className="w-full py-[var(--spacing-space-xs)] px-[var(--spacing-space-sm)] rounded-full font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                disabled={!enabled}
+                className="w-full py-[var(--spacing-space-xs)] px-[var(--spacing-space-sm)] rounded-full font-semibold transition-all flex items-center justify-center gap-1.5"
                 style={{
-                  backgroundColor: isSelected ? method.accentColor : 'var(--color-surface-container-high)',
-                  color: isSelected ? '#000000' : 'var(--color-on-surface)',
+                  backgroundColor:
+                    isSelected && enabled ? method.accentColor : 'var(--color-surface-container-high)',
+                  color: isSelected && enabled ? '#000000' : 'var(--color-on-surface)',
                   fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-label-md)'
+                  fontSize: 'var(--text-label-md)',
+                  cursor: enabled ? 'pointer' : 'not-allowed',
                 }}
               >
-                <span>{isSelected ? 'Method Selected' : 'Choose Method'}</span>
-                <MaterialIcon icon={isSelected ? 'radio_button_checked' : 'radio_button_unchecked'} className="text-[16px]" />
+                <span>
+                  {!enabled ? 'Unavailable' : isSelected ? 'Method selected' : 'Choose method'}
+                </span>
+                <MaterialIcon
+                  icon={
+                    !enabled
+                      ? 'block'
+                      : isSelected
+                        ? 'radio_button_checked'
+                        : 'radio_button_unchecked'
+                  }
+                  className="text-[16px]"
+                />
               </button>
             </div>
           );
         })}
       </div>
 
-      {/* Dynamic Detail Card for the Currently Selected Payment Method */}
       <div
-        className="p-[var(--spacing-space-lg)] rounded-DEFAULT border transition-all duration-300"
+        className="p-[var(--spacing-space-lg)] rounded-DEFAULT border"
         style={{
           backgroundColor: 'var(--color-surface-container-low)',
-          borderColor: 'var(--color-surface-container-high)'
+          borderColor: 'var(--color-surface-container-high)',
         }}
       >
-        {selectedMethod === 'ecocash' && (
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-[var(--spacing-space-md)]">
-            <div className="flex items-start gap-[var(--spacing-space-md)]">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgba(66, 165, 71, 0.25)', color: 'var(--color-tertiary)' }}
-              >
-                <MaterialIcon icon="phone_android" className="text-[24px]" />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="font-semibold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-headline-sm)', color: 'var(--color-on-surface)' }}>
-                  EcoCash Mobile USSD Checkout
-                </h4>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}>
-                  Enter your EcoCash registered subscriber number. We will push an instant *151# authorization pin prompt directly to your handset.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-[var(--spacing-space-xs)] w-full md:w-auto">
-              <div className="relative flex items-center w-full md:w-72">
-                <span className="absolute left-3 font-mono font-bold" style={{ color: 'var(--color-tertiary)', fontSize: 'var(--text-body-sm)' }}>
-                  +263
-                </span>
-                <input
-                  type="tel"
-                  placeholder="77 123 4567"
-                  value={ecoCashPhone}
-                  onChange={(e) => onEcoCashPhoneChange(e.target.value)}
-                  className="w-full pl-16 pr-3 py-2 rounded-full font-mono transition-all focus:outline-none focus:ring-1"
-                  style={{
-                    backgroundColor: 'var(--color-surface-container-high)',
-                    color: 'var(--color-on-surface)',
-                    fontSize: 'var(--text-body-sm)',
-                    borderColor: 'var(--color-tertiary)'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedMethod === 'innbucks' && (
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-[var(--spacing-space-md)]">
-            <div className="flex items-start gap-[var(--spacing-space-md)]">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgba(134, 3, 156, 0.25)', color: 'var(--color-secondary)' }}
-              >
-                <MaterialIcon icon="qr_code_2" className="text-[24px]" />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="font-semibold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-headline-sm)', color: 'var(--color-on-surface)' }}>
-                  InnBucks App & Voucher
-                </h4>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}>
-                  Confirming will generate your dynamic invoice QR code or a one-time 6-digit payment voucher for instant settlement in the InnBucks app.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-secondary)' }}>
-              <MaterialIcon icon="verified" className="text-[18px]" />
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)' }}>Instant QR & Voucher Generation Ready</span>
-            </div>
-          </div>
-        )}
-
-        {selectedMethod === 'card' && (
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-[var(--spacing-space-md)]">
-            <div className="flex items-start gap-[var(--spacing-space-md)]">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgba(33, 150, 243, 0.25)', color: 'var(--color-primary)' }}
-              >
-                <MaterialIcon icon="lock" className="text-[24px]" />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="font-semibold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-headline-sm)', color: 'var(--color-on-surface)' }}>
-                  Global Credit & Debit Card Checkout
-                </h4>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}>
-                  Protected by 256-bit encryption. Supports Apple Pay, Google Pay, Visa, Mastercard, and American Express.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>
-                Apple Pay
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>
-                Google Pay
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-primary)' }}>
-                Stripe / 3DSecure
-              </span>
-            </div>
-          </div>
-        )}
-
-        {selectedMethod === 'crypto' && (
+        {selectedMethod === 'crypto' && cryptoLive && (
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-[var(--spacing-space-md)]">
             <div className="flex items-start gap-[var(--spacing-space-md)]">
               <div
@@ -246,35 +174,67 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                 <MaterialIcon icon="account_balance_wallet" className="text-[24px]" />
               </div>
               <div className="flex flex-col">
-                <h4 className="font-semibold" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-headline-sm)', color: 'var(--color-on-surface)' }}>
-                  EVM Multi-Sig Compute Vault
+                <h4
+                  className="font-semibold"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'var(--text-headline-sm)',
+                    color: 'var(--color-on-surface)',
+                  }}
+                >
+                  {publicConfig.cryptoNetwork}
                 </h4>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}>
-                  Accepts USDT, USDC, and POL on Polygon PoS. Direct decentralized smart contract with zero intermediary fees.
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-body-sm)',
+                    color: 'var(--color-on-surface-variant)',
+                  }}
+                >
+                  Copy the published receive address. This site cannot confirm the transfer.
                 </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-2 w-full lg:w-auto">
-              <span className="truncate font-mono text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-primary)' }}>
-                {walletAddress}
+            <div className="flex items-center gap-2 w-full lg:w-auto min-w-0">
+              <span
+                className="truncate font-mono text-xs px-3 py-1.5 rounded-full"
+                style={{
+                  backgroundColor: 'var(--color-surface-container-high)',
+                  color: 'var(--color-primary)',
+                }}
+              >
+                {publicConfig.cryptoAddress}
               </span>
               <button
                 type="button"
-                onClick={handleCopyWallet}
-                className="px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 cursor-pointer transition-colors hover:bg-[var(--color-surface-bright)]"
+                onClick={handleCopyAddress}
+                className="shrink-0 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 cursor-pointer"
                 style={{
-                  backgroundColor: walletCopied ? 'var(--color-tertiary)' : 'var(--color-surface-container-highest)',
-                  color: walletCopied ? '#000' : 'var(--color-on-surface)',
+                  backgroundColor: copied ? 'var(--color-tertiary)' : 'var(--color-surface-container-highest)',
+                  color: copied ? '#000' : 'var(--color-on-surface)',
                   fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-label-md)'
+                  fontSize: 'var(--text-label-md)',
                 }}
               >
-                <MaterialIcon icon={walletCopied ? 'check' : 'content_copy'} className="text-[16px]" />
-                <span>{walletCopied ? 'Copied' : 'Copy'}</span>
+                <MaterialIcon icon={copied ? 'check' : 'content_copy'} className="text-[16px]" />
+                <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
           </div>
+        )}
+
+        {selectedMethod === 'crypto' && !cryptoLive && (
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}>
+            No public crypto address is configured. Add one in <code>src/config/public.ts</code> when it exists.
+          </p>
+        )}
+
+        {selectedMethod !== 'crypto' && selected && (
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-sm)', color: 'var(--color-on-surface-variant)' }}>
+            {isMethodEnabled(selectedMethod)
+              ? `Continue opens ${selected.name} in a new tab. Captionary does not process the payment.`
+              : `A public ${selected.name} link is not configured yet. Copy the amount and come back when a checkout URL is published.`}
+          </p>
         )}
       </div>
     </div>

@@ -1,8 +1,9 @@
 import 'package:captionary/widgets/app_header.dart';
 import 'package:flutter/material.dart';
 
-import '../widgets/donate_banner.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../widgets/donate_banner.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -71,7 +72,10 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
             const SizedBox(height: 32),
             _buildLanguageCardsList(context, ref),
             const SizedBox(height: 32),
-            DonateBanner(onTap: () {}),
+            DonateBanner(
+              key: const ValueKey('donate-banner'),
+              onTap: () => context.push('/donate'),
+            ),
             const SizedBox(height: 16),
             const AdBannerWidget(),
           ],
@@ -128,6 +132,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
         ),
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
+                tooltip: 'Clear search',
                 icon: const Icon(
                   Symbols.close,
                   color: AppColors.onSurfaceVariant,
@@ -136,7 +141,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                   _searchController.clear();
                 },
               )
-            : const Icon(Symbols.tune, color: AppColors.onSurfaceVariant),
+            : null,
         filled: true,
         fillColor: AppColors.surfaceContainerLow,
         contentPadding: const EdgeInsets.symmetric(vertical: 14.0),

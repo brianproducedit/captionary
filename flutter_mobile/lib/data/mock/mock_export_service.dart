@@ -1,3 +1,4 @@
+import '../../core/caption_export.dart';
 import '../services/export_service.dart';
 import '../models/export_job.dart';
 import '../models/subtitle_segment.dart';
@@ -13,7 +14,7 @@ class MockExportService implements ExportService {
     required Duration videoDuration,
   }) async* {
     for (int i = 0; i <= 50; i++) {
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 1));
       yield ExportJob(
         id: 'mock_export_1',
         sourceFileName: 'Source_Video.mp4',
@@ -32,13 +33,11 @@ class MockExportService implements ExportService {
 
   @override
   Future<String> exportSRT(List<SubtitleSegment> segments) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    return '1\n00:00:00,000 --> 00:00:03,000\nMhoroi mose, ndinofara kuva pano\n\n';
+    return CaptionExport.srt(segments);
   }
 
   @override
   Future<String> exportVTT(List<SubtitleSegment> segments) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    return 'WEBVTT\n\n00:00.000 --> 00:03.000\nMhoroi mose, ndinofara kuva pano\n\n';
+    return CaptionExport.vtt(segments);
   }
 }

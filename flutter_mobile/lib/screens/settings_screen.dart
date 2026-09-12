@@ -1,55 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../theme/app_colors.dart';
-import '../widgets/app_toast.dart';
-import '../widgets/sub_screen_header.dart';
-import '../widgets/donate_banner.dart';
+import '../core/constants/app_constants.dart';
+import '../core/user_preferences.dart';
 import '../providers/engagement_provider.dart';
+import '../providers/preferences_provider.dart';
+import '../providers/url_open_provider.dart';
+import '../theme/app_colors.dart';
+import '../widgets/donate_banner.dart';
+import '../widgets/ghost_pill_button.dart';
+import '../widgets/sub_screen_header.dart';
+import '../widgets/app_toast.dart';
 
-import 'package:go_router/go_router.dart';
-
-class SettingsScreen extends ConsumerStatefulWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
-  @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  String _selectedRamTier = 'Auto';
-
-  final List<String> _ramTiers = [
-    'Auto',
-    'High (6GB+)',
-    'Standard (4GB)',
-    'Low (<4GB)',
-  ];
-  final List<String> _frequencies = ['Every 8 hours', 'Daily', 'Never'];
+  static const _frequencies = ['Every 8 hours', 'Daily'];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(preferencesProvider);
+    final engagement = ref.watch(engagementProvider);
+    final packageInfo = ref.watch(appPackageInfoProvider);
+
     return Scaffold(
       appBar: const SubScreenHeader(title: 'Settings'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildSectionHeader('General'),
-            _buildCard(
+            _sectionHeader(context, 'General'),
+            _card(
               child: Column(
                 children: [
-                  _buildListTile(
+                  _tile(
+                    context,
                     title: 'Donate Reminders',
                     subtitle:
                         'Help donate to the project by keeping reminders on',
                     icon: Symbols.favorite,
-                    trailing: _buildCustomSwitch(
-                      value: ref
-                          .watch(engagementProvider)
-                          .donateRemindersEnabled,
+                    trailing: _switch(
+                      value: engagement.donateRemindersEnabled,
                       onChanged: (value) {
                         ref
                             .read(engagementProvider.notifier)
@@ -57,122 +51,163 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       },
                     ),
                   ),
-                  if (ref.watch(engagementProvider).donateRemindersEnabled)
+                  if (engagement.donateRemindersEnabled) ...[
                     const Divider(color: AppColors.surfaceContainerHigh),
-                  if (ref.watch(engagementProvider).donateRemindersEnabled)
-                    _buildListTile(
+                    _tile(
+                      context,
                       title: 'Frequency',
                       icon: Symbols.schedule,
-                      trailing: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: ref
-                              .watch(engagementProvider)
-                              .reminderFrequency,
-                          dropdownColor: AppColors.surfaceContainerHigh,
-                          items: _frequencies.where((f) => f != 'Never').map((
-                            String value,
-                          ) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              ref
-                                  .read(engagementProvider.notifier)
-                                  .setReminderFrequency(newValue);
-                            }
-                          },
-                        ),
+                      trailing: _dropdown<String>(
+                        context,
+                        value: engagement.reminderFrequency == 'Never'
+                            ? 'Every 8 hours'
+                            : engagement.reminderFrequency,
+                        items: _frequencies,
+                        onChanged: (value) {
+                          if (value != null) {
+                            ref
+                                .read(engagementProvider.notifier)
+                                .setReminderFrequency(value);
+                          }
+                        },
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionHeader('Playback & Export'),
-            _buildCard(
+            _sectionHeader(context, 'Playback & Export'),
+            _card(
               child: Column(
                 children: [
-                  _buildListTile(
+                  _tile(
+                    context,
                     title: 'Auto-Play Previews',
-                    subtitle: 'Play videos automatically in the video player',
+                    subtitle: 'Start playback when a video opens',
                     icon: Symbols.play_circle,
-                    trailing: _buildCustomSwitch(
-                      value: true,
-                      onChanged: (val) {},
+                    trailing: _switch(
+                      key: const ValueKey('settings-autoplay'),
+                      value: prefs.autoPlay,
+                      onChanged: (value) {
+                        ref.read(preferencesProvider.notifier).setAutoPlay(value);
+                      },
                     ),
                   ),
                   const Divider(color: AppColors.surfaceContainerHigh),
-                  _buildListTile(
-                    title: 'Default Export Quality',
-                    icon: Symbols.hd,
-                    trailing: Text(
-                      '1080p',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.primary),
+                  _tile(
+                    context,
+                    title: 'Default speed',
+                    icon: Symbols.speed,
+                    trailing: _dropdown<double>(
+                      context,
+                      value: prefs.playbackSpeed,
+                      items: UserPreferences.playbackSpeeds,
+                      label: (speed) => '${speed}x',
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref
+                              .read(preferencesProvider.notifier)
+                              .setPlaybackSpeed(value);
+                        }
+                      },
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionHeader('System'),
-            _buildCard(
-              child: Column(
-                children: [
-                  _buildListTile(
-                    title: 'RAM Allocation Tier',
-                    subtitle: 'Controls how much memory the AI models can use',
-                    icon: Symbols.memory,
-                    trailing: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedRamTier,
-                        dropdownColor: AppColors.surfaceContainerHigh,
-                        items: _ramTiers.map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(
-                              value,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _selectedRamTier = newValue;
-                            });
-                          }
+                  const Divider(color: AppColors.surfaceContainerHigh),
+                  _tile(
+                    context,
+                    title: 'Default volume',
+                    subtitle: '${(prefs.volume * 100).round()}%',
+                    icon: Symbols.volume_up,
+                    trailing: SizedBox(
+                      width: 140,
+                      child: Slider(
+                        key: const ValueKey('settings-volume'),
+                        value: prefs.volume,
+                        onChanged: (value) {
+                          ref.read(preferencesProvider.notifier).setVolume(value);
                         },
                       ),
                     ),
                   ),
                   const Divider(color: AppColors.surfaceContainerHigh),
-                  _buildListTile(
+                  _tile(
+                    context,
+                    title: 'Default caption format',
+                    icon: Symbols.subtitles,
+                    trailing: _dropdown<String>(
+                      context,
+                      value: prefs.exportFormat,
+                      items: UserPreferences.exportFormats,
+                      label: (value) => value.toUpperCase(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref
+                              .read(preferencesProvider.notifier)
+                              .setExportFormat(value);
+                        }
+                      },
+                    ),
+                  ),
+                  const Divider(color: AppColors.surfaceContainerHigh),
+                  _tile(
+                    context,
+                    title: 'Default Export Quality',
+                    icon: Symbols.hd,
+                    trailing: _dropdown<String>(
+                      context,
+                      value: prefs.exportQuality,
+                      items: UserPreferences.exportQualities,
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref
+                              .read(preferencesProvider.notifier)
+                              .setExportQuality(value);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            _sectionHeader(context, 'System'),
+            _card(
+              child: Column(
+                children: [
+                  _tile(
+                    context,
+                    title: 'RAM Allocation Tier',
+                    subtitle:
+                        'Saved locally. Memory probes are not wired yet.',
+                    icon: Symbols.memory,
+                    trailing: _dropdown<String>(
+                      context,
+                      value: prefs.ramTier,
+                      items: UserPreferences.ramTiers,
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(preferencesProvider.notifier).setRamTier(value);
+                        }
+                      },
+                    ),
+                  ),
+                  const Divider(color: AppColors.surfaceContainerHigh),
+                  _tile(
+                    context,
                     title: 'Model Cache',
-                    subtitle: '1.2 GB used by downloaded language packs',
+                    subtitle: 'Clearing downloaded packs is not implemented yet.',
                     icon: Symbols.storage,
                     trailing: OutlinedButton(
-                      onPressed: () {
-                        AppToast.show(
-                          context,
-                          message: 'Cache clearing is not available yet',
-                          variant: AppToastVariant.warning,
-                        );
-                      },
+                      onPressed: null,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.onSurface,
+                        foregroundColor: AppColors.onSurfaceVariant,
                         side: const BorderSide(
                           color: AppColors.surfaceContainerHigh,
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 4.0,
+                          horizontal: 16,
+                          vertical: 4,
                         ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -184,44 +219,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildSectionHeader('About'),
-            _buildCard(
+            _sectionHeader(context, 'About'),
+            _card(
               child: Column(
                 children: [
-                  _buildListTile(
+                  _tile(
+                    context,
                     title: 'App Version',
-                    subtitle: '1.0.0 (Build 42)',
+                    subtitle: packageInfo.label,
                     icon: Symbols.info,
                   ),
                   const Divider(color: AppColors.surfaceContainerHigh),
-                  _buildListTile(
+                  _tile(
+                    context,
+                    key: const ValueKey('settings-license'),
                     title: 'Open Source License',
                     subtitle: 'AGPL-3.0',
                     icon: Symbols.gavel,
-                    onTap: () {},
+                    onTap: () async {
+                      final uri = Uri.parse(AppConstants.licenseUrl);
+                      final opened = await ref.read(urlOpenHandlerProvider)(uri);
+                      if (!opened && context.mounted) {
+                        AppToast.show(
+                          context,
+                          message: 'Could not open the license page',
+                          variant: AppToastVariant.warning,
+                        );
+                      }
+                    },
                   ),
                   const Divider(color: AppColors.surfaceContainerHigh),
-                  _buildListTile(
+                  _tile(
+                    context,
                     title: 'Rate on Play Store',
+                    subtitle: 'Not listed yet',
                     icon: Symbols.star,
-                    onTap: () {},
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            GhostPillButton(
+              key: const ValueKey('settings-reset'),
+              label: 'Reset playback defaults',
+              onTap: () async {
+                await ref.read(preferencesProvider.notifier).resetToDefaults();
+                if (context.mounted) {
+                  AppToast.show(
+                    context,
+                    message: 'Playback and export defaults restored',
+                    variant: AppToastVariant.info,
+                  );
+                }
+              },
+              isFullWidth: true,
+            ),
             const SizedBox(height: 32),
             DonateBanner(onTap: () => context.push('/donate')),
-            const SizedBox(height: 32),
-            const SizedBox(height: 32),
+            const SizedBox(height: 64),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _sectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -233,13 +297,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildCard({required Widget child}) {
+  Widget _card({required Widget child}) {
     return Material(
       color: AppColors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(16.0),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.0),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.surfaceContainerHigh),
         ),
         child: child,
@@ -247,7 +311,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildListTile({
+  Widget _tile(
+    BuildContext context, {
+    Key? key,
     required String title,
     String? subtitle,
     required IconData icon,
@@ -255,6 +321,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     VoidCallback? onTap,
   }) {
     return ListTile(
+      key: key,
       leading: Icon(icon, color: AppColors.onSurfaceVariant),
       title: Text(
         title,
@@ -270,18 +337,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           : null,
       trailing: trailing,
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16.0,
-        vertical: 4.0,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 
-  Widget _buildCustomSwitch({
+  Widget _switch({
+    Key? key,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
     return GestureDetector(
+      key: key,
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -304,6 +370,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _dropdown<T>(
+    BuildContext context, {
+    required T value,
+    required List<T> items,
+    required ValueChanged<T?> onChanged,
+    String Function(T value)? label,
+  }) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<T>(
+        value: value,
+        dropdownColor: AppColors.surfaceContainerHigh,
+        items: [
+          for (final item in items)
+            DropdownMenuItem<T>(
+              value: item,
+              child: Text(
+                label?.call(item) ?? item.toString(),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+        ],
+        onChanged: onChanged,
       ),
     );
   }

@@ -10,11 +10,7 @@ final activeSubtitleProvider = Provider<SubtitleSegment?>((ref) {
   final playerState = ref.watch(playerProvider);
   final segments = ref.watch(subtitleProvider);
 
-  if (playerState.controller == null || !playerState.isInitialized) {
-    return null;
-  }
-
-  final position = playerState.controller!.value.position;
+  final position = playerState.position;
 
   try {
     // Find the segment that spans the current video position

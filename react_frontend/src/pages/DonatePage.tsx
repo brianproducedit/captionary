@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MaterialIcon } from '../components/MaterialIcon';
 import { DonationAmountSelector } from '../components/DonationAmountSelector';
@@ -6,21 +6,36 @@ import { PaymentMethodSelector } from '../components/PaymentMethodSelector';
 import { PRESET_TIERS, PAYMENT_METHODS } from '../types/donation';
 import type { PaymentMethodId } from '../types/donation';
 import { publicConfig } from '../config/public';
+import {
+  checkoutUrlFor,
+  copyText,
+  donationInstructions,
+  isMethodEnabled,
+} from '../lib/donate';
 
 export const DonatePage: React.FC = () => {
   const navigate = useNavigate();
 
-  // Selected state
   const [selectedTier, setSelectedTier] = useState<string>('language');
   const [selectedAmount, setSelectedAmount] = useState<number>(10);
   const [customAmount, setCustomAmount] = useState<number>(25);
   const [giftMessage, setGiftMessage] = useState<string>('');
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>('ecocash');
-  const [ecoCashPhone, setEcoCashPhone] = useState<string>('');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>('kofi');
+  const [online, setOnline] = useState(
+    () => (typeof navigator === 'undefined' ? true : navigator.onLine),
+  );
+  const [copied, setCopied] = useState(false);
 
-  // Processing mock state
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [processingStatus, setProcessingStatus] = useState<string>('Connecting to secure gateway...');
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
   const handleSelectTier = (tierId: string, amount: number) => {
     setSelectedTier(tierId);
@@ -42,40 +57,48 @@ export const DonatePage: React.FC = () => {
 
   const getMethodDisplayName = (): string => {
     const found = PAYMENT_METHODS.find((m) => m.id === selectedMethod);
-    return found ? found.name : 'EcoCash USSD Push';
+    return found ? found.name : 'Ko-fi';
   };
 
-  const handleConfirmPayment = () => {
-    setIsProcessing(true);
-    setProcessingStatus('Initiating secure gateway connection...');
+  const methodEnabled = isMethodEnabled(selectedMethod);
+  const checkoutUrl = checkoutUrlFor(selectedMethod);
+  const canContinue =
+    online && methodEnabled && (Boolean(checkoutUrl) || selectedMethod === 'crypto');
 
-    setTimeout(() => {
-      setProcessingStatus(`Connecting to ${getMethodDisplayName()} rails...`);
-    }, 600);
+  const handleCopyInstructions = async () => {
+    const ok = await copyText(donationInstructions(selectedAmount, selectedMethod));
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2400);
+    }
+  };
 
-    setTimeout(() => {
-      setProcessingStatus('Verifying transaction token & escrow node...');
-    }, 1200);
+  const goPending = () => {
+    navigate('/payment-confirmation', {
+      state: {
+        amount: selectedAmount,
+        tierName: getTierDisplayName(),
+        paymentMethod: selectedMethod,
+        paymentMethodTitle: getMethodDisplayName(),
+        message: giftMessage,
+        pendingExternal: true,
+        instructions: donationInstructions(selectedAmount, selectedMethod),
+      },
+    });
+  };
 
-    setTimeout(() => {
-      setProcessingStatus('Payment authorized! Generating receipt...');
-    }, 1700);
-
-    setTimeout(() => {
-      setIsProcessing(false);
-      const generatedRef = `#CAP-${Math.floor(10000 + Math.random() * 90000)}-ZW`;
-      navigate('/payment-confirmation', {
-        state: {
-          amount: selectedAmount,
-          tierName: getTierDisplayName(),
-          paymentMethod: selectedMethod,
-          paymentMethodTitle: getMethodDisplayName(),
-          referenceId: generatedRef,
-          message: giftMessage,
-          phone: ecoCashPhone
-        }
-      });
-    }, 2200);
+  const handleOpenCheckout = async () => {
+    if (!canContinue) return;
+    if (selectedMethod === 'crypto') {
+      if (publicConfig.cryptoAddress) {
+        await copyText(publicConfig.cryptoAddress);
+      }
+      goPending();
+      return;
+    }
+    if (!checkoutUrl) return;
+    window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+    goPending();
   };
 
   return (
@@ -84,73 +107,6 @@ export const DonatePage: React.FC = () => {
       data-donate-url={publicConfig.donateWebUrl}
       style={{ paddingLeft: 'var(--spacing-margin-mobile)', paddingRight: 'var(--spacing-margin-mobile)' }}
     >
-      {/* Mock Payment Processing Overlay Modal */}
-      {isProcessing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300">
-          <div
-            className="w-full max-w-md p-8 rounded-2xl shadow-2xl border flex flex-col items-center text-center animate-in fade-in zoom-in duration-300"
-            style={{
-              backgroundColor: 'var(--color-surface-container-low)',
-              borderColor: 'var(--color-primary-container)'
-            }}
-          >
-            <div className="relative mb-6">
-              <div
-                className="w-20 h-20 rounded-full border-4 border-t-transparent animate-spin"
-                style={{
-                  borderColor: 'var(--color-primary-container)',
-                  borderTopColor: 'transparent'
-                }}
-              ></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <MaterialIcon icon="lock" className="text-2xl" style={{ color: 'var(--color-primary)' }} />
-              </div>
-            </div>
-
-            <h3
-              className="text-xl font-bold mb-2 tracking-tight"
-              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-on-surface)' }}
-            >
-              Processing Contribution
-            </h3>
-
-            <p
-              className="text-sm font-medium mb-4 animate-pulse"
-              style={{ fontFamily: 'var(--font-body)', color: 'var(--color-primary)' }}
-            >
-              {processingStatus}
-            </p>
-
-            <div
-              className="w-full p-4 rounded-xl flex items-center justify-between"
-              style={{ backgroundColor: 'var(--color-surface-container-high)' }}
-            >
-              <div className="flex flex-col text-left">
-                <span className="text-xs uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  Total Fuel
-                </span>
-                <span className="font-bold text-lg" style={{ color: 'var(--color-on-surface)' }}>
-                  ${selectedAmount}.00 USD
-                </span>
-              </div>
-              <div className="flex flex-col text-right">
-                <span className="text-xs uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  Channel
-                </span>
-                <span className="font-medium text-xs truncate max-w-[140px]" style={{ color: 'var(--color-tertiary)' }}>
-                  {getMethodDisplayName()}
-                </span>
-              </div>
-            </div>
-
-            <span className="text-xs mt-4 flex items-center gap-1" style={{ color: 'var(--color-on-surface-variant)' }}>
-              <MaterialIcon icon="verified_user" className="text-sm" style={{ color: 'var(--color-tertiary)' }} />
-              End-to-end 256-bit encrypted telemetry
-            </span>
-          </div>
-        </div>
-      )}
-
       <div className="flex flex-col w-full">
         <div className="relative w-full overflow-hidden pb-[var(--spacing-space-3xl)]">
           <div
@@ -259,10 +215,7 @@ export const DonatePage: React.FC = () => {
                 </span>
               </div>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-label-md)', color: 'var(--color-on-surface)' }}>
-                <strong className="font-semibold" style={{ color: 'var(--color-primary)' }}>
-                  1,420+
-                </strong>{' '}
-                creators & researchers keeping regional speech free
+                Independent creators & researchers keeping regional speech free
               </span>
               <MaterialIcon icon="verified" className="text-[18px]" style={{ color: 'var(--color-tertiary)' }} />
             </div>
@@ -295,7 +248,7 @@ export const DonatePage: React.FC = () => {
                 }}
               >
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--color-tertiary)' }}></span>
-                Tax-deductible open science allocation
+                Static page • payments happen off-site
               </div>
             </div>
 
@@ -329,15 +282,13 @@ export const DonatePage: React.FC = () => {
                 className="mt-[var(--spacing-space-xxs)]"
                 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-md)', color: 'var(--color-on-surface-variant)' }}
               >
-                Choose your preferred payment rails. Direct decentralized routing with zero platform cuts.
+                Public checkout links only. Empty rails stay disabled until a URL or address is published.
               </p>
             </div>
 
             <PaymentMethodSelector
               selectedMethod={selectedMethod}
               onSelectMethod={setSelectedMethod}
-              ecoCashPhone={ecoCashPhone}
-              onEcoCashPhoneChange={setEcoCashPhone}
             />
           </section>
 
@@ -357,16 +308,27 @@ export const DonatePage: React.FC = () => {
 
               {/* Left Side: Summary info */}
               <div className="flex flex-col gap-2 relative z-10 w-full lg:w-auto">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span
                     className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
                     style={{ backgroundColor: 'var(--color-primary-container)', color: 'var(--color-on-primary)' }}
                   >
-                    Ready for Checkout
+                    External checkout
                   </span>
-                  <span className="text-xs font-mono" style={{ color: 'var(--color-tertiary)' }}>
-                    SSL 256-bit Secure
-                  </span>
+                  {!online && (
+                    <span
+                      data-testid="offline-banner"
+                      className="text-xs font-medium"
+                      style={{ color: 'var(--color-attention-yellow)' }}
+                    >
+                      You appear offline. Copy instructions and open checkout when you have a connection.
+                    </span>
+                  )}
+                  {online && !methodEnabled && (
+                    <span className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>
+                      No public checkout link is configured for this rail yet.
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-baseline gap-3">
@@ -385,22 +347,38 @@ export const DonatePage: React.FC = () => {
               </div>
 
               {/* Right Side: Big CTA Button */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full lg:w-auto">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10 w-full lg:w-auto min-w-0">
+                <button
+                  type="button"
+                  id="copy-instructions-btn"
+                  onClick={handleCopyInstructions}
+                  className="w-full sm:w-auto px-6 py-3 rounded-full font-semibold flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  style={{
+                    backgroundColor: 'var(--color-surface-container-high)',
+                    color: 'var(--color-on-surface)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-label-lg)',
+                  }}
+                >
+                  <MaterialIcon icon={copied ? 'check' : 'content_copy'} className="text-[18px]" />
+                  <span>{copied ? 'Copied' : 'Copy instructions'}</span>
+                </button>
                 <button
                   type="button"
                   id="confirm-donation-btn"
-                  onClick={handleConfirmPayment}
-                  disabled={isProcessing}
-                  className="w-full sm:w-auto px-8 py-4 rounded-full font-bold shadow-[0_4px_24px_rgba(33,150,243,0.4)] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer hover:scale-[1.02] active:scale-[0.98] hover:shadow-[0_6px_30px_rgba(33,150,243,0.6)]"
+                  onClick={handleOpenCheckout}
+                  disabled={!canContinue}
+                  className="w-full sm:w-auto px-8 py-4 rounded-full font-bold shadow-[0_4px_24px_rgba(33,150,243,0.4)] transition-all duration-200 flex items-center justify-center gap-3 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{
                     backgroundImage: 'linear-gradient(to right, var(--color-primary-container), var(--color-secondary))',
                     color: 'var(--color-on-primary)',
                     fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-headline-sm)'
+                    fontSize: 'var(--text-headline-sm)',
+                    cursor: canContinue ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  <MaterialIcon icon="verified_user" className="text-[22px]" />
-                  <span>Confirm Donation • ${selectedAmount}.00</span>
+                  <MaterialIcon icon="open_in_new" className="text-[22px]" />
+                  <span>Open external checkout • ${selectedAmount}.00</span>
                 </button>
               </div>
             </div>

@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:captionary/data/mock/mock_export_service.dart';
 import 'package:captionary/data/models/caption_style.dart';
 import 'package:captionary/data/models/export_job.dart';
-import 'package:flutter/material.dart';
+import 'package:captionary/data/models/subtitle_segment.dart';
 
 void main() {
   group('MockExportService Tests', () {
@@ -36,7 +37,15 @@ void main() {
     });
 
     test('exportSRT generates SRT string', () async {
-      final res = await service.exportSRT([]);
+      final res = await service.exportSRT([
+        SubtitleSegment(
+          index: 1,
+          startTime: Duration.zero,
+          endTime: const Duration(seconds: 3),
+          text: 'Mhoroi mose, ndinofara kuva pano',
+          isSelected: false,
+        ),
+      ]);
       expect(res.contains('1'), true);
       expect(res.contains('00:00:00,000'), true);
     });

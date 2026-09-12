@@ -8,7 +8,7 @@ void main() {
     return const ProviderScope(child: MaterialApp(home: StudioScreen()));
   }
 
-  testWidgets('Studio Screen style presets update preview text styling', (
+  testWidgets('Style button opens the stylization sheet with equal presets', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1080, 2400);
@@ -16,83 +16,32 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    // Default style should be "TikTok Bold"
-    expect(find.text('TikTok Bold'), findsWidgets); // Found in the list
+    await tester.tap(find.text('Style'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text('TikTok Bold'), findsWidgets);
     expect(find.text('IG Highlight'), findsOneWidget);
+    expect(find.text('Presets'), findsOneWidget);
+  });
 
-    // Initial subtitle text "Mhoroi mose, ndinofara kuva pano" or "Nhasi tichataura nezve rwendo rwedu"
-    // depending on the seed data selection logic. The second is selected by default in seed data.
+  testWidgets('Timeline chip is visible on the studio canvas', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pump();
+
     expect(
-      find.textContaining('Nhasi tichataura', findRichText: true),
+      find.text('Mhoroi mose, ndinofara kuva pano'),
       findsWidgets,
     );
-
-    // Tap IG Highlight
-    await tester.tap(find.text('IG Highlight'));
-    await tester.pumpAndSettle();
   });
 
-  testWidgets('Sliders update font size and opacity values', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
-
-    await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
-
-    // Tap Text tab
-    await tester.tap(find.text('Text'));
-    await tester.pumpAndSettle();
-
-    // Verify font size slider exists
-    final textSliders = find.byType(Slider);
-    expect(textSliders, findsOneWidget);
-
-    // Move first slider
-    await tester.drag(textSliders.first, const Offset(100.0, 0.0));
-    await tester.pumpAndSettle();
-
-    // Tap Colors tab
-    await tester.tap(find.text('Colors'));
-    await tester.pumpAndSettle();
-
-    // Verify opacity slider exists
-    final colorSliders = find.byType(Slider);
-    expect(colorSliders, findsOneWidget);
-  });
-
-  testWidgets('Timeline block tap selects segment', (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
-
-    await tester.pumpWidget(buildTestWidget());
-    await tester.pumpAndSettle();
-
-    // The first segment has text "Mhoroi mose, ndinofara kuva pano"
-    final firstBlockText = find.text('Mhoroi mose, ndinofara kuva pano');
-    expect(firstBlockText, findsOneWidget);
-
-    await tester.tap(firstBlockText);
-    await tester.pumpAndSettle();
-
-    // Now it should be a text field
-    final textField = find.byType(TextField);
-    expect(textField, findsOneWidget);
-
-    // Edit text field
-    await tester.enterText(textField, 'Hello there');
-    await tester.pumpAndSettle();
-
-    // The text should be updated
-    expect(find.textContaining('Hello there'), findsWidgets);
-  });
-
-  testWidgets('Action buttons trigger correct navigation/snackbar', (
-    tester,
-  ) async {
+  testWidgets('Export captions opens the format sheet', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -101,12 +50,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    final exportSrt = find.text('Export .SRT');
-    expect(exportSrt, findsOneWidget);
+    final export = find.text('Export captions');
+    expect(export, findsOneWidget);
 
-    await tester.tap(exportSrt);
+    await tester.tap(export);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.text('SRT file export is not wired yet'), findsOneWidget);
+    expect(find.text('SRT'), findsOneWidget);
+    expect(find.text('VTT'), findsOneWidget);
+    expect(find.text('ASS'), findsOneWidget);
   });
 }

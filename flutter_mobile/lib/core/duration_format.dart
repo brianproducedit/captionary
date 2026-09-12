@@ -7,3 +7,9 @@ String formatPlayerTime(Duration duration) {
   final text = hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
   return negative ? '-$text' : text;
 }
+
+String formatClockHms(Duration duration) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  final value = duration.abs();
+  return '${two(value.inHours)}:${two(value.inMinutes.remainder(60))}:${two(value.inSeconds.remainder(60))}';
+}

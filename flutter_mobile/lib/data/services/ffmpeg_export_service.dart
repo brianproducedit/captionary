@@ -7,6 +7,7 @@ import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new_min_gpl/statistics.dart';
 
+import '../../core/caption_export.dart';
 import '../models/subtitle_segment.dart';
 import '../models/caption_style.dart';
 import '../models/export_job.dart';
@@ -15,52 +16,12 @@ import 'export_service.dart';
 class FfmpegExportService implements ExportService {
   @override
   Future<String> exportSRT(List<SubtitleSegment> segments) async {
-    final StringBuffer sb = StringBuffer();
-    for (int i = 0; i < segments.length; i++) {
-      final seg = segments[i];
-      sb.writeln('${i + 1}');
-      sb.writeln(
-        '${_formatSRTTime(seg.startTime)} --> ${_formatSRTTime(seg.endTime)}',
-      );
-      sb.writeln(seg.text);
-      sb.writeln();
-    }
-    return sb.toString();
+    return CaptionExport.srt(segments);
   }
 
   @override
   Future<String> exportVTT(List<SubtitleSegment> segments) async {
-    final StringBuffer sb = StringBuffer();
-    sb.writeln('WEBVTT\n');
-    for (int i = 0; i < segments.length; i++) {
-      final seg = segments[i];
-      sb.writeln(
-        '${_formatVTTTime(seg.startTime)} --> ${_formatVTTTime(seg.endTime)}',
-      );
-      sb.writeln(seg.text);
-      sb.writeln();
-    }
-    return sb.toString();
-  }
-
-  String _formatSRTTime(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String threeDigits(int n) => n.toString().padLeft(3, '0');
-    String hours = twoDigits(duration.inHours);
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    String milliseconds = threeDigits(duration.inMilliseconds.remainder(1000));
-    return '$hours:$minutes:$seconds,$milliseconds';
-  }
-
-  String _formatVTTTime(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String threeDigits(int n) => n.toString().padLeft(3, '0');
-    String hours = twoDigits(duration.inHours);
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    String milliseconds = threeDigits(duration.inMilliseconds.remainder(1000));
-    return '$hours:$minutes:$seconds.$milliseconds';
+    return CaptionExport.vtt(segments);
   }
 
   @override

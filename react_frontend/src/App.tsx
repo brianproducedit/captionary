@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { AboutProject } from './pages/AboutProject';
 import { DonatePage } from './pages/DonatePage';
@@ -12,7 +12,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<DonatePage />} />
           <Route path="donate" element={<DonatePage />} />
-          <Route path="support" element={<DonatePage />} />
+          <Route path="support" element={<Navigate to="/donate" replace />} />
           <Route path="about" element={<AboutProject />} />
           <Route path="payment-confirmation" element={<PaymentConfirmation />} />
         </Route>

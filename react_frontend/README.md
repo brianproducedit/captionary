@@ -30,3 +30,19 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Captionary donate portal
+
+This app is a **static** Vite SPA. It does not call a payment API. Put public Ko-fi / Buy Me a Coffee / Paynow-hosted URLs and crypto addresses in `src/config/public.ts`. Empty values keep those rails disabled.
+
+### SPA fallback (hosting)
+
+Client routes (`/donate`, `/about`, `/payment-confirmation`, `/support` → `/donate`) need the host to serve `index.html` for unknown paths. Do not add SSR.
+
+- **Netlify / Cloudflare Pages:** `public/_redirects` already contains `/* /index.html 200`.
+- **GitHub Pages:** use a `404.html` copy of `index.html`, or a `hash` router (not used here).
+- **nginx:** `try_files $uri $uri/ /index.html;`
+- **Apache:** fallback to `index.html` for non-file paths.
+
+See [Vite static deploy](https://vite.dev/guide/static-deploy.html) and [React Router static hosting](https://reactrouter.com/start/library/routing).
+

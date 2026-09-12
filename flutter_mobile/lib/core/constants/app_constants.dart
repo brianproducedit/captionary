@@ -5,6 +5,7 @@ class AppConstants {
   /// Canonical donate portal URL. Keep in sync with
   /// `react_frontend/src/config/public.ts` (`publicConfig.donateWebUrl`).
   static const String donateWebUrl = 'https://captionary.co.zw/donate';
+  static const String licenseUrl = 'https://www.gnu.org/licenses/agpl-3.0.html';
   static const int maxModelSizeBytes = 1024 * 1024 * 1024; // 1GB
   static const int audioSampleDurationSec = 30;
   static const double storageCapacityGB = 10.0;

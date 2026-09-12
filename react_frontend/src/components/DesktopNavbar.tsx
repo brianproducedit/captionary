@@ -44,9 +44,8 @@ export const DesktopNavbar: React.FC = () => {
               src={captionaryLogo}
             />
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center" style={{ gap: 'var(--spacing-space-xs)' }}>
-              <span
+            <div className="flex flex-col min-w-0">
+            <span
                 className="tracking-tight font-semibold"
                 style={{
                   fontFamily: 'var(--font-display)',
@@ -57,20 +56,6 @@ export const DesktopNavbar: React.FC = () => {
               >
                 Captionary
               </span>
-              <span
-                className="rounded-full uppercase tracking-wider"
-                style={{
-                  padding: 'var(--spacing-space-xxs) var(--spacing-space-xs)',
-                  backgroundColor: 'var(--color-surface-container-highest)',
-                  color: 'var(--color-primary)',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-caption-code)',
-                  lineHeight: 'var(--text-caption-code--line-height)',
-                }}
-              >
-                V2.4 CORE
-              </span>
-            </div>
             <span
               className="hidden sm:inline-block"
               style={{
@@ -87,7 +72,7 @@ export const DesktopNavbar: React.FC = () => {
 
         {/* Nav Pills */}
         <nav
-          className="hidden lg:flex items-center rounded-full border"
+          className="flex items-center rounded-full border overflow-x-auto max-w-[min(100%,16rem)] sm:max-w-none shrink min-w-0"
           style={{
             padding: 'var(--spacing-space-xxs)',
             gap: 'var(--spacing-space-xs)',
@@ -123,8 +108,8 @@ export const DesktopNavbar: React.FC = () => {
         {/* Right Actions */}
         <div className="flex items-center" style={{ gap: 'var(--spacing-space-sm)' }}>
           <NavLink
-            to="/"
-            className="rounded-full bg-gradient-to-r transition-all"
+            to="/donate"
+            className="rounded-full bg-gradient-to-r transition-all shrink-0 whitespace-nowrap"
             style={{
               padding: 'var(--spacing-space-xs) var(--spacing-space-lg)',
               backgroundImage: 'linear-gradient(to right, var(--color-primary-container), var(--color-secondary-container))',

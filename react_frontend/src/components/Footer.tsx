@@ -43,9 +43,8 @@ export const Footer: React.FC = () => {
             borderColor: 'rgba(64, 71, 82, 0.3)',
           }}
         >
-          <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-tertiary)' }} />
           <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-on-surface-variant)' }}>
-            Edge Inference: <strong style={{ color: 'var(--color-tertiary)', fontWeight: 500 }}>Operational</strong>
+            Offline-first Android app · static donate page
           </span>
         </div>
 

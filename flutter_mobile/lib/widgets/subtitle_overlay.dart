@@ -62,8 +62,65 @@ class SubtitleOverlay extends StatelessWidget {
     );
   }
 
+  TextStyle _baseStyle(BuildContext context, {Color? color, Paint? foreground}) {
+    return Theme.of(context).textTheme.bodyMedium!.copyWith(
+      fontFamily: CaptionStyle.fontFamily,
+      fontSize: style.fontSize,
+      height: style.lineHeight,
+      fontWeight: FontWeight.bold,
+      color: foreground == null ? color : null,
+      foreground: foreground,
+      shadows: style.shadowBlur > 0
+          ? [
+              Shadow(
+                color: style.shadowColor.withValues(alpha: 0.85),
+                blurRadius: style.shadowBlur,
+              ),
+            ]
+          : null,
+    );
+  }
+
   Widget _buildOverlay(BuildContext context) {
     final words = segment!.text.split(' ');
+
+    List<InlineSpan> spans({Paint? foreground}) {
+      return words.asMap().entries.map((entry) {
+        final isActive = entry.key == activeWordIndex;
+        final isLastWord = entry.key == words.length - 1;
+        return TextSpan(
+          text: isLastWord ? entry.value : '${entry.value} ',
+          style: _baseStyle(
+            context,
+            color: isActive ? style.accentColor : AppColors.allWhite,
+            foreground: foreground,
+          ),
+        );
+      }).toList();
+    }
+
+    final fill = RichText(
+      textAlign: style.textAlign.asTextAlign,
+      text: TextSpan(children: spans()),
+    );
+
+    Widget body = fill;
+    if (style.outlineWidth > 0) {
+      final strokePaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = style.outlineWidth
+        ..color = style.outlineColor;
+      body = Stack(
+        alignment: Alignment.center,
+        children: [
+          RichText(
+            textAlign: style.textAlign.asTextAlign,
+            text: TextSpan(children: spans(foreground: strokePaint)),
+          ),
+          fill,
+        ],
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -71,26 +128,7 @@ class SubtitleOverlay extends StatelessWidget {
         color: AppColors.baseCanvas.withValues(alpha: style.boxOpacity),
         borderRadius: BorderRadius.circular(8.0),
       ),
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontSize: style.fontSize,
-            fontWeight: FontWeight.bold,
-            shadows: [const Shadow(color: AppColors.baseCanvas, blurRadius: 4)],
-          ),
-          children: words.asMap().entries.map((entry) {
-            final isActive = entry.key == activeWordIndex;
-            final isLastWord = entry.key == words.length - 1;
-            return TextSpan(
-              text: isLastWord ? entry.value : '${entry.value} ',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isActive ? style.accentColor : AppColors.allWhite,
-              ),
-            );
-          }).toList(),
-        ),
-      ),
+      child: body,
     );
   }
 }

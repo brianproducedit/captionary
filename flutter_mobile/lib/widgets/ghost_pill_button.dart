@@ -5,13 +5,13 @@ import '../theme/app_colors.dart';
 class GhostPillButton extends StatelessWidget {
   final String label;
   final IconData? icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isFullWidth;
 
   const GhostPillButton({
     super.key,
     required this.label,
-    required this.onTap,
+    this.onTap,
     this.icon,
     this.isFullWidth = false,
   });
@@ -23,29 +23,42 @@ class GhostPillButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[
-          Icon(icon, size: 20, color: AppColors.primary),
+          Icon(
+            icon,
+            size: 20,
+            color: onTap == null
+                ? AppColors.onSurfaceVariant
+                : AppColors.primary,
+          ),
           const SizedBox(width: 8),
         ],
         Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge
-              ?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: onTap == null
+                ? AppColors.onSurfaceVariant
+                : AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
 
-    Widget button = GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(9999),
-          border: Border.all(color: AppColors.outlineVariant, width: 1),
+    Widget button = Opacity(
+      opacity: onTap == null ? 0.5 : 1,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(9999),
+            border: Border.all(color: AppColors.outlineVariant, width: 1),
+          ),
+          alignment: Alignment.center,
+          child: content,
         ),
-        alignment: Alignment.center,
-        child: content,
       ),
     );
 

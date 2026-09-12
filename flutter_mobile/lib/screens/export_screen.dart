@@ -127,7 +127,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
             ),
             TextButton(
               onPressed: () {
-                // Mock abort
+                AppToast.show(
+                  context,
+                  message:
+                      'Export cancel is not connected to the encoder yet',
+                  variant: AppToastVariant.warning,
+                );
                 context.pop();
               },
               style: TextButton.styleFrom(
@@ -436,39 +441,53 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
           ),
         ),
         const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: GhostPillButton(
-                label: 'Preview',
-                icon: Symbols.play_arrow,
-                onTap: () {
-                  AppToast.show(
-                    context,
-                    message: 'Export preview is not wired yet',
-                    variant: AppToastVariant.warning,
-                  );
-                },
-                isFullWidth: true,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              // child: GradientPillButton(
-              child: GhostPillButton(
-                label: 'Share Video',
-                onTap: () {
-                  SharePlus.instance.share(
-                    ShareParams(
-                      files: [XFile(activeJob.outputFileName)],
-                      text: 'Check out my new video edited with Captionary!',
+        Builder(
+          builder: (context) {
+            final outputExists = File(activeJob.outputFileName).existsSync();
+            return Row(
+              children: [
+                if (outputExists) ...[
+                  Expanded(
+                    child: GhostPillButton(
+                      label: 'Preview',
+                      icon: Symbols.play_arrow,
+                      onTap: () {
+                        context.push(
+                          '/player',
+                          extra: activeJob.outputFileName,
+                        );
+                      },
+                      isFullWidth: true,
                     ),
-                  );
-                },
-                isFullWidth: true,
-              ),
-            ),
-          ],
+                  ),
+                  const SizedBox(width: 16),
+                ],
+                Expanded(
+                  child: GhostPillButton(
+                    label: 'Share Video',
+                    onTap: outputExists
+                        ? () {
+                            SharePlus.instance.share(
+                              ShareParams(
+                                files: [
+                                  XFile(
+                                    activeJob.outputFileName,
+                                    mimeType: 'video/mp4',
+                                    name: activeJob.outputFileName
+                                        .split(Platform.pathSeparator)
+                                        .last,
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        : null,
+                    isFullWidth: true,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 32),
         // Community support banner

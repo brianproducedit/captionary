@@ -7,7 +7,7 @@ import '../theme/app_shadows.dart';
 class GradientPillButton extends StatelessWidget {
   final String label;
   final IconData? icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isFullWidth;
   final LinearGradient gradient;
   final BoxShadow glowShadow;
@@ -15,7 +15,7 @@ class GradientPillButton extends StatelessWidget {
   const GradientPillButton({
     super.key,
     required this.label,
-    required this.onTap,
+    this.onTap,
     this.icon,
     this.isFullWidth = false,
     this.gradient = AppGradients.primaryGradient,
@@ -43,18 +43,21 @@ class GradientPillButton extends StatelessWidget {
       ],
     );
 
-    Widget button = GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(9999),
-          boxShadow: [glowShadow],
+    Widget button = Opacity(
+      opacity: onTap == null ? 0.45 : 1,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(9999),
+            boxShadow: [glowShadow],
+          ),
+          alignment: Alignment.center,
+          child: content,
         ),
-        alignment: Alignment.center,
-        child: content,
       ),
     );
 
