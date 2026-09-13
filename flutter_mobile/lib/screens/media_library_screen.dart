@@ -76,6 +76,16 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
           const AdBannerWidget(),
         ],
       ),
+      floatingActionButton: recentMediaAsync.maybeWhen(
+        data: (items) => items.isNotEmpty
+            ? FloatingActionButton(
+                onPressed: _importMedia,
+                backgroundColor: AppColors.onSecondaryFixed,
+                child: const Icon(Symbols.add, color: AppColors.allWhite),
+              )
+            : null,
+        orElse: () => null,
+      ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 0),
     );
   }
@@ -397,13 +407,6 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
               _buildMediaCard(context, item, isGrid: false),
               const SizedBox(height: 12),
             ],
-
-            //TODO: the add more media floating button needs review cause it not working
-            FloatingActionButton(
-              onPressed: _importMedia,
-              backgroundColor: AppColors.onSecondaryFixed,
-              child: const Icon(Symbols.add, color: AppColors.allWhite),
-            ),
           ],
         );
       },
@@ -480,7 +483,21 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12),
-                  StatusChip(label: statusLabel, variant: variant),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      StatusChip(label: statusLabel, variant: variant),
+                      if (item.status != MediaStatus.newItem)
+                        IconButton(
+                          icon: const Icon(Symbols.edit, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          color: AppColors.primary,
+                          onPressed: () =>
+                              context.push('/studio', extra: item.filePath),
+                        ),
+                    ],
+                  ),
                 ],
               )
             : Row(
@@ -507,7 +524,23 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
-                        StatusChip(label: statusLabel, variant: variant),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            StatusChip(label: statusLabel, variant: variant),
+                            if (item.status != MediaStatus.newItem)
+                              IconButton(
+                                icon: const Icon(Symbols.edit, size: 20),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                color: AppColors.primary,
+                                onPressed: () => context.push(
+                                  '/studio',
+                                  extra: item.filePath,
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

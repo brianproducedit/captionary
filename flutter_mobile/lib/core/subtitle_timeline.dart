@@ -104,11 +104,7 @@ class SubtitleTimeline {
     ordered[i] = seg.copyWith(endTime: at, text: parts.$1, isSelected: false);
     ordered.insert(
       i + 1,
-      seg.copyWith(
-        startTime: at,
-        text: parts.$2,
-        isSelected: true,
-      ),
+      seg.copyWith(startTime: at, text: parts.$2, isSelected: true),
     );
     return reindex(ordered);
   }

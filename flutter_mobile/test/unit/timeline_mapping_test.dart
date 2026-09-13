@@ -19,7 +19,10 @@ void main() {
       duration: Duration(seconds: 10),
       snapEnabled: true,
     );
-    expect(snapping.clampTime(const Duration(seconds: 99)), const Duration(seconds: 10));
+    expect(
+      snapping.clampTime(const Duration(seconds: 99)),
+      const Duration(seconds: 10),
+    );
     expect(
       snapping.snap(const Duration(milliseconds: 140)),
       const Duration(milliseconds: 100),

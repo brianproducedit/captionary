@@ -90,7 +90,9 @@ class SettingsScreen extends ConsumerWidget {
                       key: const ValueKey('settings-autoplay'),
                       value: prefs.autoPlay,
                       onChanged: (value) {
-                        ref.read(preferencesProvider.notifier).setAutoPlay(value);
+                        ref
+                            .read(preferencesProvider.notifier)
+                            .setAutoPlay(value);
                       },
                     ),
                   ),
@@ -125,7 +127,9 @@ class SettingsScreen extends ConsumerWidget {
                         key: const ValueKey('settings-volume'),
                         value: prefs.volume,
                         onChanged: (value) {
-                          ref.read(preferencesProvider.notifier).setVolume(value);
+                          ref
+                              .read(preferencesProvider.notifier)
+                              .setVolume(value);
                         },
                       ),
                     ),
@@ -178,8 +182,7 @@ class SettingsScreen extends ConsumerWidget {
                   _tile(
                     context,
                     title: 'RAM Allocation Tier',
-                    subtitle:
-                        'Saved locally. Memory probes are not wired yet.',
+                    subtitle: 'Saved locally. Memory probes are not wired yet.',
                     icon: Symbols.memory,
                     trailing: _dropdown<String>(
                       context,
@@ -187,7 +190,9 @@ class SettingsScreen extends ConsumerWidget {
                       items: UserPreferences.ramTiers,
                       onChanged: (value) {
                         if (value != null) {
-                          ref.read(preferencesProvider.notifier).setRamTier(value);
+                          ref
+                              .read(preferencesProvider.notifier)
+                              .setRamTier(value);
                         }
                       },
                     ),
@@ -196,7 +201,8 @@ class SettingsScreen extends ConsumerWidget {
                   _tile(
                     context,
                     title: 'Model Cache',
-                    subtitle: 'Clearing downloaded packs is not implemented yet.',
+                    subtitle:
+                        'Clearing downloaded packs is not implemented yet.',
                     icon: Symbols.storage,
                     trailing: OutlinedButton(
                       onPressed: null,
@@ -238,7 +244,9 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Symbols.gavel,
                     onTap: () async {
                       final uri = Uri.parse(AppConstants.licenseUrl);
-                      final opened = await ref.read(urlOpenHandlerProvider)(uri);
+                      final opened = await ref.read(urlOpenHandlerProvider)(
+                        uri,
+                      );
                       if (!opened && context.mounted) {
                         AppToast.show(
                           context,

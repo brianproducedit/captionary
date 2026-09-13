@@ -18,7 +18,9 @@ void main() {
     return SharedPreferences.getInstance();
   }
 
-  testWidgets('library view toggle and donate banner are wired', (tester) async {
+  testWidgets('library view toggle and donate banner are wired', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -35,7 +37,7 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     final viewToggle = tester.widget<IconButton>(
       find.byKey(const ValueKey('library-view-toggle')),
@@ -51,9 +53,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(await prefs()),
-        ],
+        overrides: [sharedPreferencesProvider.overrideWithValue(await prefs())],
         child: MaterialApp.router(
           routerConfig: GoRouter(
             initialLocation: '/settings',

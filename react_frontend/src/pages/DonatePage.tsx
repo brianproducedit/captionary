@@ -103,9 +103,8 @@ export const DonatePage: React.FC = () => {
 
   return (
     <div
-      className="max-w-7xl mx-auto pb-[var(--spacing-space-xl)] flex flex-col relative"
+      className="max-w-7xl mx-auto pb-[var(--spacing-space-xl)] flex flex-col relative px-4 md:px-8 xl:px-12"
       data-donate-url={publicConfig.donateWebUrl}
-      style={{ paddingLeft: 'var(--spacing-margin-mobile)', paddingRight: 'var(--spacing-margin-mobile)' }}
     >
       <div className="flex flex-col w-full">
         <div className="relative w-full overflow-hidden pb-[var(--spacing-space-3xl)]">
@@ -123,7 +122,7 @@ export const DonatePage: React.FC = () => {
           ></div>
 
           {/* Hero Section */}
-          <section className="flex flex-col items-center text-center pb-[var(--spacing-space-2xl)] max-w-4xl mx-auto px-[var(--spacing-margin-mobile)] pt-8">
+          <section className="flex flex-col items-center text-center pb-[var(--spacing-space-2xl)] max-w-4xl mx-auto pt-8">
             <div className="mb-[var(--spacing-space-lg)] relative flex items-center justify-center">
               <div
                 className="absolute inset-0 rounded-full blur-xl opacity-40 animate-pulse"

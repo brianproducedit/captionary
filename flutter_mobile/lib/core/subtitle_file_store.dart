@@ -14,7 +14,7 @@ class SubtitleFileStore {
   }) async {
     final dir = directory ?? await getTemporaryDirectory();
     final file = File(p.join(dir.path, fileName));
-    await file.writeAsString(content);
+    file.writeAsStringSync(content);
     return file;
   }
 }
@@ -31,4 +31,6 @@ class CaptionShareRequest {
   });
 }
 
-typedef CaptionShareHandler = Future<void> Function(CaptionShareRequest request);
+typedef CaptionShareHandler = Future<void> Function(
+  CaptionShareRequest request,
+);

@@ -115,8 +115,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       );
     } on TimeoutException {
       state = PlayerState(
-        error:
-            'This video took too long to open. It may be unsupported or corrupt.',
+        error: 'This video took too long to open. It may be unsupported or corrupt.',
       );
     } catch (e) {
       state = PlayerState(error: e.toString());

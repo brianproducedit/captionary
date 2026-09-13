@@ -103,9 +103,7 @@ void main() {
 
   testWidgets('Reset restores defaults', (tester) async {
     await tester.pumpWidget(
-      await buildSettings(
-        initial: {PreferenceKeys.exportQuality: '1440p'},
-      ),
+      await buildSettings(initial: {PreferenceKeys.exportQuality: '1440p'}),
     );
     await tester.pump();
     expect(find.text('1440p'), findsOneWidget);

@@ -41,8 +41,10 @@ class TimelineMapping {
     final clamped = clampTime(time);
     if (!snapEnabled) return clamped;
     final step = snapStep.inMilliseconds;
-    final snapped =
-        ((clamped.inMilliseconds / step).round() * step).clamp(0, duration.inMilliseconds);
+    final snapped = ((clamped.inMilliseconds / step).round() * step).clamp(
+      0,
+      duration.inMilliseconds,
+    );
     return Duration(milliseconds: snapped);
   }
 

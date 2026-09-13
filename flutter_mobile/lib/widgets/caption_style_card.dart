@@ -43,7 +43,9 @@ class CaptionStyleCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.surfaceContainerHigh,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.surfaceContainerHigh,
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -63,14 +65,15 @@ class CaptionStyleCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           style.name,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: isSelected
-                                ? AppColors.onSurface
-                                : AppColors.onSurfaceVariant,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: isSelected
+                                    ? AppColors.onSurface
+                                    : AppColors.onSurfaceVariant,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -84,7 +87,9 @@ class CaptionStyleCard extends StatelessWidget {
                     child: Icon(
                       Symbols.check_circle,
                       size: 18,
-                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                     ),
                   ),
                 ],

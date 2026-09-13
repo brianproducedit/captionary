@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:captionary/screens/language_packs_screen.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 void main() {
   Widget buildTestWidget() {
@@ -59,8 +60,8 @@ void main() {
     // The state changes to downloading
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Check if "Abort" button appears indicating downloading state
-    expect(find.text('Abort'), findsWidgets);
+    // Check if "Close/Abort" icon button appears indicating downloading state
+    expect(find.byIcon(Symbols.close), findsWidgets);
 
     // Fast forward to complete the download mock (takes about 4 seconds mock time)
     for (int i = 0; i < 25; i++) {

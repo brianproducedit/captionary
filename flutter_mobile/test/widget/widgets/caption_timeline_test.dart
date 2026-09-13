@@ -42,7 +42,10 @@ void main() {
     final container = ProviderScope.containerOf(element);
     final before = container.read(subtitleProvider).first.startTime;
 
-    await tester.drag(find.byKey(const ValueKey('chip-1')), const Offset(40, 0));
+    await tester.drag(
+      find.byKey(const ValueKey('chip-1')),
+      const Offset(40, 0),
+    );
     await tester.pump();
 
     final after = container.read(subtitleProvider).first.startTime;
@@ -54,9 +57,9 @@ void main() {
     await pumpTimeline(tester);
     final element = tester.element(find.byType(CaptionTimeline));
     final container = ProviderScope.containerOf(element);
-    await container.read(playerProvider.notifier).seekTo(
-      const Duration(milliseconds: 1500),
-    );
+    await container
+        .read(playerProvider.notifier)
+        .seekTo(const Duration(milliseconds: 1500));
     await tester.pump();
 
     await tester.tap(find.byTooltip('Split at playhead'));

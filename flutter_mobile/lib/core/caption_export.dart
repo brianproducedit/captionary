@@ -84,7 +84,10 @@ class CaptionExport {
     return buffer.toString();
   }
 
-  static String encode(List<SubtitleSegment> segments, CaptionExportFormat format) {
+  static String encode(
+    List<SubtitleSegment> segments,
+    CaptionExportFormat format,
+  ) {
     switch (format) {
       case CaptionExportFormat.srt:
         return srt(segments);

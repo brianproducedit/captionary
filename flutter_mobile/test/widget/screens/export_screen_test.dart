@@ -71,12 +71,13 @@ void main() {
   testWidgets('complete state shows Preview when the output file exists', (
     tester,
   ) async {
-    final file = File(
-      '${Directory.systemTemp.path}/captionary_preview_test.mp4',
-    );
-    await file.writeAsBytes(const [0, 1, 2]);
+    final tempDir = Directory.systemTemp.createTempSync('captionary_test_');
+    final file = File('${tempDir.path}/captionary_preview_test.mp4');
+    file.writeAsBytesSync(const [0, 1, 2]);
     addTearDown(() {
-      if (file.existsSync()) file.deleteSync();
+      try {
+        if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
+      } catch (_) {}
     });
 
     await tester.pumpWidget(

@@ -63,37 +63,93 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
       appBar: const AppHeader(subtitle: 'Studio'),
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
-              child: _buildTopToolbar(context),
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: _buildVideoCanvas(context, style, segments),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
-                  bottom: AppSpacing.bottomNavClearance,
-                ),
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            if (orientation == Orientation.landscape) {
+              return Row(
                 children: [
-                  _buildTimelineStudio(context),
-                  const SizedBox(height: 16),
-                  _buildActionButtons(context),
-                  const SizedBox(height: 42),
-                  const AdBannerWidget(),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            16.0,
+                            16.0,
+                            16.0,
+                            0,
+                          ),
+                          child: _buildTopToolbar(context),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              16.0,
+                              0,
+                              8.0,
+                              16.0,
+                            ),
+                            child: _buildVideoCanvas(context, style, segments),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: ListView(
+                      padding: const EdgeInsets.only(
+                        left: 8.0,
+                        right: 16.0,
+                        bottom: AppSpacing.bottomNavClearance,
+                      ),
+                      children: [
+                        _buildTimelineStudio(context),
+                        const SizedBox(height: 16),
+                        _buildActionButtons(context),
+                        const SizedBox(height: 42),
+                        const AdBannerWidget(),
+                      ],
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          ],
+              );
+            }
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+                  child: _buildTopToolbar(context),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildVideoCanvas(context, style, segments),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.only(
+                      left: 16.0,
+                      right: 16.0,
+                      bottom: AppSpacing.bottomNavClearance,
+                    ),
+                    children: [
+                      _buildTimelineStudio(context),
+                      const SizedBox(height: 16),
+                      _buildActionButtons(context),
+                      const SizedBox(height: 42),
+                      const AdBannerWidget(),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
 
@@ -169,6 +225,14 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 onTap: subtitleNotifier.canRedo
                     ? () => subtitleNotifier.redo()
                     : null,
+              ),
+              const SizedBox(width: 8),
+              _buildIconButton(
+                Symbols.visibility,
+                tooltip: 'Preview in Player',
+                onTap: () {
+                  context.pushReplacement('/player', extra: widget.videoPath);
+                },
               ),
               const SizedBox(width: 8),
             ],

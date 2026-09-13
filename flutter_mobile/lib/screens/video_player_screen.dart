@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:video_player/video_player.dart';
 
@@ -12,6 +13,7 @@ import '../theme/app_colors.dart';
 import '../widgets/app_header.dart';
 import '../widgets/player_transport_bar.dart';
 import '../widgets/subtitle_overlay.dart';
+import '../widgets/ghost_pill_button.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -173,59 +175,103 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
       onToggleFullscreen: _toggleFullscreen,
     );
 
-    final scaffold = _isFullscreen
-        ? Scaffold(
-            backgroundColor: Colors.black,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  Expanded(child: videoStack),
-                  if (controller != null && playerState.isInitialized)
-                    VideoProgressIndicator(
-                      controller,
-                      allowScrubbing: true,
-                      colors: const VideoProgressColors(
-                        playedColor: AppColors.primary,
-                        backgroundColor: AppColors.surfaceContainerHigh,
-                      ),
-                    ),
-                  transport,
-                ],
-              ),
-            ),
-          )
-        : Scaffold(
-            appBar: const AppHeader(subtitle: 'Player'),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  Expanded(child: videoStack),
-                  if (controller != null && playerState.isInitialized)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: VideoProgressIndicator(
-                        controller,
-                        allowScrubbing: true,
-                        colors: const VideoProgressColors(
-                          playedColor: AppColors.primary,
-                          backgroundColor: AppColors.surfaceContainerHigh,
-                        ),
-                      ),
-                    ),
-                  transport,
-                ],
-              ),
-            ),
-          );
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final isLandscape = orientation == Orientation.landscape;
+        final showFullscreen = _isFullscreen || isLandscape;
 
-    return PopScope(
-      canPop: !_isFullscreen,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _isFullscreen) {
-          _toggleFullscreen();
+        // Automatically manage system UI for physical rotation
+        if (isLandscape && !_isFullscreen) {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        } else if (!isLandscape && !_isFullscreen) {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         }
+
+        final scaffold = showFullscreen
+            ? Scaffold(
+                backgroundColor: Colors.black,
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Expanded(child: videoStack),
+                      if (controller != null && playerState.isInitialized)
+                        VideoProgressIndicator(
+                          controller,
+                          allowScrubbing: true,
+                          colors: const VideoProgressColors(
+                            playedColor: AppColors.primary,
+                            backgroundColor: AppColors.surfaceContainerHigh,
+                          ),
+                        ),
+                      transport,
+                    ],
+                  ),
+                ),
+              )
+            : Scaffold(
+                appBar: AppHeader(
+                  subtitle: 'Player',
+                  actions: [
+                    if (segments.isNotEmpty)
+                      GhostPillButton(
+                        label: 'Edit Captions',
+                        icon: Symbols.edit,
+                        onTap: () {
+                          // Allow editing by popping and pushing to studio
+                          // if coming from library, or just pushing
+                          context.pushReplacement(
+                            '/studio',
+                            extra: widget.videoPath,
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Expanded(child: videoStack),
+                      if (controller != null && playerState.isInitialized)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: VideoProgressIndicator(
+                            controller,
+                            allowScrubbing: true,
+                            colors: const VideoProgressColors(
+                              playedColor: AppColors.primary,
+                              backgroundColor: AppColors.surfaceContainerHigh,
+                            ),
+                          ),
+                        ),
+                      transport,
+                    ],
+                  ),
+                ),
+              );
+
+        return PopScope(
+          canPop: !showFullscreen,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop && showFullscreen) {
+              if (_isFullscreen) {
+                _toggleFullscreen();
+              } else {
+                // Force portrait if it was physically rotated
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.portraitUp,
+                  DeviceOrientation.portraitDown,
+                ]);
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  SystemChrome.setPreferredOrientations(
+                    DeviceOrientation.values,
+                  );
+                });
+              }
+            }
+          },
+          child: scaffold,
+        );
       },
-      child: scaffold,
     );
   }
 }

@@ -53,7 +53,10 @@ void main() {
     final dir = Directory.systemTemp.createTempSync('captionary_export');
     addTearDown(() => dir.deleteSync(recursive: true));
     final store = SubtitleFileStore(directory: dir);
-    final file = await store.write(fileName: 'captions.vtt', content: 'WEBVTT\n');
+    final file = await store.write(
+      fileName: 'captions.vtt',
+      content: 'WEBVTT\n',
+    );
     expect(file.existsSync(), isTrue);
     expect(file.readAsStringSync(), 'WEBVTT\n');
   });

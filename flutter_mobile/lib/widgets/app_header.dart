@@ -11,11 +11,13 @@ import 'donate_pill.dart';
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String subtitle;
+  final List<Widget>? actions;
 
   const AppHeader({
     super.key,
     this.title = 'Captionary',
     required this.subtitle,
+    this.actions,
   });
 
   @override
@@ -91,6 +93,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ),
+              // Custom Actions
+              if (actions != null) ...?actions,
+              if (actions != null) const SizedBox(width: 12),
               // Donate Pill
               DonatePill(onTap: () => context.push('/donate')),
             ],

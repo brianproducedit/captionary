@@ -129,8 +129,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
               onPressed: () {
                 AppToast.show(
                   context,
-                  message:
-                      'Export cancel is not connected to the encoder yet',
+                  message: 'Export cancel is not connected to the encoder yet',
                   variant: AppToastVariant.warning,
                 );
                 context.pop();

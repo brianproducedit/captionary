@@ -59,7 +59,13 @@ void main() {
 
   testWidgets('exporting VTT writes a file and shares it', (tester) async {
     final dir = Directory.systemTemp.createTempSync('captionary_sheet');
-    addTearDown(() => dir.deleteSync(recursive: true));
+    addTearDown(() {
+      try {
+        dir.deleteSync(recursive: true);
+      } catch (e) {
+        // Ignore file lock errors on Windows during test teardown
+      }
+    });
     CaptionShareRequest? shared;
 
     await pumpSheet(
@@ -88,10 +94,12 @@ void main() {
     );
 
     await tester.tap(find.byKey(const ValueKey('format-vtt')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // Ensure the sheet is scrolled if necessary
+    await tester.ensureVisible(find.text('Export VTT'));
     await tester.tap(find.text('Export VTT'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
 
     expect(shared, isNotNull);
     expect(shared!.fileName.endsWith('.vtt'), isTrue);

@@ -138,10 +138,8 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
                             height: 44,
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
-                              onTapDown: (details) => _seekToX(
-                                mapping,
-                                details.localPosition.dx,
-                              ),
+                              onTapDown: (details) =>
+                                  _seekToX(mapping, details.localPosition.dx),
                               child: widget.waveform.displayPeaks.isEmpty
                                   ? const ColoredBox(
                                       color: AppColors.surfaceContainerHighest,
@@ -169,7 +167,8 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
                                       segment: segment,
                                       isSelected: segment.isSelected,
                                       isActive:
-                                          player.position >= segment.startTime &&
+                                          player.position >=
+                                              segment.startTime &&
                                           player.position <= segment.endTime,
                                       width:
                                           mapping.timeToX(segment.endTime) -
@@ -327,9 +326,8 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
         Expanded(
           child: Text(
             data.message.isEmpty ? 'Waveform' : data.message,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: color),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: color),
           ),
         ),
       ],
@@ -349,18 +347,21 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
       children: [
         Text(
           formatClockHms(ref.watch(playerProvider).position),
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: AppColors.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: AppColors.onSurfaceVariant),
         ),
         _tool(Symbols.zoom_out, 'Zoom out', () {
           setState(() {
-            _pixelsPerSecond = TimelineMapping.clampZoom(_pixelsPerSecond / 1.25);
+            _pixelsPerSecond = TimelineMapping.clampZoom(
+              _pixelsPerSecond / 1.25,
+            );
           });
         }),
         _tool(Symbols.zoom_in, 'Zoom in', () {
           setState(() {
-            _pixelsPerSecond = TimelineMapping.clampZoom(_pixelsPerSecond * 1.25);
+            _pixelsPerSecond = TimelineMapping.clampZoom(
+              _pixelsPerSecond * 1.25,
+            );
           });
         }),
         _tool(

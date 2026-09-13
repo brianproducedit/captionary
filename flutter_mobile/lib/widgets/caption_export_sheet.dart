@@ -104,9 +104,8 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
               Text(
                 'Writes an SRT or VTT file and opens the system share sheet. '
                 'ASS is listed when the burn-in writer exists.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppColors.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -135,9 +134,8 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
                 const SizedBox(height: 12),
                 Text(
                   reason,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppColors.error),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: AppColors.error),
                 ),
               ],
               const SizedBox(height: 24),

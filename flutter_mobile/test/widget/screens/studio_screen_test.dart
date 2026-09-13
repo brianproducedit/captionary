@@ -35,10 +35,7 @@ void main() {
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
 
-    expect(
-      find.text('Mhoroi mose, ndinofara kuva pano'),
-      findsWidgets,
-    );
+    expect(find.text('Mhoroi mose, ndinofara kuva pano'), findsWidgets);
   });
 
   testWidgets('Export captions opens the format sheet', (tester) async {

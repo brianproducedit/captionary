@@ -129,74 +129,95 @@ class NotificationService {
   Future<void> scheduleDonateReminder({
     Duration delay = const Duration(hours: 8),
   }) async {
-    final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+    try {
+      final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
 
-    await _plugin.zonedSchedule(
-      id: donateReminderId,
-      title: '☕ Your video captioning matters!',
-      body: 'Fuel Captionary with a small donation to keep our AI language models updated and accessible to everyone.',
-      scheduledDate: scheduledDate,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _donateChannelId,
-          _donateChannelName,
-          channelDescription: _donateChannelDesc,
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-          icon: '@mipmap/launcher_icon',
+      await _plugin.zonedSchedule(
+        id: donateReminderId,
+        title: '☕ Your video captioning matters!',
+        body: 'Fuel Captionary with a small donation to keep our AI language models updated and accessible to everyone.',
+        scheduledDate: scheduledDate,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _donateChannelId,
+            _donateChannelName,
+            channelDescription: _donateChannelDesc,
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: '@mipmap/launcher_icon',
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: '/donate?from=notification',
-    );
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: '/donate?from=notification',
+      );
 
-    debugPrint(
-      '[NotificationService] Donate reminder scheduled for $scheduledDate.',
-    );
+      debugPrint(
+        '[NotificationService] Donate reminder scheduled for $scheduledDate.',
+      );
+    } catch (e) {
+      debugPrint(
+        '[NotificationService] Failed to schedule donate reminder: $e',
+      );
+    }
   }
 
   /// Schedule an inactivity nudge (5-day idle).
   Future<void> scheduleInactivityNudge({
     Duration delay = const Duration(days: 5),
   }) async {
-    final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+    try {
+      final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
 
-    await _plugin.zonedSchedule(
-      id: inactivityNudgeId,
-      title: '👋 We miss you!',
-      body:
-          'Your videos are waiting for captions. Come back and add some magic!',
-      scheduledDate: scheduledDate,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _donateChannelId,
-          _donateChannelName,
-          channelDescription: _donateChannelDesc,
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-          icon: '@mipmap/launcher_icon',
+      await _plugin.zonedSchedule(
+        id: inactivityNudgeId,
+        title: '👋 We miss you!',
+        body: 'Your videos are waiting for captions. Come back and add some magic!',
+        scheduledDate: scheduledDate,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _donateChannelId,
+            _donateChannelName,
+            channelDescription: _donateChannelDesc,
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: '@mipmap/launcher_icon',
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: '/library',
-    );
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: '/library',
+      );
 
-    debugPrint(
-      '[NotificationService] Inactivity nudge scheduled for $scheduledDate.',
-    );
+      debugPrint(
+        '[NotificationService] Inactivity nudge scheduled for $scheduledDate.',
+      );
+    } catch (e) {
+      debugPrint(
+        '[NotificationService] Failed to schedule inactivity nudge: $e',
+      );
+    }
   }
 
   /// Cancel all scheduled notifications.
   Future<void> cancelAll() async {
-    await _plugin.cancelAll();
-    debugPrint('[NotificationService] All notifications cancelled.');
+    try {
+      await _plugin.cancelAll();
+      debugPrint('[NotificationService] All notifications cancelled.');
+    } catch (e) {
+      debugPrint(
+        '[NotificationService] Failed to cancel all notifications: $e',
+      );
+    }
   }
 
   /// Cancel a specific notification by ID.
   Future<void> cancel(int id) async {
-    await _plugin.cancel(id: id);
+    try {
+      await _plugin.cancel(id: id);
+    } catch (e) {
+      debugPrint('[NotificationService] Failed to cancel notification: $e');
+    }
   }
 
   /// Show an immediate notification (e.g., for export progress).

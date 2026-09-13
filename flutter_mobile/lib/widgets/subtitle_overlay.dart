@@ -62,7 +62,11 @@ class SubtitleOverlay extends StatelessWidget {
     );
   }
 
-  TextStyle _baseStyle(BuildContext context, {Color? color, Paint? foreground}) {
+  TextStyle _baseStyle(
+    BuildContext context, {
+    Color? color,
+    Paint? foreground,
+  }) {
     return Theme.of(context).textTheme.bodyMedium!.copyWith(
       fontFamily: CaptionStyle.fontFamily,
       fontSize: style.fontSize,

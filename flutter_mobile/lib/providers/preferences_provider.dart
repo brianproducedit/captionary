@@ -21,9 +21,10 @@ class PreferencesNotifier extends StateNotifier<UserPreferences> {
           prefs.getBool(PreferenceKeys.autoPlay) ??
           UserPreferences.defaults.autoPlay,
       playbackSpeed: nearest,
-      volume: (prefs.getDouble(PreferenceKeys.volume) ??
-              UserPreferences.defaults.volume)
-          .clamp(0.0, 1.0),
+      volume:
+          (prefs.getDouble(PreferenceKeys.volume) ??
+                  UserPreferences.defaults.volume)
+              .clamp(0.0, 1.0),
       exportQuality:
           prefs.getString(PreferenceKeys.exportQuality) ??
           UserPreferences.defaults.exportQuality,
