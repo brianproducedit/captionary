@@ -54,5 +54,50 @@ void main() {
       final res = await service.exportVTT([]);
       expect(res.contains('WEBVTT'), true);
     });
+
+    test('exportASS generates ASS string with styles and script info', () async {
+      final res = await service.exportASS([
+        SubtitleSegment(
+          index: 1,
+          startTime: Duration.zero,
+          endTime: const Duration(seconds: 2),
+          text: 'ASS subtitle line',
+          isSelected: false,
+        ),
+      ]);
+      expect(res.contains('[Script Info]'), true);
+      expect(res.contains('[V4+ Styles]'), true);
+      expect(res.contains('ASS subtitle line'), true);
+    });
+
+    test('cancel sets cancelled state on burnCaptions stream', () async {
+      final style = CaptionStyle(
+        name: 'Style1',
+        previewText: 'Preview',
+        fontSize: 24.0,
+        boxOpacity: 0.5,
+        accentColor: Colors.red,
+        animationType: 'bounce',
+        targetPlatform: 'generic',
+      );
+      final stream = service.burnCaptions(
+        videoPath: 'test_path.mp4',
+        segments: [],
+        style: style,
+        outputPath: 'out.mp4',
+        videoDuration: const Duration(minutes: 1),
+      );
+
+      // Cancel after first event
+      final events = <ExportJob>[];
+      await for (final event in stream) {
+        events.add(event);
+        if (events.length == 2) {
+          await service.cancel();
+        }
+      }
+
+      expect(events.last.state, ExportState.cancelled);
+    });
   });
 }

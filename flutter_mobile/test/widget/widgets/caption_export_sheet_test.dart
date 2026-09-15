@@ -33,7 +33,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('format picker includes SRT, VTT, and disabled ASS', (
+  testWidgets('format picker includes SRT, VTT, and enabled ASS', (
     tester,
   ) async {
     await pumpSheet(tester);
@@ -44,6 +44,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('format-vtt')));
     await tester.pump();
     expect(find.text('Export VTT'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('format-ass')));
+    await tester.pump();
+    expect(find.text('Export ASS'), findsOneWidget);
   });
 
   testWidgets('empty captions show why export is disabled', (tester) async {
@@ -107,5 +111,59 @@ void main() {
     final file = File(shared!.path);
     expect(file.existsSync(), isTrue);
     expect(file.readAsStringSync(), contains('WEBVTT'));
+  });
+
+  testWidgets('exporting ASS writes a styled ASS file and shares it', (tester) async {
+    final dir = Directory.systemTemp.createTempSync('captionary_sheet_ass');
+    addTearDown(() {
+      try {
+        dir.deleteSync(recursive: true);
+      } catch (e) {
+        // Ignore file lock errors on Windows during test teardown
+      }
+    });
+    CaptionShareRequest? shared;
+
+    await pumpSheet(
+      tester,
+      overrides: [
+        subtitleFileStoreProvider.overrideWith(
+          (ref) => SubtitleFileStore(directory: dir),
+        ),
+        captionShareHandlerProvider.overrideWith((ref) {
+          return (request) async {
+            shared = request;
+          };
+        }),
+        subtitleProvider.overrideWith(
+          (ref) => SubtitleNotifier([
+            SubtitleSegment(
+              index: 1,
+              startTime: Duration.zero,
+              endTime: const Duration(seconds: 2),
+              text: 'Styled caption',
+              isSelected: false,
+            ),
+          ]),
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const ValueKey('format-ass')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Export ASS'));
+    await tester.tap(find.text('Export ASS'));
+    await tester.pumpAndSettle();
+
+    expect(shared, isNotNull);
+    expect(shared!.fileName.endsWith('.ass'), isTrue);
+    expect(shared!.mimeType, 'text/x-ssa');
+    final file = File(shared!.path);
+    expect(file.existsSync(), isTrue);
+    final content = file.readAsStringSync();
+    expect(content, contains('[Script Info]'));
+    expect(content, contains('[V4+ Styles]'));
+    expect(content, contains('Styled caption'));
   });
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/caption_export.dart';
 import '../core/subtitle_file_store.dart';
 import '../data/models/subtitle_segment.dart';
+import '../providers/caption_style_provider.dart';
 import '../providers/export_provider.dart';
 import '../providers/subtitle_provider.dart';
 import '../theme/app_colors.dart';
@@ -29,9 +30,19 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
     setState(() => _busy = true);
     try {
       final service = ref.read(exportServiceProvider);
-      final content = _format == CaptionExportFormat.vtt
-          ? await service.exportVTT(segments)
-          : await service.exportSRT(segments);
+      final style = ref.read(captionStyleProvider);
+      final String content;
+      switch (_format) {
+        case CaptionExportFormat.vtt:
+          content = await service.exportVTT(segments);
+          break;
+        case CaptionExportFormat.ass:
+          content = await service.exportASS(segments, style: style);
+          break;
+        case CaptionExportFormat.srt:
+          content = await service.exportSRT(segments);
+          break;
+      }
       final fileName =
           'captions_${DateTime.now().millisecondsSinceEpoch}.${_format.fileExtension}';
       final file = await ref
@@ -102,8 +113,7 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Writes an SRT or VTT file and opens the system share sheet. '
-                'ASS is listed when the burn-in writer exists.',
+                'Writes an SRT, VTT, or styled ASS file and opens the system share sheet.',
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: AppColors.onSurfaceVariant),
               ),
@@ -127,7 +137,7 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
               if (!_format.isAvailable) ...[
                 const SizedBox(height: 8),
                 const Text(
-                  'ASS is not available until the backend writer exists.',
+                  'Selected format is not available.',
                 ),
               ],
               if (reason != null) ...[

@@ -516,6 +516,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   onComplete: () {
                     ref.read(engagementProvider.notifier).onExportCompleted();
                   },
+                  onCancel: () => exportService.cancel(),
                 );
             context.push('/export');
           },

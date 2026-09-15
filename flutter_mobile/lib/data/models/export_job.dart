@@ -10,6 +10,7 @@ class ExportJob {
   final Duration estimatedTimeRemaining;
   final int outputSizeBytes;
   final bool hardwareAcceleration;
+  final String? fallbackReason;
 
   ExportJob({
     required this.id,
@@ -23,6 +24,7 @@ class ExportJob {
     required this.estimatedTimeRemaining,
     required this.outputSizeBytes,
     required this.hardwareAcceleration,
+    this.fallbackReason,
   });
 
   ExportJob copyWith({
@@ -37,6 +39,7 @@ class ExportJob {
     Duration? estimatedTimeRemaining,
     int? outputSizeBytes,
     bool? hardwareAcceleration,
+    String? fallbackReason,
   }) {
     return ExportJob(
       id: id ?? this.id,
@@ -51,6 +54,7 @@ class ExportJob {
           estimatedTimeRemaining ?? this.estimatedTimeRemaining,
       outputSizeBytes: outputSizeBytes ?? this.outputSizeBytes,
       hardwareAcceleration: hardwareAcceleration ?? this.hardwareAcceleration,
+      fallbackReason: fallbackReason ?? this.fallbackReason,
     );
   }
 }

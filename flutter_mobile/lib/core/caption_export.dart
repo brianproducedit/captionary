@@ -1,9 +1,13 @@
+import 'dart:ui';
+
+import 'ass_file_writer.dart';
+import '../data/models/caption_style.dart';
 import '../data/models/subtitle_segment.dart';
 
 enum CaptionExportFormat { srt, vtt, ass }
 
 extension CaptionExportFormatX on CaptionExportFormat {
-  bool get isAvailable => this != CaptionExportFormat.ass;
+  bool get isAvailable => true;
 
   String get label {
     switch (this) {
@@ -84,17 +88,44 @@ class CaptionExport {
     return buffer.toString();
   }
 
+  static String ass(
+    List<SubtitleSegment> segments, {
+    CaptionStyle? style,
+    int playResX = 1080,
+    int playResY = 1920,
+  }) {
+    final fallbackStyle =
+        style ??
+        CaptionStyle(
+          name: 'Default',
+          previewText: 'Default',
+          fontSize: 24.0,
+          boxOpacity: 0.0,
+          accentColor: const Color(0xFFFFFFFF),
+          animationType: CaptionStyle.animationNone,
+          targetPlatform: 'generic',
+        );
+
+    return AssFileWriter.generate(
+      segments: segments,
+      style: fallbackStyle,
+      playResX: playResX,
+      playResY: playResY,
+    );
+  }
+
   static String encode(
     List<SubtitleSegment> segments,
-    CaptionExportFormat format,
-  ) {
+    CaptionExportFormat format, {
+    CaptionStyle? style,
+  }) {
     switch (format) {
       case CaptionExportFormat.srt:
         return srt(segments);
       case CaptionExportFormat.vtt:
         return vtt(segments);
       case CaptionExportFormat.ass:
-        throw UnsupportedError('ASS export is not available yet.');
+        return ass(segments, style: style);
     }
   }
 

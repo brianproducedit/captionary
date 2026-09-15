@@ -8,7 +8,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_typography.dart';
-import '../widgets/app_toast.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/ghost_pill_button.dart';
 import '../widgets/circular_progress_painter.dart';
@@ -127,12 +126,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
             ),
             TextButton(
               onPressed: () {
-                AppToast.show(
-                  context,
-                  message: 'Export cancel is not connected to the encoder yet',
-                  variant: AppToastVariant.warning,
-                );
-                context.pop();
+                ref.read(activeExportJobProvider.notifier).cancelJob();
               },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.error,
@@ -254,6 +248,33 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
             ),
           ),
         ),
+        if (activeJob.fallbackReason != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              color: AppColors.secondaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Symbols.info, color: AppColors.secondary, size: 18),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    activeJob.fallbackReason!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.onSurface,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 32),
         // Hardware Details
         Container(
@@ -436,6 +457,40 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
                   ],
                 ),
               ),
+              if (activeJob.fallbackReason != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 8.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(
+                      color: AppColors.secondary.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Symbols.info,
+                        color: AppColors.secondary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          activeJob.fallbackReason!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

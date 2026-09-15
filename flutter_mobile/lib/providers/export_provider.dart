@@ -45,6 +45,7 @@ class ActiveExportJobNotifier extends StateNotifier<ExportJob?> {
   ActiveExportJobNotifier() : super(null);
 
   StreamSubscription<ExportJob>? _subscription;
+  Future<void> Function()? _onCancel;
 
   void setJob(ExportJob job) {
     state = job;
@@ -54,8 +55,10 @@ class ActiveExportJobNotifier extends StateNotifier<ExportJob?> {
     ExportJob job,
     Stream<ExportJob> progressStream, {
     void Function()? onComplete,
+    Future<void> Function()? onCancel,
   }) {
     _subscription?.cancel();
+    _onCancel = onCancel;
     state = job;
     _subscription = progressStream.listen((updatedJob) {
       state = updatedJob;
@@ -65,15 +68,28 @@ class ActiveExportJobNotifier extends StateNotifier<ExportJob?> {
     });
   }
 
+  Future<void> cancelJob() async {
+    try {
+      await _onCancel?.call();
+    } catch (_) {}
+    _subscription?.cancel();
+    _subscription = null;
+    if (state != null) {
+      state = state!.copyWith(state: ExportState.cancelled);
+    }
+  }
+
   void clearJob() {
     _subscription?.cancel();
     _subscription = null;
+    _onCancel = null;
     state = null;
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _onCancel = null;
     super.dispose();
   }
 }
