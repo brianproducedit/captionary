@@ -1,14 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:video_player/video_player.dart';
 
+import '../data/mock/mock_media_player_service.dart';
 import '../data/services/media_player_service.dart';
 import '../core/user_preferences.dart';
+import 'backend_mode_provider.dart';
 import 'preferences_provider.dart';
 
 class PlayerState {
-  final VideoPlayerController? controller;
+  final PlayerHandle? handle;
   final bool isPlaying;
   final bool isBuffering;
   final Duration position;
@@ -19,7 +21,7 @@ class PlayerState {
   final String? error;
 
   PlayerState({
-    this.controller,
+    this.handle,
     this.isPlaying = false,
     this.isBuffering = false,
     this.position = Duration.zero,
@@ -31,9 +33,17 @@ class PlayerState {
   });
 
   bool get isMuted => volume <= 0;
+  double get aspectRatio => handle?.aspectRatio ?? (16 / 9);
+
+  Widget buildVideoView(BuildContext context) {
+    if (handle != null && isInitialized) {
+      return handle!.buildWidget(context);
+    }
+    return const SizedBox.shrink();
+  }
 
   PlayerState copyWith({
-    VideoPlayerController? controller,
+    PlayerHandle? handle,
     bool? isPlaying,
     bool? isBuffering,
     Duration? position,
@@ -44,7 +54,7 @@ class PlayerState {
     String? error,
   }) {
     return PlayerState(
-      controller: controller ?? this.controller,
+      handle: handle ?? this.handle,
       isPlaying: isPlaying ?? this.isPlaying,
       isBuffering: isBuffering ?? this.isBuffering,
       position: position ?? this.position,
@@ -67,23 +77,38 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   final UserPreferences Function()? readPreferences;
   double _volumeBeforeMute = 1.0;
 
+  final List<StreamSubscription> _subscriptions = [];
+  PlayerHandle? _currentHandle;
+
   PlayerNotifier(
     this._mediaPlayerService, {
     this.initTimeout = defaultInitTimeout,
     this.readPreferences,
   }) : super(PlayerState());
 
+  void _cancelSubscriptions() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
+  }
+
   @override
   void dispose() {
-    state.controller?.removeListener(_onControllerTick);
-    state.controller?.dispose();
+    if (!mounted) return;
+    _cancelSubscriptions();
+    final handle = _currentHandle;
+    _currentHandle = null;
+    if (handle != null) {
+      _mediaPlayerService.dispose(handle);
+    }
     super.dispose();
   }
 
   Future<void> initPlayer(String videoPath) async {
-    state.controller?.removeListener(_onControllerTick);
-    if (state.controller != null) {
-      await _mediaPlayerService.dispose(state.controller!);
+    _cancelSubscriptions();
+    if (state.handle != null) {
+      await _mediaPlayerService.dispose(state.handle!);
     }
 
     if (videoPath.trim().isEmpty) {
@@ -94,24 +119,53 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     state = PlayerState();
 
     try {
-      final controller = await _mediaPlayerService
+      final handle = await _mediaPlayerService
           .open(videoPath)
           .timeout(initTimeout);
-      controller.addListener(_onControllerTick);
+
       final prefs = readPreferences?.call() ?? UserPreferences.defaults;
-      await controller.setVolume(prefs.volume);
-      await controller.setPlaybackSpeed(prefs.playbackSpeed);
+      await handle.setVolume(prefs.volume);
+      await handle.setPlaybackSpeed(prefs.playbackSpeed);
       if (prefs.autoPlay) {
-        await controller.play();
+        await handle.play();
       }
+
+      _currentHandle = handle;
       state = state.copyWith(
-        controller: controller,
+        handle: handle,
         isInitialized: true,
-        duration: controller.value.duration,
+        duration: handle.duration,
+        position: handle.position,
         volume: prefs.volume,
         playbackSpeed: prefs.playbackSpeed,
         isPlaying: prefs.autoPlay,
-        isBuffering: controller.value.isBuffering,
+        isBuffering: handle.isBuffering,
+      );
+
+      _subscriptions.add(
+        handle.positionStream.listen((pos) {
+          if (mounted) state = state.copyWith(position: pos);
+        }),
+      );
+      _subscriptions.add(
+        handle.durationStream.listen((dur) {
+          if (mounted && dur > Duration.zero) state = state.copyWith(duration: dur);
+        }),
+      );
+      _subscriptions.add(
+        handle.playingStream.listen((playing) {
+          if (mounted) state = state.copyWith(isPlaying: playing);
+        }),
+      );
+      _subscriptions.add(
+        handle.bufferingStream.listen((buffering) {
+          if (mounted) state = state.copyWith(isBuffering: buffering);
+        }),
+      );
+      _subscriptions.add(
+        handle.errorStream.listen((err) {
+          if (mounted && err.isNotEmpty) state = state.copyWith(error: err);
+        }),
       );
     } on TimeoutException {
       state = PlayerState(
@@ -123,46 +177,43 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   }
 
   Future<void> disposePlayer() async {
-    final controller = state.controller;
-    if (controller == null) return;
-
-    controller.removeListener(_onControllerTick);
-    await _mediaPlayerService.dispose(controller);
-    state = PlayerState();
-  }
-
-  void _onControllerTick() {
-    final controller = state.controller;
-    if (controller != null && controller.value.isInitialized) {
-      if (state.position != controller.value.position ||
-          state.isPlaying != controller.value.isPlaying ||
-          state.isBuffering != controller.value.isBuffering ||
-          state.duration != controller.value.duration) {
-        state = state.copyWith(
-          position: controller.value.position,
-          isPlaying: controller.value.isPlaying,
-          isBuffering: controller.value.isBuffering,
-          duration: controller.value.duration,
-        );
-      }
+    _cancelSubscriptions();
+    final handle = _currentHandle;
+    _currentHandle = null;
+    if (handle != null) {
+      await _mediaPlayerService.dispose(handle);
+    }
+    if (mounted) {
+      await Future.microtask(() {
+        if (mounted) {
+          state = PlayerState();
+        }
+      });
     }
   }
 
   Future<void> togglePlay() async {
-    final controller = state.controller;
-    if (controller != null && controller.value.isInitialized) {
-      if (controller.value.isPlaying) {
-        await controller.pause();
+    final handle = state.handle;
+    if (handle != null && state.isInitialized) {
+      if (state.isPlaying) {
+        await handle.pause();
       } else {
-        await controller.play();
+        await handle.play();
       }
     }
   }
 
+  Future<void> play() async {
+    final handle = state.handle;
+    if (handle != null && state.isInitialized && !state.isPlaying) {
+      await handle.play();
+    }
+  }
+
   Future<void> pause() async {
-    final controller = state.controller;
-    if (controller?.value.isPlaying == true) {
-      await controller!.pause();
+    final handle = state.handle;
+    if (handle != null && state.isPlaying) {
+      await handle.pause();
     }
   }
 
@@ -172,44 +223,37 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     if (state.duration > Duration.zero && target > state.duration) {
       target = state.duration;
     }
-    final controller = state.controller;
-    if (controller != null && controller.value.isInitialized) {
-      await controller.seekTo(target);
-    } else {
-      state = state.copyWith(position: target);
+    final handle = state.handle;
+    if (handle != null && state.isInitialized) {
+      await handle.seekTo(target);
     }
+    state = state.copyWith(position: target);
   }
 
   Future<void> seekRelative(Duration offset) async {
-    final controller = state.controller;
-    if (controller != null && controller.value.isInitialized) {
-      final newPos = controller.value.position + offset;
-      // Clamp to duration boundaries
-      final clampedPos = newPos < Duration.zero
-          ? Duration.zero
-          : newPos > controller.value.duration
-          ? controller.value.duration
-          : newPos;
-      await controller.seekTo(clampedPos);
-    }
+    final newPos = state.position + offset;
+    final clampedPos = newPos < Duration.zero
+        ? Duration.zero
+        : (state.duration > Duration.zero && newPos > state.duration)
+            ? state.duration
+            : newPos;
+    await seekTo(clampedPos);
   }
 
   Future<void> setVolume(double volume) async {
-    final controller = state.controller;
-    if (controller != null) {
-      await controller.setVolume(volume);
+    final handle = state.handle;
+    if (handle != null) {
+      await handle.setVolume(volume);
     }
     state = state.copyWith(volume: volume);
   }
 
   Future<void> setPlaybackSpeed(double speed) async {
-    final controller = state.controller;
-    if (controller != null) {
-      await controller.setPlaybackSpeed(speed);
-      state = state.copyWith(playbackSpeed: speed);
-    } else {
-      state = state.copyWith(playbackSpeed: speed);
+    final handle = state.handle;
+    if (handle != null) {
+      await handle.setPlaybackSpeed(speed);
     }
+    state = state.copyWith(playbackSpeed: speed);
   }
 
   Future<void> skipBack() => seekRelative(-skipInterval);
@@ -235,7 +279,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 final playerProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((
   ref,
 ) {
-  return PlayerNotifier(
+  final notifier = PlayerNotifier(
     ref.watch(mediaPlayerServiceProvider),
     readPreferences: () {
       try {
@@ -245,8 +289,16 @@ final playerProvider = StateNotifierProvider<PlayerNotifier, PlayerState>((
       }
     },
   );
+  return notifier;
 });
 
 final mediaPlayerServiceProvider = Provider<MediaPlayerService>((ref) {
-  return VideoPlayerMediaService();
+  final mode = ref.watch(backendModeProvider);
+  switch (mode) {
+    case BackendMode.mock:
+      return MockMediaPlayerService();
+    case BackendMode.local:
+    case BackendMode.real:
+      return MediaKitMediaService();
+  }
 });

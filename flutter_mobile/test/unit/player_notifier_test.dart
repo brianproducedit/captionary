@@ -1,28 +1,28 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:video_player/video_player.dart';
+import 'package:captionary/data/mock/mock_media_player_service.dart';
 import 'package:captionary/data/services/media_player_service.dart';
 import 'package:captionary/providers/player_provider.dart';
 
 class _HangingMediaPlayerService implements MediaPlayerService {
   @override
-  Future<VideoPlayerController> open(String videoPath) {
-    return Completer<VideoPlayerController>().future;
+  Future<PlayerHandle> open(String videoPath) {
+    return Completer<PlayerHandle>().future;
   }
 
   @override
-  Future<void> dispose(VideoPlayerController controller) async {}
+  Future<void> dispose(PlayerHandle handle) async {}
 }
 
 class _FailingMediaPlayerService implements MediaPlayerService {
   @override
-  Future<VideoPlayerController> open(String videoPath) {
+  Future<PlayerHandle> open(String videoPath) {
     throw Exception('unsupported format');
   }
 
   @override
-  Future<void> dispose(VideoPlayerController controller) async {}
+  Future<void> dispose(PlayerHandle handle) async {}
 }
 
 void main() {
@@ -60,6 +60,44 @@ void main() {
     expect(notifier.state.isMuted, isTrue);
     await notifier.toggleMute();
     expect(notifier.state.volume, 1.0);
+    notifier.dispose();
+  });
+
+  test('MockMediaPlayerService initializes properly and controls playback', () async {
+    final service = MockMediaPlayerService(mockDuration: const Duration(seconds: 45));
+    final notifier = PlayerNotifier(service);
+
+    await notifier.initPlayer('sample.mp4');
+    expect(notifier.state.isInitialized, isTrue);
+    expect(notifier.state.error, isNull);
+    expect(notifier.state.duration, const Duration(seconds: 45));
+    expect(notifier.state.isPlaying, isFalse);
+
+    await notifier.play();
+    expect(notifier.state.isPlaying, isTrue);
+
+    await notifier.pause();
+    expect(notifier.state.isPlaying, isFalse);
+
+    await notifier.togglePlay();
+    expect(notifier.state.isPlaying, isTrue);
+
+    await notifier.seekTo(const Duration(seconds: 15));
+    expect(notifier.state.position, const Duration(seconds: 15));
+
+    await notifier.seekRelative(const Duration(seconds: 5));
+    expect(notifier.state.position, const Duration(seconds: 20));
+
+    await notifier.seekRelative(const Duration(seconds: -10));
+    expect(notifier.state.position, const Duration(seconds: 10));
+
+    await notifier.setPlaybackSpeed(1.5);
+    expect(notifier.state.playbackSpeed, 1.5);
+
+    await notifier.disposePlayer();
+    expect(notifier.state.handle, isNull);
+    expect(notifier.state.isInitialized, isFalse);
+
     notifier.dispose();
   });
 }

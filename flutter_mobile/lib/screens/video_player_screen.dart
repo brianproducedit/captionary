@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:video_player/video_player.dart';
 
 import '../data/models/subtitle_segment.dart';
 import '../providers/caption_style_provider.dart';
@@ -77,7 +76,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
   Widget build(BuildContext context) {
     final playerState = ref.watch(playerProvider);
     final notifier = ref.read(playerProvider.notifier);
-    final controller = playerState.controller;
     final segments = ref.watch(subtitleProvider);
     final currentStyle = ref.watch(captionStyleProvider);
 
@@ -105,12 +103,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
           ),
         ),
       );
-    } else if (controller != null && playerState.isInitialized) {
+    } else if (playerState.handle != null && playerState.isInitialized) {
       playerWidget = AspectRatio(
-        aspectRatio: controller.value.aspectRatio > 0
-            ? controller.value.aspectRatio
+        aspectRatio: playerState.aspectRatio > 0
+            ? playerState.aspectRatio
             : 16 / 9,
-        child: VideoPlayer(controller),
+        child: playerState.buildVideoView(context),
       );
     } else {
       playerWidget = const Center(
@@ -194,14 +192,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
                   child: Column(
                     children: [
                       Expanded(child: videoStack),
-                      if (controller != null && playerState.isInitialized)
-                        VideoProgressIndicator(
-                          controller,
-                          allowScrubbing: true,
-                          colors: const VideoProgressColors(
-                            playedColor: AppColors.primary,
-                            backgroundColor: AppColors.surfaceContainerHigh,
-                          ),
+                      if (playerState.isInitialized)
+                        _VideoScrubber(
+                          position: playerState.position,
+                          duration: playerState.duration,
+                          onSeek: notifier.seekTo,
                         ),
                       transport,
                     ],
@@ -231,16 +226,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
                   child: Column(
                     children: [
                       Expanded(child: videoStack),
-                      if (controller != null && playerState.isInitialized)
+                      if (playerState.isInitialized)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: VideoProgressIndicator(
-                            controller,
-                            allowScrubbing: true,
-                            colors: const VideoProgressColors(
-                              playedColor: AppColors.primary,
-                              backgroundColor: AppColors.surfaceContainerHigh,
-                            ),
+                          child: _VideoScrubber(
+                            position: playerState.position,
+                            duration: playerState.duration,
+                            onSeek: notifier.seekTo,
                           ),
                         ),
                       transport,
@@ -270,6 +262,67 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
             }
           },
           child: scaffold,
+        );
+      },
+    );
+  }
+}
+
+class _VideoScrubber extends StatelessWidget {
+  final Duration position;
+  final Duration duration;
+  final ValueChanged<Duration> onSeek;
+
+  const _VideoScrubber({
+    required this.position,
+    required this.duration,
+    required this.onSeek,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final maxMs = duration.inMilliseconds.toDouble();
+    final currentMs = position.inMilliseconds.toDouble().clamp(
+      0.0,
+      maxMs > 0 ? maxMs : 1.0,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: (details) {
+            final box = context.findRenderObject() as RenderBox?;
+            if (box == null || box.size.width <= 0 || maxMs <= 0) return;
+            final local = box.globalToLocal(details.globalPosition);
+            final ratio = (local.dx / box.size.width).clamp(0.0, 1.0);
+            onSeek(Duration(milliseconds: (ratio * maxMs).round()));
+          },
+          onTapDown: (details) {
+            final box = context.findRenderObject() as RenderBox?;
+            if (box == null || box.size.width <= 0 || maxMs <= 0) return;
+            final local = box.globalToLocal(details.globalPosition);
+            final ratio = (local.dx / box.size.width).clamp(0.0, 1.0);
+            onSeek(Duration(milliseconds: (ratio * maxMs).round()));
+          },
+          child: Container(
+            height: 20,
+            alignment: Alignment.center,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: SizedBox(
+                height: 4,
+                width: double.infinity,
+                child: LinearProgressIndicator(
+                  value: maxMs > 0 ? (currentMs / maxMs).clamp(0.0, 1.0) : 0.0,
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primary,
+                  ),
+                  backgroundColor: AppColors.surfaceContainerHigh,
+                ),
+              ),
+            ),
+          ),
         );
       },
     );

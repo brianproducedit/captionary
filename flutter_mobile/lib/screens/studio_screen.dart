@@ -23,8 +23,6 @@ import '../data/models/caption_style.dart';
 import '../providers/player_provider.dart';
 import '../providers/engagement_provider.dart';
 
-import 'package:video_player/video_player.dart';
-
 import '../theme/app_spacing.dart';
 import '../widgets/app_toast.dart';
 import '../widgets/glass_card.dart';
@@ -278,15 +276,28 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     List<SubtitleSegment> segments,
   ) {
     final playerState = ref.watch(playerProvider);
-    final controller = playerState.controller;
 
     Widget playerWidget;
-    if (controller != null && playerState.isInitialized) {
+    if (playerState.error != null) {
       playerWidget = AspectRatio(
-        aspectRatio: controller.value.aspectRatio > 0
-            ? controller.value.aspectRatio
+        aspectRatio: 16 / 9,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              playerState.error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.onSurface),
+            ),
+          ),
+        ),
+      );
+    } else if (playerState.handle != null && playerState.isInitialized) {
+      playerWidget = AspectRatio(
+        aspectRatio: playerState.aspectRatio > 0
+            ? playerState.aspectRatio
             : 16 / 9,
-        child: VideoPlayer(controller),
+        child: playerState.buildVideoView(context),
       );
     } else {
       playerWidget = const AspectRatio(
