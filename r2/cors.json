@@ -2,7 +2,10 @@
   {
     "AllowedOrigins": [
       "http://localhost:5173",
-      "https://captionary.example"
+      "http://localhost:3000",
+      "https://captionary.co.zw",
+      "https://models.captionary.co.zw",
+      "https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev"
     ],
     "AllowedMethods": ["GET", "HEAD"],
     "AllowedHeaders": ["Range", "Origin", "Accept"],

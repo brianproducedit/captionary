@@ -30,6 +30,12 @@ subprojects {
                 compileSdk = 36
             }
         }
+        if (project.hasProperty("android")) {
+            val androidExtension = project.extensions.findByName("android")
+            if (androidExtension is com.android.build.gradle.BaseExtension) {
+                androidExtension.ndkVersion = "28.2.13676358"
+            }
+        }
     }
     tasks.withType<JavaCompile>().configureEach {
         sourceCompatibility = "17"
