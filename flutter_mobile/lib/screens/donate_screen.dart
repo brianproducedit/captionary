@@ -8,12 +8,11 @@ import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../core/constants/app_constants.dart';
+import '../providers/url_open_provider.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/app_header.dart';
-
-import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/url_fallback_dialog.dart';
 
@@ -36,7 +35,7 @@ class DonateScreen extends ConsumerWidget {
         children: [
           _buildHeroSpotlight(context),
           const SizedBox(height: 32),
-          _buildWebContributionCard(context),
+          _buildWebContributionCard(context, ref),
           const SizedBox(height: 32),
           Text(
             'Your Impact',
@@ -135,36 +134,13 @@ class DonateScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            //   children: [
-            //     _buildStatColumn(
-            //       context,
-            //       '1,420+',
-            //       'Global Backers',
-            //       AppColors.primary,
-            //     ),
-            //     _buildStatColumn(
-            //       context,
-            //       '18.5k+',
-            //       'Models Funded',
-            //       AppColors.secondary,
-            //     ),
-            //     _buildStatColumn(
-            //       context,
-            //       '4',
-            //       'Dialects Preserved',
-            //       AppColors.tertiary,
-            //     ),
-            //   ],
-            // ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildWebContributionCard(BuildContext context) {
+  Widget _buildWebContributionCard(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
@@ -214,13 +190,12 @@ class DonateScreen extends ConsumerWidget {
               final url = AppConstants.donateWebUrl;
               final uri = Uri.parse(url);
               try {
-                if (!await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
-                  if (context.mounted) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => UrlFallbackDialog(url: url),
-                    );
-                  }
+                final opened = await ref.read(urlOpenHandlerProvider)(uri);
+                if (!opened && context.mounted) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => UrlFallbackDialog(url: url),
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {

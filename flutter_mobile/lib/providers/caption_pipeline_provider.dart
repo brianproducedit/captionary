@@ -95,5 +95,5 @@ class CaptionPipelineNotifier extends Notifier<CaptionPipelineState> {
 /// Global provider for the active CaptionPipeline notifier and its reactive state.
 final captionPipelineProvider =
     NotifierProvider<CaptionPipelineNotifier, CaptionPipelineState>(() {
-  return CaptionPipelineNotifier();
-});
+      return CaptionPipelineNotifier();
+    });

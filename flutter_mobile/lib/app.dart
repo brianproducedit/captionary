@@ -21,11 +21,7 @@ class CaptionaryApp extends ConsumerStatefulWidget {
   final String? initialRoute;
   final GoRouter? router;
 
-  const CaptionaryApp({
-    super.key,
-    this.initialRoute,
-    this.router,
-  });
+  const CaptionaryApp({super.key, this.initialRoute, this.router});
 
   @override
   ConsumerState<CaptionaryApp> createState() => _CaptionaryAppState();
@@ -40,8 +36,8 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
 
     // Initialize router with initial location based on onboarding state or initialRoute
     final hasSeenOnboarding = ref.read(engagementProvider).hasSeenOnboarding;
-    final initialLocation = widget.initialRoute ??
-        (hasSeenOnboarding ? '/library' : '/onboarding');
+    final initialLocation =
+        widget.initialRoute ?? (hasSeenOnboarding ? '/library' : '/onboarding');
 
     _router = widget.router ?? _buildRouter(initialLocation);
 

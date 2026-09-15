@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -87,7 +88,11 @@ class WhisperChunker {
     final dataOffset = header.dataOffset!;
     final dataLength = header.dataSize!;
 
-    final pcmBytes = Uint8List.sublistView(bytes, dataOffset, dataOffset + dataLength);
+    final pcmBytes = Uint8List.sublistView(
+      bytes,
+      dataOffset,
+      dataOffset + dataLength,
+    );
 
     final chunkBytesCount = chunkDuration.inMilliseconds * bytesPerMs;
     final stepDuration = chunkDuration - overlap;
@@ -98,11 +103,16 @@ class WhisperChunker {
     Duration currentOffset = Duration.zero;
 
     while (currentByteOffset < pcmBytes.length) {
-      final endByteOffset = (currentByteOffset + chunkBytesCount > pcmBytes.length)
+      final endByteOffset =
+          (currentByteOffset + chunkBytesCount > pcmBytes.length)
           ? pcmBytes.length
           : currentByteOffset + chunkBytesCount;
 
-      final slice = Uint8List.sublistView(pcmBytes, currentByteOffset, endByteOffset);
+      final slice = Uint8List.sublistView(
+        pcmBytes,
+        currentByteOffset,
+        endByteOffset,
+      );
       final sliceDuration = Duration(milliseconds: slice.length ~/ bytesPerMs);
 
       final chunkFile = File('${chunksDir.path}/chunk_${_uuid.v4()}.wav');
@@ -125,7 +135,8 @@ class WhisperChunker {
       currentOffset += stepDuration;
 
       // If the remaining duration is less than or equal to the overlap, we're done
-      if (pcmBytes.length - currentByteOffset <= overlap.inMilliseconds * bytesPerMs) {
+      if (pcmBytes.length - currentByteOffset <=
+          overlap.inMilliseconds * bytesPerMs) {
         break;
       }
     }

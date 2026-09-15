@@ -10,10 +10,7 @@ class FileImportService {
   final Future<Directory> Function()? getTempDirectory;
   final Future<String?> Function()? filePicker;
 
-  FileImportService({
-    this.getTempDirectory,
-    this.filePicker,
-  });
+  FileImportService({this.getTempDirectory, this.filePicker});
 
   Future<String?> pickVideoFile() async {
     if (filePicker != null) {

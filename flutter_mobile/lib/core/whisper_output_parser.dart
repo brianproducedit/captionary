@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
 import '../data/models/subtitle_segment.dart';
@@ -85,19 +86,23 @@ class WhisperOutputParser {
         final text = (match.group(9) ?? '').trim();
         if (text.isEmpty) continue;
 
-        var start = Duration(
-          hours: startH,
-          minutes: startM,
-          seconds: startS,
-          milliseconds: startMs,
-        ) + timeOffset;
+        var start =
+            Duration(
+              hours: startH,
+              minutes: startM,
+              seconds: startS,
+              milliseconds: startMs,
+            ) +
+            timeOffset;
 
-        var end = Duration(
-          hours: endH,
-          minutes: endM,
-          seconds: endS,
-          milliseconds: endMs,
-        ) + timeOffset;
+        var end =
+            Duration(
+              hours: endH,
+              minutes: endM,
+              seconds: endS,
+              milliseconds: endMs,
+            ) +
+            timeOffset;
 
         if (start < Duration.zero) start = Duration.zero;
         if (end <= start) {
@@ -155,8 +160,11 @@ class WhisperOutputParser {
       final prev = merged.last;
 
       // 1. Deduplication: exact or near-identical text within overlap window (<= 3s apart)
-      final sameText = prev.text.toLowerCase().trim() == current.text.toLowerCase().trim();
-      final closeInTime = (current.startTime - prev.startTime).abs() < const Duration(seconds: 3);
+      final sameText =
+          prev.text.toLowerCase().trim() == current.text.toLowerCase().trim();
+      final closeInTime =
+          (current.startTime - prev.startTime).abs() <
+          const Duration(seconds: 3);
 
       if (sameText && closeInTime) {
         if (current.endTime > prev.endTime) {
@@ -189,8 +197,7 @@ class WhisperOutputParser {
 
     // Re-index cleanly 0..N-1
     return [
-      for (int i = 0; i < merged.length; i++)
-        merged[i].copyWith(index: i),
+      for (int i = 0; i < merged.length; i++) merged[i].copyWith(index: i),
     ];
   }
 }

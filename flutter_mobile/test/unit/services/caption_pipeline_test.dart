@@ -152,23 +152,24 @@ class TestTranscriptionService implements TranscriptionService {
     this.shouldFail = false,
     this.delay = Duration.zero,
     List<SubtitleSegment>? segments,
-  }) : segmentsToReturn = segments ??
-            [
-              SubtitleSegment(
-                index: 0,
-                startTime: Duration.zero,
-                endTime: const Duration(seconds: 2),
-                text: 'Hello from test transcription',
-                isSelected: false,
-              ),
-              SubtitleSegment(
-                index: 1,
-                startTime: const Duration(seconds: 2),
-                endTime: const Duration(seconds: 4),
-                text: 'Second subtitle segment',
-                isSelected: false,
-              ),
-            ];
+  }) : segmentsToReturn =
+           segments ??
+           [
+             SubtitleSegment(
+               index: 0,
+               startTime: Duration.zero,
+               endTime: const Duration(seconds: 2),
+               text: 'Hello from test transcription',
+               isSelected: false,
+             ),
+             SubtitleSegment(
+               index: 1,
+               startTime: const Duration(seconds: 2),
+               endTime: const Duration(seconds: 4),
+               text: 'Second subtitle segment',
+               isSelected: false,
+             ),
+           ];
 
   @override
   Future<List<SubtitleSegment>> transcribeAudio({
@@ -332,54 +333,66 @@ void main() {
         mediaId: 'media_cached_1',
       );
 
-      expect(statesObserved.contains(CaptionPipelineStatus.downloadingModel), isFalse);
-      expect(statesObserved.contains(CaptionPipelineStatus.transcribing), isTrue);
+      expect(
+        statesObserved.contains(CaptionPipelineStatus.downloadingModel),
+        isFalse,
+      );
+      expect(
+        statesObserved.contains(CaptionPipelineStatus.transcribing),
+        isTrue,
+      );
       expect(pipeline.state.status, CaptionPipelineStatus.ready);
     });
 
-    test('3. Missing model triggers downloadingModel then completes transcribing', () async {
-      final missingModelFile = File('${tempDir.path}/downloaded_model.bin');
+    test(
+      '3. Missing model triggers downloadingModel then completes transcribing',
+      () async {
+        final missingModelFile = File('${tempDir.path}/downloaded_model.bin');
 
-      final audioService = TestAudioExtractionService(tempDir: tempDir);
-      final langService = TestLanguagePackService(
-        languages: [
-          LanguagePack(
-            code: 'en',
-            name: 'English',
-            nativeName: 'English',
-            region: 'Global',
-            modelFile: missingModelFile.path,
-            sizeBytes: 100,
-            sha256: 'abc',
-            accuracy: '95%',
-            engine: 'whisper',
-            isBundled: false,
-            priority: 1,
-            status: LanguagePackStatus.notDownloaded,
-            downloadProgress: 0.0,
-          ),
-        ],
-      );
-      final transService = TestTranscriptionService();
-      final statesObserved = <CaptionPipelineStatus>[];
+        final audioService = TestAudioExtractionService(tempDir: tempDir);
+        final langService = TestLanguagePackService(
+          languages: [
+            LanguagePack(
+              code: 'en',
+              name: 'English',
+              nativeName: 'English',
+              region: 'Global',
+              modelFile: missingModelFile.path,
+              sizeBytes: 100,
+              sha256: 'abc',
+              accuracy: '95%',
+              engine: 'whisper',
+              isBundled: false,
+              priority: 1,
+              status: LanguagePackStatus.notDownloaded,
+              downloadProgress: 0.0,
+            ),
+          ],
+        );
+        final transService = TestTranscriptionService();
+        final statesObserved = <CaptionPipelineStatus>[];
 
-      final pipeline = CaptionPipeline(
-        audioExtractionService: audioService,
-        languagePackService: langService,
-        transcriptionService: transService,
-        onStateChange: (st) => statesObserved.add(st.status),
-      );
+        final pipeline = CaptionPipeline(
+          audioExtractionService: audioService,
+          languagePackService: langService,
+          transcriptionService: transService,
+          onStateChange: (st) => statesObserved.add(st.status),
+        );
 
-      final segments = await pipeline.run(
-        videoPath: dummyVideoFile.path,
-        mediaId: 'media_download_1',
-      );
+        final segments = await pipeline.run(
+          videoPath: dummyVideoFile.path,
+          mediaId: 'media_download_1',
+        );
 
-      expect(statesObserved, contains(CaptionPipelineStatus.downloadingModel));
-      expect(statesObserved, contains(CaptionPipelineStatus.transcribing));
-      expect(pipeline.state.status, CaptionPipelineStatus.ready);
-      expect(segments.isNotEmpty, isTrue);
-    });
+        expect(
+          statesObserved,
+          contains(CaptionPipelineStatus.downloadingModel),
+        );
+        expect(statesObserved, contains(CaptionPipelineStatus.transcribing));
+        expect(pipeline.state.status, CaptionPipelineStatus.ready);
+        expect(segments.isNotEmpty, isTrue);
+      },
+    );
 
     test('4. Network failure during model download transitions to error and cleans up', () async {
       final missingModelFile = File('${tempDir.path}/missing.bin');
@@ -425,96 +438,102 @@ void main() {
       expect(File(audioService.lastCreatedAudioPath!).existsSync(), isFalse);
     });
 
-    test('5. Transcription failure transitions to error and cleans up', () async {
-      final audioService = TestAudioExtractionService(tempDir: tempDir);
-      final langService = TestLanguagePackService(
-        languages: [
-          LanguagePack(
-            code: 'en',
-            name: 'English',
-            nativeName: 'English',
-            region: 'Global',
-            modelFile: dummyModelFile.path,
-            sizeBytes: 100,
-            sha256: 'abc',
-            accuracy: '95%',
-            engine: 'whisper',
-            isBundled: false,
-            priority: 1,
-            status: LanguagePackStatus.installed,
-            downloadProgress: 1.0,
+    test(
+      '5. Transcription failure transitions to error and cleans up',
+      () async {
+        final audioService = TestAudioExtractionService(tempDir: tempDir);
+        final langService = TestLanguagePackService(
+          languages: [
+            LanguagePack(
+              code: 'en',
+              name: 'English',
+              nativeName: 'English',
+              region: 'Global',
+              modelFile: dummyModelFile.path,
+              sizeBytes: 100,
+              sha256: 'abc',
+              accuracy: '95%',
+              engine: 'whisper',
+              isBundled: false,
+              priority: 1,
+              status: LanguagePackStatus.installed,
+              downloadProgress: 1.0,
+            ),
+          ],
+        );
+        final transService = TestTranscriptionService(shouldFail: true);
+
+        final pipeline = CaptionPipeline(
+          audioExtractionService: audioService,
+          languagePackService: langService,
+          transcriptionService: transService,
+        );
+
+        await expectLater(
+          pipeline.run(
+            videoPath: dummyVideoFile.path,
+            mediaId: 'media_trans_fail_1',
           ),
-        ],
-      );
-      final transService = TestTranscriptionService(shouldFail: true);
+          throwsA(isA<StateError>()),
+        );
 
-      final pipeline = CaptionPipeline(
-        audioExtractionService: audioService,
-        languagePackService: langService,
-        transcriptionService: transService,
-      );
+        expect(audioService.lastCreatedAudioPath, isNotNull);
+        expect(File(audioService.lastCreatedAudioPath!).existsSync(), isFalse);
+      },
+    );
 
-      await expectLater(
-        pipeline.run(
+    test(
+      '6. Cancel during transcription sets cancelled state and cleans up',
+      () async {
+        final audioService = TestAudioExtractionService(tempDir: tempDir);
+        final langService = TestLanguagePackService(
+          languages: [
+            LanguagePack(
+              code: 'en',
+              name: 'English',
+              nativeName: 'English',
+              region: 'Global',
+              modelFile: dummyModelFile.path,
+              sizeBytes: 100,
+              sha256: 'abc',
+              accuracy: '95%',
+              engine: 'whisper',
+              isBundled: false,
+              priority: 1,
+              status: LanguagePackStatus.installed,
+              downloadProgress: 1.0,
+            ),
+          ],
+        );
+        // Slow transcription stream
+        final transService = TestTranscriptionService(
+          delay: const Duration(milliseconds: 50),
+        );
+
+        final pipeline = CaptionPipeline(
+          audioExtractionService: audioService,
+          languagePackService: langService,
+          transcriptionService: transService,
+        );
+
+        final future = pipeline.run(
           videoPath: dummyVideoFile.path,
-          mediaId: 'media_trans_fail_1',
-        ),
-        throwsA(isA<StateError>()),
-      );
+          mediaId: 'media_cancel_1',
+        );
 
-      expect(audioService.lastCreatedAudioPath, isNotNull);
-      expect(File(audioService.lastCreatedAudioPath!).existsSync(), isFalse);
-    });
+        // Cancel shortly after starting
+        await Future.delayed(const Duration(milliseconds: 15));
+        pipeline.cancel();
 
-    test('6. Cancel during transcription sets cancelled state and cleans up', () async {
-      final audioService = TestAudioExtractionService(tempDir: tempDir);
-      final langService = TestLanguagePackService(
-        languages: [
-          LanguagePack(
-            code: 'en',
-            name: 'English',
-            nativeName: 'English',
-            region: 'Global',
-            modelFile: dummyModelFile.path,
-            sizeBytes: 100,
-            sha256: 'abc',
-            accuracy: '95%',
-            engine: 'whisper',
-            isBundled: false,
-            priority: 1,
-            status: LanguagePackStatus.installed,
-            downloadProgress: 1.0,
-          ),
-        ],
-      );
-      // Slow transcription stream
-      final transService = TestTranscriptionService(
-        delay: const Duration(milliseconds: 50),
-      );
+        final segments = await future;
+        expect(segments, isEmpty);
+        expect(pipeline.state.status, CaptionPipelineStatus.cancelled);
 
-      final pipeline = CaptionPipeline(
-        audioExtractionService: audioService,
-        languagePackService: langService,
-        transcriptionService: transService,
-      );
-
-      final future = pipeline.run(
-        videoPath: dummyVideoFile.path,
-        mediaId: 'media_cancel_1',
-      );
-
-      // Cancel shortly after starting
-      await Future.delayed(const Duration(milliseconds: 15));
-      pipeline.cancel();
-
-      final segments = await future;
-      expect(segments, isEmpty);
-      expect(pipeline.state.status, CaptionPipelineStatus.cancelled);
-
-      // Verify temp audio cleanup
-      expect(audioService.lastCreatedAudioPath, isNotNull);
-      expect(File(audioService.lastCreatedAudioPath!).existsSync(), isFalse);
-    });
+        // Verify temp audio cleanup
+        expect(audioService.lastCreatedAudioPath, isNotNull);
+        expect(File(audioService.lastCreatedAudioPath!).existsSync(), isFalse);
+      },
+    );
 
     test('7. Cleanup verification across multiple runs', () async {
       final audioService = TestAudioExtractionService(tempDir: tempDir);
@@ -661,9 +680,7 @@ void main() {
           isSelected: false,
         ),
       ];
-      final transService = TestTranscriptionService(
-        segments: expectedSegments,
-      );
+      final transService = TestTranscriptionService(segments: expectedSegments);
 
       final container = ProviderContainer(
         overrides: [
@@ -725,9 +742,7 @@ void main() {
           isSelected: false,
         ),
       ];
-      final transService = TestTranscriptionService(
-        segments: expectedSegments,
-      );
+      final transService = TestTranscriptionService(segments: expectedSegments);
 
       final container = ProviderContainer(
         overrides: [
@@ -738,7 +753,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final transcriptionNotifier = container.read(transcriptionProvider.notifier);
+      final transcriptionNotifier = container.read(
+        transcriptionProvider.notifier,
+      );
       await transcriptionNotifier.startTranscription(dummyVideoFile.path);
 
       final transcriptionState = container.read(transcriptionProvider);

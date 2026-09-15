@@ -63,41 +63,46 @@ void main() {
     notifier.dispose();
   });
 
-  test('MockMediaPlayerService initializes properly and controls playback', () async {
-    final service = MockMediaPlayerService(mockDuration: const Duration(seconds: 45));
-    final notifier = PlayerNotifier(service);
+  test(
+    'MockMediaPlayerService initializes properly and controls playback',
+    () async {
+      final service = MockMediaPlayerService(
+        mockDuration: const Duration(seconds: 45),
+      );
+      final notifier = PlayerNotifier(service);
 
-    await notifier.initPlayer('sample.mp4');
-    expect(notifier.state.isInitialized, isTrue);
-    expect(notifier.state.error, isNull);
-    expect(notifier.state.duration, const Duration(seconds: 45));
-    expect(notifier.state.isPlaying, isFalse);
+      await notifier.initPlayer('sample.mp4');
+      expect(notifier.state.isInitialized, isTrue);
+      expect(notifier.state.error, isNull);
+      expect(notifier.state.duration, const Duration(seconds: 45));
+      expect(notifier.state.isPlaying, isFalse);
 
-    await notifier.play();
-    expect(notifier.state.isPlaying, isTrue);
+      await notifier.play();
+      expect(notifier.state.isPlaying, isTrue);
 
-    await notifier.pause();
-    expect(notifier.state.isPlaying, isFalse);
+      await notifier.pause();
+      expect(notifier.state.isPlaying, isFalse);
 
-    await notifier.togglePlay();
-    expect(notifier.state.isPlaying, isTrue);
+      await notifier.togglePlay();
+      expect(notifier.state.isPlaying, isTrue);
 
-    await notifier.seekTo(const Duration(seconds: 15));
-    expect(notifier.state.position, const Duration(seconds: 15));
+      await notifier.seekTo(const Duration(seconds: 15));
+      expect(notifier.state.position, const Duration(seconds: 15));
 
-    await notifier.seekRelative(const Duration(seconds: 5));
-    expect(notifier.state.position, const Duration(seconds: 20));
+      await notifier.seekRelative(const Duration(seconds: 5));
+      expect(notifier.state.position, const Duration(seconds: 20));
 
-    await notifier.seekRelative(const Duration(seconds: -10));
-    expect(notifier.state.position, const Duration(seconds: 10));
+      await notifier.seekRelative(const Duration(seconds: -10));
+      expect(notifier.state.position, const Duration(seconds: 10));
 
-    await notifier.setPlaybackSpeed(1.5);
-    expect(notifier.state.playbackSpeed, 1.5);
+      await notifier.setPlaybackSpeed(1.5);
+      expect(notifier.state.playbackSpeed, 1.5);
 
-    await notifier.disposePlayer();
-    expect(notifier.state.handle, isNull);
-    expect(notifier.state.isInitialized, isFalse);
+      await notifier.disposePlayer();
+      expect(notifier.state.handle, isNull);
+      expect(notifier.state.isInitialized, isFalse);
 
-    notifier.dispose();
-  });
+      notifier.dispose();
+    },
+  );
 }

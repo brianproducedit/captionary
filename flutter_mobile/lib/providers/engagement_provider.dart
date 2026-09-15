@@ -102,12 +102,25 @@ class EngagementNotifier extends StateNotifier<EngagementState> {
       donateRemindersEnabled: enabled,
       reminderFrequency: frequency,
     );
+
+    if (enabled && _shouldScheduleReminder() && state.exportCount >= 2) {
+      final delay = _getDelayFromFrequency(frequency);
+      await NotificationService.instance.scheduleDonateReminder(delay: delay);
+    }
   }
 
   /// Update reminder frequency.
   Future<void> setReminderFrequency(String frequency) async {
     await _prefs.setString(EngagementKeys.reminderFrequency, frequency);
     state = state.copyWith(reminderFrequency: frequency);
+
+    if (_shouldScheduleReminder() && state.exportCount >= 2) {
+      await NotificationService.instance.cancel(
+        NotificationService.donateReminderId,
+      );
+      final delay = _getDelayFromFrequency(frequency);
+      await NotificationService.instance.scheduleDonateReminder(delay: delay);
+    }
   }
 
   /// Mark the user as having donated. Cancels all reminders.

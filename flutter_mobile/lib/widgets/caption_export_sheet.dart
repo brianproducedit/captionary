@@ -136,9 +136,7 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
               ),
               if (!_format.isAvailable) ...[
                 const SizedBox(height: 8),
-                const Text(
-                  'Selected format is not available.',
-                ),
+                const Text('Selected format is not available.'),
               ],
               if (reason != null) ...[
                 const SizedBox(height: 12),

@@ -11,7 +11,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('Cold start with notification payload opens DonateScreen', (tester) async {
+  testWidgets('Cold start with notification payload opens DonateScreen', (
+    tester,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(
@@ -27,7 +29,9 @@ void main() {
     expect(find.byType(DonateScreen), findsOneWidget);
   });
 
-  testWidgets('Notification tap while running navigates to DonateScreen', (tester) async {
+  testWidgets('Notification tap while running navigates to DonateScreen', (
+    tester,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(

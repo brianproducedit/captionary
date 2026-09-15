@@ -34,10 +34,7 @@ class MediaKitPlayerHandle implements PlayerHandle {
   final Player player;
   final VideoController controller;
 
-  MediaKitPlayerHandle({
-    required this.player,
-    required this.controller,
-  });
+  MediaKitPlayerHandle({required this.player, required this.controller});
 
   @override
   Duration get position => player.state.position;
@@ -106,10 +103,7 @@ class MediaKitPlayerHandle implements PlayerHandle {
 
   @override
   Widget buildWidget(BuildContext context) {
-    return Video(
-      controller: controller,
-      controls: NoVideoControls,
-    );
+    return Video(controller: controller, controls: NoVideoControls);
   }
 }
 

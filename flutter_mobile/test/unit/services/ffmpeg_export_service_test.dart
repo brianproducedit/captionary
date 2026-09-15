@@ -102,33 +102,36 @@ void main() {
 
   test('escapeFilterPath escapes backslashes, colons, and single quotes', () {
     expect(
-      FfmpegExportService.escapeFilterPath(r'C:\Program Files\sub' "'" r's.ass'),
+      FfmpegExportService.escapeFilterPath(
+        r'C:\Program Files\sub'
+        "'"
+        r's.ass',
+      ),
       r"C\:/Program Files/sub\'s.ass",
     );
   });
 
-  test('burnCaptions rejects identical input and output paths immediately', () async {
-    final service = FfmpegExportService(
-      tempDirResolver: () async => tempDir,
-    );
+  test(
+    'burnCaptions rejects identical input and output paths immediately',
+    () async {
+      final service = FfmpegExportService(tempDirResolver: () async => tempDir);
 
-    final stream = service.burnCaptions(
-      videoPath: sampleVideo.path,
-      segments: segments,
-      style: style,
-      outputPath: sampleVideo.path,
-      videoDuration: const Duration(seconds: 10),
-    );
+      final stream = service.burnCaptions(
+        videoPath: sampleVideo.path,
+        segments: segments,
+        style: style,
+        outputPath: sampleVideo.path,
+        videoDuration: const Duration(seconds: 10),
+      );
 
-    final events = await stream.toList();
-    expect(events.last.state, ExportState.error);
-    expect(events.last.fallbackReason, contains('cannot be identical'));
-  });
+      final events = await stream.toList();
+      expect(events.last.state, ExportState.error);
+      expect(events.last.fallbackReason, contains('cannot be identical'));
+    },
+  );
 
   test('burnCaptions rejects non-existent input video', () async {
-    final service = FfmpegExportService(
-      tempDirResolver: () async => tempDir,
-    );
+    final service = FfmpegExportService(tempDirResolver: () async => tempDir);
 
     final stream = service.burnCaptions(
       videoPath: '${tempDir.path}/does_not_exist.mp4',
@@ -206,57 +209,62 @@ void main() {
     expect(events.last.outputSizeBytes, greaterThan(0));
   });
 
-  test('burnCaptions falls back to SRT burn-in when ASS filter fails', () async {
-    final commands = <String>[];
-    final outputPath = '${tempDir.path}/output_fallback.mp4';
+  test(
+    'burnCaptions falls back to SRT burn-in when ASS filter fails',
+    () async {
+      final commands = <String>[];
+      final outputPath = '${tempDir.path}/output_fallback.mp4';
 
-    final service = FfmpegExportService(
-      tempDirResolver: () async => tempDir,
-      fontDirResolver: () async => null,
-      metadataExtractor: (path) async => {
-        'resolution': '1080x1920',
-        'duration': const Duration(seconds: 5),
-      },
-      ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
-        commands.add(cmd);
-        if (cmd.contains('-vf "ass=')) {
-          // ASS fails (e.g. libass filter not compiled)
-          onComplete(FakeSession(id: 1, code: ReturnCode(1)));
-        } else if (cmd.contains('subtitles=')) {
-          // SRT succeeds
-          final partFile = File('$outputPath.part');
-          partFile.writeAsStringSync('fallback srt video');
-          onComplete(FakeSession(id: 2, code: ReturnCode(0)));
-        }
-      },
-    );
+      final service = FfmpegExportService(
+        tempDirResolver: () async => tempDir,
+        fontDirResolver: () async => null,
+        metadataExtractor: (path) async => {
+          'resolution': '1080x1920',
+          'duration': const Duration(seconds: 5),
+        },
+        ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
+          commands.add(cmd);
+          if (cmd.contains('-vf "ass=')) {
+            // ASS fails (e.g. libass filter not compiled)
+            onComplete(FakeSession(id: 1, code: ReturnCode(1)));
+          } else if (cmd.contains('subtitles=')) {
+            // SRT succeeds
+            final partFile = File('$outputPath.part');
+            partFile.writeAsStringSync('fallback srt video');
+            onComplete(FakeSession(id: 2, code: ReturnCode(0)));
+          }
+        },
+      );
 
-    final stream = service.burnCaptions(
-      videoPath: sampleVideo.path,
-      segments: segments,
-      style: style,
-      outputPath: outputPath,
-      videoDuration: const Duration(seconds: 5),
-    );
+      final stream = service.burnCaptions(
+        videoPath: sampleVideo.path,
+        segments: segments,
+        style: style,
+        outputPath: outputPath,
+        videoDuration: const Duration(seconds: 5),
+      );
 
-    final events = await stream.toList();
+      final events = await stream.toList();
 
-    // Verify two attempts were made: first ASS, then SRT
-    expect(commands.length, 2);
-    expect(commands[0], contains('-vf "ass='));
-    expect(commands[1], contains('subtitles='));
+      // Verify two attempts were made: first ASS, then SRT
+      expect(commands.length, 2);
+      expect(commands[0], contains('-vf "ass='));
+      expect(commands[1], contains('subtitles='));
 
-    // Verify fallback reason is populated
-    expect(
-      events.any((e) => e.fallbackReason != null && e.fallbackReason!.contains('SRT')),
-      isTrue,
-    );
+      // Verify fallback reason is populated
+      expect(
+        events.any(
+          (e) => e.fallbackReason != null && e.fallbackReason!.contains('SRT'),
+        ),
+        isTrue,
+      );
 
-    // Verify output file exists
-    final finalFile = File(outputPath);
-    expect(finalFile.existsSync(), isTrue);
-    expect(events.last.state, ExportState.complete);
-  });
+      // Verify output file exists
+      final finalFile = File(outputPath);
+      expect(finalFile.existsSync(), isTrue);
+      expect(events.last.state, ExportState.complete);
+    },
+  );
 
   test('burnCaptions handles cancellation and cleans up .part files', () async {
     final outputPath = '${tempDir.path}/output_cancelled.mp4';

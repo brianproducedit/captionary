@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 import 'package:captionary/core/wav_header_validator.dart';
@@ -68,70 +69,75 @@ void main() {
       );
     });
 
-    test('transcribes audio using injected runner and returns parsed segments', () async {
-      final service = WhisperTranscriptionService(
-        getTempDirectory: () async => tempDir,
-        runner: ({
-          required String audioPath,
-          required String modelPath,
-          required String languageCode,
-        }) async {
-          return WhisperTranscribeResponse(
-            type: 'text',
-            text: 'Hello from mock whisper',
-            segments: [
-              WhisperTranscribeSegment(
-                fromTs: const Duration(seconds: 0),
-                toTs: const Duration(seconds: 2),
-                text: 'Hello from',
-              ),
-              WhisperTranscribeSegment(
-                fromTs: const Duration(seconds: 2),
-                toTs: const Duration(seconds: 4),
-                text: 'mock whisper',
-              ),
-            ],
-          );
-        },
-      );
+    test(
+      'transcribes audio using injected runner and returns parsed segments',
+      () async {
+        final service = WhisperTranscriptionService(
+          getTempDirectory: () async => tempDir,
+          runner:
+              ({
+                required String audioPath,
+                required String modelPath,
+                required String languageCode,
+              }) async {
+                return WhisperTranscribeResponse(
+                  type: 'text',
+                  text: 'Hello from mock whisper',
+                  segments: [
+                    WhisperTranscribeSegment(
+                      fromTs: const Duration(seconds: 0),
+                      toTs: const Duration(seconds: 2),
+                      text: 'Hello from',
+                    ),
+                    WhisperTranscribeSegment(
+                      fromTs: const Duration(seconds: 2),
+                      toTs: const Duration(seconds: 4),
+                      text: 'mock whisper',
+                    ),
+                  ],
+                );
+              },
+        );
 
-      final segments = await service.transcribeAudio(
-        audioPath: testWavFile.path,
-        languageCode: 'en',
-        modelPath: testModelFile.path,
-      );
+        final segments = await service.transcribeAudio(
+          audioPath: testWavFile.path,
+          languageCode: 'en',
+          modelPath: testModelFile.path,
+        );
 
-      expect(segments.length, 2);
-      expect(segments[0].text, 'Hello from');
-      expect(segments[0].startTime, Duration.zero);
-      expect(segments[0].endTime, const Duration(seconds: 2));
+        expect(segments.length, 2);
+        expect(segments[0].text, 'Hello from');
+        expect(segments[0].startTime, Duration.zero);
+        expect(segments[0].endTime, const Duration(seconds: 2));
 
-      expect(segments[1].text, 'mock whisper');
-      expect(segments[1].startTime, const Duration(seconds: 2));
-      expect(segments[1].endTime, const Duration(seconds: 4));
-    });
+        expect(segments[1].text, 'mock whisper');
+        expect(segments[1].startTime, const Duration(seconds: 2));
+        expect(segments[1].endTime, const Duration(seconds: 4));
+      },
+    );
 
     test('cancellation terminates stream early', () async {
       final service = WhisperTranscriptionService(
         getTempDirectory: () async => tempDir,
-        runner: ({
-          required String audioPath,
-          required String modelPath,
-          required String languageCode,
-        }) async {
-          await Future.delayed(const Duration(milliseconds: 80));
-          return WhisperTranscribeResponse(
-            type: 'text',
-            text: 'Result',
-            segments: [
-              WhisperTranscribeSegment(
-                fromTs: Duration.zero,
-                toTs: const Duration(seconds: 2),
-                text: 'Should not arrive',
-              ),
-            ],
-          );
-        },
+        runner:
+            ({
+              required String audioPath,
+              required String modelPath,
+              required String languageCode,
+            }) async {
+              await Future.delayed(const Duration(milliseconds: 80));
+              return WhisperTranscribeResponse(
+                type: 'text',
+                text: 'Result',
+                segments: [
+                  WhisperTranscribeSegment(
+                    fromTs: Duration.zero,
+                    toTs: const Duration(seconds: 2),
+                    text: 'Should not arrive',
+                  ),
+                ],
+              );
+            },
       );
 
       final future = service.transcribeAudio(
@@ -154,23 +160,24 @@ void main() {
 
       final service = WhisperTranscriptionService(
         getTempDirectory: () async => tempDir,
-        runner: ({
-          required String audioPath,
-          required String modelPath,
-          required String languageCode,
-        }) async {
-          activeRunners++;
-          if (activeRunners > maxConcurrent) {
-            maxConcurrent = activeRunners;
-          }
-          await Future.delayed(const Duration(milliseconds: 40));
-          activeRunners--;
-          return WhisperTranscribeResponse(
-            type: 'text',
-            text: 'Done',
-            segments: [],
-          );
-        },
+        runner:
+            ({
+              required String audioPath,
+              required String modelPath,
+              required String languageCode,
+            }) async {
+              activeRunners++;
+              if (activeRunners > maxConcurrent) {
+                maxConcurrent = activeRunners;
+              }
+              await Future.delayed(const Duration(milliseconds: 40));
+              activeRunners--;
+              return WhisperTranscribeResponse(
+                type: 'text',
+                text: 'Done',
+                segments: [],
+              );
+            },
       );
 
       // Launch 2 parallel transcription tasks

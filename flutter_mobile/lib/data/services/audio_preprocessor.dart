@@ -25,10 +25,7 @@ class AudioPreprocessor implements AudioExtractionService {
   FFmpegSession? _activeSession;
   bool _cancelRequested = false;
 
-  AudioPreprocessor({
-    this.getTempDirectory,
-    this.ffmpegRunner,
-  });
+  AudioPreprocessor({this.getTempDirectory, this.ffmpegRunner});
 
   /// Extracts audio from [videoPath] and transcodes it to a mono 16kHz WAV file.
   /// Returns the path to the newly created audio file, or null on failure.
@@ -62,8 +59,8 @@ class AudioPreprocessor implements AudioExtractionService {
     _cancelRequested = false;
 
     try {
-      final runner = ffmpegRunner ??
-          (cmd, cb) => FFmpegKit.executeAsync(cmd, cb);
+      final runner =
+          ffmpegRunner ?? (cmd, cb) => FFmpegKit.executeAsync(cmd, cb);
 
       final session = await runner(command, (completedSession) async {
         _activeSession = null;

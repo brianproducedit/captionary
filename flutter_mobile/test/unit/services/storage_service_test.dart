@@ -29,10 +29,14 @@ void main() {
     expect(storageService.getStorageTotalGB(), 10.0);
 
     // Create dummy files in audio, media, thumbnails, models
-    final audioDir = Directory('${tempDir.path}/audio')..createSync(recursive: true);
-    final mediaDir = Directory('${tempDir.path}/media')..createSync(recursive: true);
-    final thumbDir = Directory('${tempDir.path}/thumbnails')..createSync(recursive: true);
-    final modelsDir = Directory('${supportDir.path}/models')..createSync(recursive: true);
+    final audioDir = Directory('${tempDir.path}/audio')
+      ..createSync(recursive: true);
+    final mediaDir = Directory('${tempDir.path}/media')
+      ..createSync(recursive: true);
+    final thumbDir = Directory('${tempDir.path}/thumbnails')
+      ..createSync(recursive: true);
+    final modelsDir = Directory('${supportDir.path}/models')
+      ..createSync(recursive: true);
 
     final dummy1MB = List<int>.filled(1024 * 1024, 0); // 1 MB
     File('${audioDir.path}/audio1.wav').writeAsBytesSync(dummy1MB);

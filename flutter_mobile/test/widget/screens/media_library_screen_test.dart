@@ -208,25 +208,28 @@ void main() {
     expect(find.byKey(const ValueKey('media-card-long')), findsOneWidget);
   });
 
-  testWidgets('missing file displays Missing File chip and shows dialog on tap', (tester) async {
-    final missingItem = MediaItem(
-      id: 'missing-1',
-      fileName: 'deleted_video.mp4',
-      filePath: '/non/existent/path/deleted_video.mp4',
-      fileSizeBytes: 1024,
-      resolution: '1920x1080',
-      duration: const Duration(seconds: 10),
-      status: MediaStatus.error,
-      importedAt: DateTime.now(),
-    );
+  testWidgets(
+    'missing file displays Missing File chip and shows dialog on tap',
+    (tester) async {
+      final missingItem = MediaItem(
+        id: 'missing-1',
+        fileName: 'deleted_video.mp4',
+        filePath: '/non/existent/path/deleted_video.mp4',
+        fileSizeBytes: 1024,
+        resolution: '1920x1080',
+        duration: const Duration(seconds: 10),
+        status: MediaStatus.error,
+        importedAt: DateTime.now(),
+      );
 
-    await pumpLibrary(tester, items: [missingItem]);
+      await pumpLibrary(tester, items: [missingItem]);
 
-    expect(find.text('Missing File'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('media-card-missing-1')));
-    await tester.pumpAndSettle();
+      expect(find.text('Missing File'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('media-card-missing-1')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Missing Media File'), findsOneWidget);
-    expect(find.text('Remove from Library'), findsOneWidget);
-  });
+      expect(find.text('Missing Media File'), findsOneWidget);
+      expect(find.text('Remove from Library'), findsOneWidget);
+    },
+  );
 }

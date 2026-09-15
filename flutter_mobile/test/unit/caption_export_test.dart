@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:captionary/core/ass_file_writer.dart';
@@ -66,7 +67,12 @@ void main() {
 
   test('srt and vtt encode cue times with Unicode text', () {
     final srt = CaptionExport.srt(unicodeSegments);
-    expect(srt, contains('1\n00:00:01,000 --> 00:00:03,250\nMhoroi mose, ndinofara kuva pano 🇿🇼'));
+    expect(
+      srt,
+      contains(
+        '1\n00:00:01,000 --> 00:00:03,250\nMhoroi mose, ndinofara kuva pano 🇿🇼',
+      ),
+    );
     expect(srt, contains('2\n00:00:03,000 --> 00:00:05,000\nÈdè Yorùbá'));
 
     final vtt = CaptionExport.vtt(unicodeSegments);
@@ -138,50 +144,80 @@ void main() {
     expect(AssFileWriter.colorToAss(const Color(0xFF0000FF)), '&H00FF0000');
     // 50% opacity green
     final halfGreen = AssFileWriter.colorToAss(const Color(0x8000FF00));
-    expect(halfGreen.startsWith('&H7F') || halfGreen.startsWith('&H80'), isTrue);
+    expect(
+      halfGreen.startsWith('&H7F') || halfGreen.startsWith('&H80'),
+      isTrue,
+    );
     expect(halfGreen.endsWith('00FF00'), isTrue);
   });
 
-  test('ASS alignment maps correctly for all positions and text alignments', () {
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.top, CaptionTextAlign.left),
-      7,
-    );
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.top, CaptionTextAlign.center),
-      8,
-    );
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.top, CaptionTextAlign.right),
-      9,
-    );
+  test(
+    'ASS alignment maps correctly for all positions and text alignments',
+    () {
+      expect(
+        AssFileWriter.assAlignment(SubtitlePosition.top, CaptionTextAlign.left),
+        7,
+      );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.top,
+          CaptionTextAlign.center,
+        ),
+        8,
+      );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.top,
+          CaptionTextAlign.right,
+        ),
+        9,
+      );
 
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.center, CaptionTextAlign.left),
-      4,
-    );
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.center, CaptionTextAlign.center),
-      5,
-    );
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.center, CaptionTextAlign.right),
-      6,
-    );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.center,
+          CaptionTextAlign.left,
+        ),
+        4,
+      );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.center,
+          CaptionTextAlign.center,
+        ),
+        5,
+      );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.center,
+          CaptionTextAlign.right,
+        ),
+        6,
+      );
 
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.bottom, CaptionTextAlign.left),
-      1,
-    );
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.bottom, CaptionTextAlign.center),
-      2,
-    );
-    expect(
-      AssFileWriter.assAlignment(SubtitlePosition.bottom, CaptionTextAlign.right),
-      3,
-    );
-  });
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.bottom,
+          CaptionTextAlign.left,
+        ),
+        1,
+      );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.bottom,
+          CaptionTextAlign.center,
+        ),
+        2,
+      );
+      expect(
+        AssFileWriter.assAlignment(
+          SubtitlePosition.bottom,
+          CaptionTextAlign.right,
+        ),
+        3,
+      );
+    },
+  );
 
   test('CaptionExport.encode routes to srt, vtt, and ass properly', () {
     final srt = CaptionExport.encode(segments, CaptionExportFormat.srt);
@@ -212,8 +248,16 @@ void main() {
 
     final ass = CaptionExport.ass(overlapping);
     expect(ass, contains(r'First line\NSecond line'));
-    expect(ass, contains('0:00:01.00,0:00:04.00,Default,,0,0,0,,First line\\NSecond line'));
-    expect(ass, contains('0:00:02.00,0:00:05.00,Default,,0,0,0,,Overlapping speaker'));
+    expect(
+      ass,
+      contains(
+        '0:00:01.00,0:00:04.00,Default,,0,0,0,,First line\\NSecond line',
+      ),
+    );
+    expect(
+      ass,
+      contains('0:00:02.00,0:00:05.00,Default,,0,0,0,,Overlapping speaker'),
+    );
   });
 
   test('SubtitleFileStore writes named content', () async {

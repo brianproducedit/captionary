@@ -24,7 +24,9 @@ void main() {
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('captionary_temp_test_');
-    supportDir = await Directory.systemTemp.createTemp('captionary_support_test_');
+    supportDir = await Directory.systemTemp.createTemp(
+      'captionary_support_test_',
+    );
   });
 
   tearDown(() async {
@@ -78,34 +80,37 @@ void main() {
     expect(recent.first.status, MediaStatus.newItem);
   });
 
-  test('LocalMediaService marks status as error if cached file is missing', () async {
-    final sourceVideo = File('${tempDir.path}/temp_clip.mp4');
-    await sourceVideo.writeAsString('video data');
+  test(
+    'LocalMediaService marks status as error if cached file is missing',
+    () async {
+      final sourceVideo = File('${tempDir.path}/temp_clip.mp4');
+      await sourceVideo.writeAsString('video data');
 
-    final importService = FileImportService(
-      getTempDirectory: () async => tempDir,
-      filePicker: () async => sourceVideo.path,
-    );
+      final importService = FileImportService(
+        getTempDirectory: () async => tempDir,
+        filePicker: () async => sourceVideo.path,
+      );
 
-    final service = LocalMediaService(
-      importService: importService,
-      metadataService: _FakeMetadataService(),
-      getAppSupportDir: () async => supportDir,
-    );
+      final service = LocalMediaService(
+        importService: importService,
+        metadataService: _FakeMetadataService(),
+        getAppSupportDir: () async => supportDir,
+      );
 
-    final item = await service.importVideo();
-    expect(item, isNotNull);
+      final item = await service.importVideo();
+      expect(item, isNotNull);
 
-    // Now delete the cached file from disk
-    final cachedFile = File(item!.filePath);
-    expect(await cachedFile.exists(), isTrue);
-    await cachedFile.delete();
+      // Now delete the cached file from disk
+      final cachedFile = File(item!.filePath);
+      expect(await cachedFile.exists(), isTrue);
+      await cachedFile.delete();
 
-    // Re-read media from service
-    final recent = await service.getRecentMedia();
-    expect(recent.length, 1);
-    expect(recent.first.status, MediaStatus.error);
-  });
+      // Re-read media from service
+      final recent = await service.getRecentMedia();
+      expect(recent.length, 1);
+      expect(recent.first.status, MediaStatus.error);
+    },
+  );
 
   test('LocalMediaService deletes media and removes cached files', () async {
     final sourceVideo = File('${tempDir.path}/to_delete.mp4');
@@ -139,30 +144,33 @@ void main() {
     expect(await File(item.thumbnailPath!).exists(), isFalse);
   });
 
-  test('LocalMediaService skips thumbnail generation for audio files', () async {
-    final sourceAudio = File('${tempDir.path}/podcast.mp3');
-    await sourceAudio.writeAsString('fake audio');
+  test(
+    'LocalMediaService skips thumbnail generation for audio files',
+    () async {
+      final sourceAudio = File('${tempDir.path}/podcast.mp3');
+      await sourceAudio.writeAsString('fake audio');
 
-    bool thumbGeneratorCalled = false;
-    final importService = FileImportService(
-      getTempDirectory: () async => tempDir,
-      filePicker: () async => sourceAudio.path,
-    );
+      bool thumbGeneratorCalled = false;
+      final importService = FileImportService(
+        getTempDirectory: () async => tempDir,
+        filePicker: () async => sourceAudio.path,
+      );
 
-    final service = LocalMediaService(
-      importService: importService,
-      metadataService: _FakeMetadataService(),
-      getAppSupportDir: () async => supportDir,
-      customThumbnailGenerator: (_) async {
-        thumbGeneratorCalled = true;
-        return null;
-      },
-    );
+      final service = LocalMediaService(
+        importService: importService,
+        metadataService: _FakeMetadataService(),
+        getAppSupportDir: () async => supportDir,
+        customThumbnailGenerator: (_) async {
+          thumbGeneratorCalled = true;
+          return null;
+        },
+      );
 
-    final item = await service.importVideo();
-    expect(item, isNotNull);
-    expect(item!.isAudio, isTrue);
-    expect(thumbGeneratorCalled, isFalse);
-    expect(item.thumbnailPath, isEmpty);
-  });
+      final item = await service.importVideo();
+      expect(item, isNotNull);
+      expect(item!.isAudio, isTrue);
+      expect(thumbGeneratorCalled, isFalse);
+      expect(item.thumbnailPath, isEmpty);
+    },
+  );
 }

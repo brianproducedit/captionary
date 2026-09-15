@@ -67,7 +67,10 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
             if (ref.watch(isCatalogStaleProvider)) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.attentionYellow.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
@@ -86,9 +89,8 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                     Expanded(
                       child: Text(
                         'Showing cached catalog. Connect to the internet to download new language packs.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.onSurface,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.onSurface),
                       ),
                     ),
                   ],
@@ -143,10 +145,10 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
               Text(
                 isStale ? 'Offline (Cached)' : 'R2 Sync Active',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: isStale
-                          ? AppColors.attentionYellow
-                          : AppColors.primary,
-                    ),
+                  color: isStale
+                      ? AppColors.attentionYellow
+                      : AppColors.primary,
+                ),
               ),
             ],
           ),

@@ -113,7 +113,9 @@ void main() {
     expect(file.readAsStringSync(), contains('WEBVTT'));
   });
 
-  testWidgets('exporting ASS writes a styled ASS file and shares it', (tester) async {
+  testWidgets('exporting ASS writes a styled ASS file and shares it', (
+    tester,
+  ) async {
     final dir = Directory.systemTemp.createTempSync('captionary_sheet_ass');
     addTearDown(() {
       try {

@@ -149,7 +149,9 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       );
       _subscriptions.add(
         handle.durationStream.listen((dur) {
-          if (mounted && dur > Duration.zero) state = state.copyWith(duration: dur);
+          if (mounted && dur > Duration.zero) {
+            state = state.copyWith(duration: dur);
+          }
         }),
       );
       _subscriptions.add(
@@ -235,8 +237,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     final clampedPos = newPos < Duration.zero
         ? Duration.zero
         : (state.duration > Duration.zero && newPos > state.duration)
-            ? state.duration
-            : newPos;
+        ? state.duration
+        : newPos;
     await seekTo(clampedPos);
   }
 

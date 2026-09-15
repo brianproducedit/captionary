@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../core/constants/app_constants.dart';
 import '../core/user_preferences.dart';
+import '../data/services/notification_service.dart';
 import '../providers/engagement_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/url_open_provider.dart';
@@ -39,13 +40,24 @@ class SettingsScreen extends ConsumerWidget {
                   _tile(
                     context,
                     title: 'Donate Reminders',
-                    subtitle:
-                        'Help donate to the project by keeping reminders on',
+                    subtitle: 'Occasional reminders. Delivery may vary by OEM battery policy (no exact SLA).',
                     icon: Symbols.favorite,
                     trailing: _switch(
+                      key: const ValueKey('settings-donate-reminders'),
                       value: engagement.donateRemindersEnabled,
-                      onChanged: (value) {
-                        ref
+                      onChanged: (value) async {
+                        if (value) {
+                          final granted = await NotificationService.instance
+                              .requestPermission();
+                          if (!granted && context.mounted) {
+                            AppToast.show(
+                              context,
+                              message: 'Notification permission not granted; reminders may not appear',
+                              variant: AppToastVariant.warning,
+                            );
+                          }
+                        }
+                        await ref
                             .read(engagementProvider.notifier)
                             .setDonateRemindersEnabled(value);
                       },
@@ -56,6 +68,7 @@ class SettingsScreen extends ConsumerWidget {
                     _tile(
                       context,
                       title: 'Frequency',
+                      subtitle: 'Interval is inexact to preserve battery life',
                       icon: Symbols.schedule,
                       trailing: _dropdown<String>(
                         context,
@@ -70,6 +83,40 @@ class SettingsScreen extends ConsumerWidget {
                                 .setReminderFrequency(value);
                           }
                         },
+                      ),
+                    ),
+                    const Divider(color: AppColors.surfaceContainerHigh),
+                    _tile(
+                      context,
+                      title: 'Send Test Reminder',
+                      subtitle: 'Schedules an inexact test notification in 5s',
+                      icon: Symbols.notification_important,
+                      trailing: OutlinedButton(
+                        key: const ValueKey('settings-send-test-notification'),
+                        onPressed: () async {
+                          await NotificationService.instance
+                              .scheduleTestReminder(
+                                delay: const Duration(seconds: 5),
+                              );
+                          if (context.mounted) {
+                            AppToast.show(
+                              context,
+                              message: 'Test reminder scheduled (5s)',
+                              variant: AppToastVariant.info,
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('Test (5s)'),
                       ),
                     ),
                   ],
@@ -457,7 +504,10 @@ class SettingsScreen extends ConsumerWidget {
                 SizedBox(height: 12),
                 Text(
                   'Under Section 13 of AGPLv3 and Section 5 of GPLv3, combined distribution is fully permitted with complete corresponding source code made available.',
-                  style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

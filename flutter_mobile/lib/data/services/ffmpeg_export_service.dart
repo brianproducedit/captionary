@@ -157,7 +157,8 @@ class FfmpegExportService implements ExportService {
         controller.add(
           job.copyWith(
             state: ExportState.error,
-            fallbackReason: 'Output path cannot be identical to input video path.',
+            fallbackReason:
+                'Output path cannot be identical to input video path.',
           ),
         );
         controller.close();
@@ -168,7 +169,8 @@ class FfmpegExportService implements ExportService {
         controller.add(
           job.copyWith(
             state: ExportState.error,
-            fallbackReason: 'Output path cannot be identical to input video path.',
+            fallbackReason:
+                'Output path cannot be identical to input video path.',
           ),
         );
         controller.close();
@@ -311,9 +313,11 @@ class FfmpegExportService implements ExportService {
       await srtFile.writeAsString(srtContent);
 
       final escapedSrtPath = escapeFilterPath(srtFile.path);
-      final alignment = AssFileWriter.assAlignment(style.position, style.textAlign);
-      final forceStyle =
-          'FontSize=${style.fontSize},Alignment=$alignment';
+      final alignment = AssFileWriter.assAlignment(
+        style.position,
+        style.textAlign,
+      );
+      final forceStyle = 'FontSize=${style.fontSize},Alignment=$alignment';
 
       // Use mpeg4 fallback if preferred codec failed
       final videoCodec = preferredVideoCodec == 'libx264' ? 'libx264' : 'mpeg4';
@@ -417,8 +421,9 @@ class FfmpegExportService implements ExportService {
             progress: progress,
             outputSizeBytes: statistics.getSize(),
             bitrateMbps: (statistics.getBitrate() / 1000).round(),
-            estimatedTimeRemaining:
-                Duration(milliseconds: remainingMs.clamp(0, 3600000)),
+            estimatedTimeRemaining: Duration(
+              milliseconds: remainingMs.clamp(0, 3600000),
+            ),
           ),
         );
       }
@@ -426,12 +431,7 @@ class FfmpegExportService implements ExportService {
 
     try {
       if (ffmpegAsyncRunner != null) {
-        await ffmpegAsyncRunner!(
-          command,
-          onComplete,
-          null,
-          onStatistics,
-        );
+        await ffmpegAsyncRunner!(command, onComplete, null, onStatistics);
       } else {
         await FFmpegKit.executeAsync(
           command,

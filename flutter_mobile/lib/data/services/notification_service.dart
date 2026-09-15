@@ -1,23 +1,40 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
-import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
-/// Singleton service for managing local notifications.
+/// Service for managing local notifications and scheduling inexact reminders.
 ///
 /// Handles:
 /// - Donate reminders (action-based, after N exports)
 /// - Inactivity nudges (scheduled after 5 days of no app open)
 /// - Export progress foreground notification channel
-/// - Deep-link to /donate on notification tap
+/// - Deep-link to /donate or /library on notification tap
+///
+/// NOTE on OEM Delays & Battery Optimization:
+/// Inexact alarms ([AndroidScheduleMode.inexactAllowWhileIdle]) are used by default
+/// to preserve device battery life without requiring intrusive exact alarm permissions
+/// (SCHEDULE_EXACT_ALARM).
+/// Modern Android OEM battery managers (e.g. Samsung OneUI, Xiaomi MIUI, Huawei EMUI)
+/// batch and throttle inexact background alarms when the device enters Doze mode.
+/// Consequently, reminder delivery may experience delays of minutes or hours depending
+/// on device idle state. No strict delivery SLA is guaranteed for inexact reminders.
 class NotificationService {
-  NotificationService._();
-  static final NotificationService instance = NotificationService._();
+  final FlutterLocalNotificationsPlugin _plugin;
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  NotificationService({FlutterLocalNotificationsPlugin? plugin})
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  static NotificationService _instance = NotificationService();
+
+  /// Singleton instance.
+  static NotificationService get instance => _instance;
+
+  @visibleForTesting
+  static set instance(NotificationService service) => _instance = service;
 
   bool _isInitialized = false;
+  static bool _timeZonesInitialized = false;
 
   // Notification channel IDs
   static const String _donateChannelId = 'captionary_donate';
@@ -43,12 +60,36 @@ class NotificationService {
   Future<NotificationAppLaunchDetails?> getNotificationAppLaunchDetails() =>
       _plugin.getNotificationAppLaunchDetails();
 
+  static void _ensureTimeZonesInitialized() {
+    if (!_timeZonesInitialized) {
+      try {
+        tz_data.initializeTimeZones();
+        _timeZonesInitialized = true;
+      } catch (e) {
+        debugPrint('[NotificationService] Timezone init exception: $e');
+      }
+    }
+  }
+
+  static tz.Location _safeLocation() {
+    _ensureTimeZonesInitialized();
+    try {
+      return tz.local;
+    } catch (_) {
+      try {
+        return tz.getLocation('UTC');
+      } catch (_) {
+        tz_data.initializeTimeZones();
+        return tz.getLocation('UTC');
+      }
+    }
+  }
+
   /// Initialize the notification plugin.
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Initialize timezone database
-    tz_data.initializeTimeZones();
+    _ensureTimeZonesInitialized();
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/launcher_icon',
@@ -102,39 +143,46 @@ class NotificationService {
 
   /// Request notification permission (Android 13+ / iOS).
   Future<bool> requestPermission() async {
-    // Android 13+
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    if (androidPlugin != null) {
-      final granted = await androidPlugin.requestNotificationsPermission();
-      return granted ?? false;
-    }
+    try {
+      // Android 13+
+      final androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      if (androidPlugin != null) {
+        final granted = await androidPlugin.requestNotificationsPermission();
+        return granted ?? false;
+      }
 
-    // iOS
-    final iosPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    if (iosPlugin != null) {
-      final granted = await iosPlugin.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      return granted ?? false;
+      // iOS
+      final iosPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      if (iosPlugin != null) {
+        final granted = await iosPlugin.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return granted ?? false;
+      }
+    } catch (e) {
+      debugPrint('[NotificationService] requestPermission error: $e');
     }
 
     return false;
   }
 
   /// Schedule a donate reminder notification after a delay.
+  ///
+  /// Uses [AndroidScheduleMode.inexactAllowWhileIdle] to minimize battery drain.
   Future<void> scheduleDonateReminder({
     Duration delay = const Duration(hours: 8),
   }) async {
     try {
-      final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+      final location = _safeLocation();
+      final scheduledDate = tz.TZDateTime.now(location).add(delay);
 
       await _plugin.zonedSchedule(
         id: donateReminderId,
@@ -166,12 +214,49 @@ class NotificationService {
     }
   }
 
+  /// Schedule a short test reminder for on-device or integration verification.
+  Future<void> scheduleTestReminder({
+    Duration delay = const Duration(seconds: 5),
+  }) async {
+    try {
+      final location = _safeLocation();
+      final scheduledDate = tz.TZDateTime.now(location).add(delay);
+
+      await _plugin.zonedSchedule(
+        id: donateReminderId,
+        title: '☕ Captionary Test Reminder',
+        body: 'Testing inexact local notification delivery. Tap to visit the donation page.',
+        scheduledDate: scheduledDate,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _donateChannelId,
+            _donateChannelName,
+            channelDescription: _donateChannelDesc,
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: '@mipmap/launcher_icon',
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: '/donate?from=notification',
+      );
+
+      debugPrint(
+        '[NotificationService] Test reminder scheduled for $scheduledDate (delay: ${delay.inSeconds}s).',
+      );
+    } catch (e) {
+      debugPrint('[NotificationService] Failed to schedule test reminder: $e');
+    }
+  }
+
   /// Schedule an inactivity nudge (5-day idle).
   Future<void> scheduleInactivityNudge({
     Duration delay = const Duration(days: 5),
   }) async {
     try {
-      final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+      final location = _safeLocation();
+      final scheduledDate = tz.TZDateTime.now(location).add(delay);
 
       await _plugin.zonedSchedule(
         id: inactivityNudgeId,
@@ -230,27 +315,31 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    await _plugin.show(
-      id: exportProgressId,
-      title: title,
-      body: body,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _exportChannelId,
-          _exportChannelName,
-          channelDescription: _exportChannelDesc,
-          importance: Importance.low,
-          priority: Priority.low,
-          ongoing: true,
-          autoCancel: false,
-          showProgress: true,
-          maxProgress: 100,
-          progress: (progress * 100).toInt(),
-          icon: '@mipmap/launcher_icon',
+    try {
+      await _plugin.show(
+        id: exportProgressId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _exportChannelId,
+            _exportChannelName,
+            channelDescription: _exportChannelDesc,
+            importance: Importance.low,
+            priority: Priority.low,
+            ongoing: true,
+            autoCancel: false,
+            showProgress: true,
+            maxProgress: 100,
+            progress: (progress * 100).toInt(),
+            icon: '@mipmap/launcher_icon',
+          ),
+          iOS: const DarwinNotificationDetails(),
         ),
-        iOS: const DarwinNotificationDetails(),
-      ),
-    );
+      );
+    } catch (e) {
+      debugPrint('[NotificationService] Failed to show export progress: $e');
+    }
   }
 
   /// Dismiss the export progress notification.

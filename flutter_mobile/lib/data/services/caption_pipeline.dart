@@ -34,7 +34,8 @@ class CaptionPipelineConflictException implements Exception {
   const CaptionPipelineConflictException(this.mediaId);
 
   @override
-  String toString() => 'CaptionPipeline is already running for mediaId: $mediaId';
+  String toString() =>
+      'CaptionPipeline is already running for mediaId: $mediaId';
 }
 
 /// Immutable state representation for the caption pipeline.
@@ -100,13 +101,13 @@ class CaptionPipelineState {
 
   @override
   int get hashCode => Object.hash(
-        status,
-        progress,
-        currentAction,
-        errorMessage,
-        detectedLanguage,
-        mediaId,
-      );
+    status,
+    progress,
+    currentAction,
+    errorMessage,
+    detectedLanguage,
+    mediaId,
+  );
 }
 
 /// Orchestrates the end-to-end pipeline:
@@ -175,13 +176,16 @@ class CaptionPipeline {
     if (_downloadCompleter != null && !_downloadCompleter!.isCompleted) {
       _downloadCompleter!.complete();
     }
-    if (_transcriptionCompleter != null && !_transcriptionCompleter!.isCompleted) {
+    if (_transcriptionCompleter != null &&
+        !_transcriptionCompleter!.isCompleted) {
       _transcriptionCompleter!.complete([]);
     }
-    _emit(_state.copyWith(
-      status: CaptionPipelineStatus.cancelled,
-      currentAction: 'Pipeline cancelled',
-    ));
+    _emit(
+      _state.copyWith(
+        status: CaptionPipelineStatus.cancelled,
+        currentAction: 'Pipeline cancelled',
+      ),
+    );
   }
 
   /// Execute the pipeline for [videoPath] and [mediaId].
@@ -200,13 +204,15 @@ class CaptionPipeline {
 
     try {
       // 1. Idle -> Importing
-      _emit(CaptionPipelineState(
-        status: CaptionPipelineStatus.importing,
-        progress: 0.05,
-        currentAction: 'Importing media...',
-        mediaId: mediaId,
-        videoPath: videoPath,
-      ));
+      _emit(
+        CaptionPipelineState(
+          status: CaptionPipelineStatus.importing,
+          progress: 0.05,
+          currentAction: 'Importing media...',
+          mediaId: mediaId,
+          videoPath: videoPath,
+        ),
+      );
 
       if (videoPath.trim().isEmpty) {
         throw ArgumentError('Video path cannot be empty.');
@@ -223,11 +229,13 @@ class CaptionPipeline {
       }
 
       // 2. Extracting Audio (mono 16kHz WAV)
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.extracting,
-        progress: 0.15,
-        currentAction: 'Extracting audio (mono 16kHz)...',
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.extracting,
+          progress: 0.15,
+          currentAction: 'Extracting audio (mono 16kHz)...',
+        ),
+      );
 
       final audioPath = await audioExtractionService.extractAudio(videoPath);
       if (audioPath != null) {
@@ -246,16 +254,20 @@ class CaptionPipeline {
       }
 
       // 3. Detecting Language
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.detecting,
-        progress: 0.30,
-        currentAction: 'Detecting language...',
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.detecting,
+          progress: 0.30,
+          currentAction: 'Detecting language...',
+        ),
+      );
 
       String targetLang =
-          (languageCode != null && languageCode.isNotEmpty && languageCode != 'auto')
-              ? languageCode
-              : '';
+          (languageCode != null &&
+              languageCode.isNotEmpty &&
+              languageCode != 'auto')
+          ? languageCode
+          : '';
 
       if (targetLang.isEmpty) {
         try {
@@ -278,18 +290,22 @@ class CaptionPipeline {
         return [];
       }
 
-      _emit(_state.copyWith(
-        detectedLanguage: targetLang,
-        progress: 0.40,
-        currentAction: 'Language resolved: $targetLang',
-      ));
+      _emit(
+        _state.copyWith(
+          detectedLanguage: targetLang,
+          progress: 0.40,
+          currentAction: 'Language resolved: $targetLang',
+        ),
+      );
 
       // 4. Checking Model
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.checkingModel,
-        progress: 0.45,
-        currentAction: 'Checking model availability...',
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.checkingModel,
+          progress: 0.45,
+          currentAction: 'Checking model availability...',
+        ),
+      );
 
       final availableLangs = await languagePackService.getAvailableLanguages();
       LanguagePack? targetPack = availableLangs.firstWhere(
@@ -311,14 +327,17 @@ class CaptionPipeline {
 
       // 5. Downloading Model (if not installed)
       if (!isModelInstalled) {
-        _emit(_state.copyWith(
-          status: CaptionPipelineStatus.downloadingModel,
-          progress: 0.50,
-          currentAction: 'Downloading language model (${targetPack.code})...',
-        ));
+        _emit(
+          _state.copyWith(
+            status: CaptionPipelineStatus.downloadingModel,
+            progress: 0.50,
+            currentAction: 'Downloading language model (${targetPack.code})...',
+          ),
+        );
 
-        final downloadStream =
-            languagePackService.downloadLanguagePack(targetPack.code);
+        final downloadStream = languagePackService.downloadLanguagePack(
+          targetPack.code,
+        );
         final downloadCompleter = Completer<void>();
         _downloadCompleter = downloadCompleter;
 
@@ -337,14 +356,16 @@ class CaptionPipeline {
                 : 0.0;
             final overallProgress = 0.50 + (pct * 0.20); // 0.50 -> 0.70
 
-            _emit(_state.copyWith(
-              status: CaptionPipelineStatus.downloadingModel,
-              progress: overallProgress,
-              downloadProgress: progress,
-              currentAction: progress.state == DownloadState.verifying
-                  ? 'Verifying model checksum...'
-                  : 'Downloading model (${(pct * 100).toStringAsFixed(0)}%)...',
-            ));
+            _emit(
+              _state.copyWith(
+                status: CaptionPipelineStatus.downloadingModel,
+                progress: overallProgress,
+                downloadProgress: progress,
+                currentAction: progress.state == DownloadState.verifying
+                    ? 'Verifying model checksum...'
+                    : 'Downloading model (${(pct * 100).toStringAsFixed(0)}%)...',
+              ),
+            );
 
             if (progress.state == DownloadState.complete) {
               if (!downloadCompleter.isCompleted) {
@@ -353,7 +374,9 @@ class CaptionPipeline {
             } else if (progress.state == DownloadState.error) {
               if (!downloadCompleter.isCompleted) {
                 downloadCompleter.completeError(
-                  StateError('Model download failed for ${progress.languageCode}'),
+                  StateError(
+                    'Model download failed for ${progress.languageCode}',
+                  ),
                 );
               }
             }
@@ -378,7 +401,8 @@ class CaptionPipeline {
         }
 
         // Refresh pack reference after download
-        final refreshedLangs = await languagePackService.getAvailableLanguages();
+        final refreshedLangs = await languagePackService
+            .getAvailableLanguages();
         targetPack = refreshedLangs.firstWhere(
           (p) => p.code == targetPack!.code,
           orElse: () => targetPack!,
@@ -391,11 +415,13 @@ class CaptionPipeline {
       }
 
       // 6. Transcribing Audio
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.transcribing,
-        progress: 0.70,
-        currentAction: 'Transcribing audio with Whisper...',
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.transcribing,
+          progress: 0.70,
+          currentAction: 'Transcribing audio with Whisper...',
+        ),
+      );
 
       final accumulatedSegments = <SubtitleSegment>[];
       final transcriptionCompleter = Completer<List<SubtitleSegment>>();
@@ -411,13 +437,18 @@ class CaptionPipeline {
         (segment) {
           if (_isCancelled) return;
           accumulatedSegments.add(segment);
-          final segProgress = 0.70 +
-              (0.20 * (accumulatedSegments.length / (accumulatedSegments.length + 5)));
-          _emit(_state.copyWith(
-            progress: segProgress,
-            currentAction:
-                'Transcribing: ${accumulatedSegments.length} segments...',
-          ));
+          final segProgress =
+              0.70 +
+              (0.20 *
+                  (accumulatedSegments.length /
+                      (accumulatedSegments.length + 5)));
+          _emit(
+            _state.copyWith(
+              progress: segProgress,
+              currentAction:
+                  'Transcribing: ${accumulatedSegments.length} segments...',
+            ),
+          );
         },
         onError: (err) {
           if (!transcriptionCompleter.isCompleted) {
@@ -439,36 +470,44 @@ class CaptionPipeline {
       }
 
       // 7. Merging and Normalizing
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.merging,
-        progress: 0.95,
-        currentAction: 'Merging and ordering subtitles...',
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.merging,
+          progress: 0.95,
+          currentAction: 'Merging and ordering subtitles...',
+        ),
+      );
 
       final mergedSegments = WhisperOutputParser.mergeSegments(rawSegments);
 
       // 8. Ready
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.ready,
-        progress: 1.0,
-        currentAction: 'Transcription complete',
-        segments: mergedSegments,
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.ready,
+          progress: 1.0,
+          currentAction: 'Transcription complete',
+          segments: mergedSegments,
+        ),
+      );
 
       return mergedSegments;
     } catch (e) {
       if (_isCancelled) {
-        _emit(_state.copyWith(
-          status: CaptionPipelineStatus.cancelled,
-          currentAction: 'Pipeline cancelled',
-        ));
+        _emit(
+          _state.copyWith(
+            status: CaptionPipelineStatus.cancelled,
+            currentAction: 'Pipeline cancelled',
+          ),
+        );
         return [];
       }
-      _emit(_state.copyWith(
-        status: CaptionPipelineStatus.error,
-        errorMessage: e.toString(),
-        currentAction: 'Transcription failed',
-      ));
+      _emit(
+        _state.copyWith(
+          status: CaptionPipelineStatus.error,
+          errorMessage: e.toString(),
+          currentAction: 'Transcription failed',
+        ),
+      );
       rethrow;
     } finally {
       // 3. finally deletes temp audio / failed outputs

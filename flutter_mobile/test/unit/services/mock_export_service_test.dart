@@ -55,20 +55,23 @@ void main() {
       expect(res.contains('WEBVTT'), true);
     });
 
-    test('exportASS generates ASS string with styles and script info', () async {
-      final res = await service.exportASS([
-        SubtitleSegment(
-          index: 1,
-          startTime: Duration.zero,
-          endTime: const Duration(seconds: 2),
-          text: 'ASS subtitle line',
-          isSelected: false,
-        ),
-      ]);
-      expect(res.contains('[Script Info]'), true);
-      expect(res.contains('[V4+ Styles]'), true);
-      expect(res.contains('ASS subtitle line'), true);
-    });
+    test(
+      'exportASS generates ASS string with styles and script info',
+      () async {
+        final res = await service.exportASS([
+          SubtitleSegment(
+            index: 1,
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 2),
+            text: 'ASS subtitle line',
+            isSelected: false,
+          ),
+        ]);
+        expect(res.contains('[Script Info]'), true);
+        expect(res.contains('[V4+ Styles]'), true);
+        expect(res.contains('ASS subtitle line'), true);
+      },
+    );
 
     test('cancel sets cancelled state on burnCaptions stream', () async {
       final style = CaptionStyle(

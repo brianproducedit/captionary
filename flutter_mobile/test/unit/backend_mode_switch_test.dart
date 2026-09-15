@@ -37,7 +37,10 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<MockExportService>());
       expect(container.read(mediaServiceProvider), isA<MockMediaService>());
-      expect(container.read(languageServiceProvider), isA<MockLanguageService>());
+      expect(
+        container.read(languageServiceProvider),
+        isA<MockLanguageService>(),
+      );
       expect(
         container.read(transcriptionServiceProvider),
         isA<MockTranscriptionService>(),
@@ -60,7 +63,10 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<FfmpegExportService>());
       expect(container.read(mediaServiceProvider), isA<LocalMediaService>());
-      expect(container.read(languageServiceProvider), isA<R2LanguagePackService>());
+      expect(
+        container.read(languageServiceProvider),
+        isA<R2LanguagePackService>(),
+      );
       expect(
         container.read(audioExtractionServiceProvider),
         isA<AudioPreprocessor>(),
@@ -83,7 +89,10 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<FfmpegExportService>());
       expect(container.read(mediaServiceProvider), isA<LocalMediaService>());
-      expect(container.read(languageServiceProvider), isA<R2LanguagePackService>());
+      expect(
+        container.read(languageServiceProvider),
+        isA<R2LanguagePackService>(),
+      );
       expect(
         container.read(audioExtractionServiceProvider),
         isA<AudioPreprocessor>(),

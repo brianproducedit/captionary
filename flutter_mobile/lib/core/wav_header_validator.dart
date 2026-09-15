@@ -76,10 +76,7 @@ class WavHeaderValidator {
   }
 
   /// Validates WAV bytes in memory.
-  static WavValidationResult validate(
-    Uint8List bytes, {
-    int? totalFileLength,
-  }) {
+  static WavValidationResult validate(Uint8List bytes, {int? totalFileLength}) {
     if (bytes.length < minHeaderSize) {
       return WavValidationResult(
         isValid: false,
@@ -242,7 +239,11 @@ class WavHeaderValidator {
     bd.setUint16(20, pcmAudioFormat, Endian.little); // AudioFormat = 1 (PCM)
     bd.setUint16(22, channels, Endian.little); // Mono
     bd.setUint32(24, sampleRate, Endian.little); // 16000
-    bd.setUint32(28, sampleRate * channels * 2, Endian.little); // ByteRate = 32000
+    bd.setUint32(
+      28,
+      sampleRate * channels * 2,
+      Endian.little,
+    ); // ByteRate = 32000
     bd.setUint16(32, channels * 2, Endian.little); // BlockAlign = 2
     bd.setUint16(34, bitsPerSample, Endian.little); // 16 bits
 

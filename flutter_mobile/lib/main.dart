@@ -17,8 +17,8 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   await NotificationService.instance.initialize();
 
-  final launchDetails =
-      await NotificationService.instance.getNotificationAppLaunchDetails();
+  final launchDetails = await NotificationService.instance
+      .getNotificationAppLaunchDetails();
   String? initialRoute;
   if (launchDetails?.didNotificationLaunchApp ?? false) {
     initialRoute = launchDetails?.notificationResponse?.payload;

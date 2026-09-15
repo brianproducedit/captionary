@@ -558,9 +558,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Re-aligning Captions',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -579,17 +578,16 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                         ? pipelineState.progress
                         : null,
                     backgroundColor: AppColors.surfaceContainerHighest,
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                     borderRadius: BorderRadius.circular(9999),
                   ),
                   if (pipelineState.status == CaptionPipelineStatus.error) ...[
                     const SizedBox(height: 12),
                     Text(
                       pipelineState.errorMessage ?? 'An error occurred',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
+                      style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: AppColors.error),
                       textAlign: TextAlign.center,
                     ),

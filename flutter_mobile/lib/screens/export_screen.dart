@@ -251,11 +251,16 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
         if (activeJob.fallbackReason != null) ...[
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14.0,
+              vertical: 8.0,
+            ),
             decoration: BoxDecoration(
               color: AppColors.secondaryContainer.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: AppColors.secondary.withValues(alpha: 0.5),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -265,9 +270,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
                 Flexible(
                   child: Text(
                     activeJob.fallbackReason!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.onSurface,
-                        ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: AppColors.onSurface),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -482,9 +486,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
                       Expanded(
                         child: Text(
                           activeJob.fallbackReason!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.onSurfaceVariant),
                         ),
                       ),
                     ],

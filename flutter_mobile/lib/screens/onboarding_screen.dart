@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../data/services/notification_service.dart';
+import '../providers/engagement_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../widgets/notification_permission_sheet.dart';
-import '../providers/engagement_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -59,8 +60,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _finishOnboarding() async {
-    // Show notification permission sheet
-    await showNotificationPermissionSheet(context);
+    // Show notification permission sheet (request POST_NOTIFICATIONS only after opt-in)
+    final allowed = await showNotificationPermissionSheet(
+      context,
+      onAllowed: () async {
+        await NotificationService.instance.requestPermission();
+      },
+    );
+
+    if (allowed == false) {
+      await ref.read(engagementProvider.notifier).optOutOfNotifications();
+    } else {
+      await ref.read(engagementProvider.notifier).markPermissionAsked();
+    }
 
     // Mark onboarding as complete and go to library
     if (mounted) {

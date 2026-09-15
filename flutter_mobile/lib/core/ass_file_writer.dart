@@ -13,8 +13,10 @@ class AssFileWriter {
     final double effectiveOpacity = (opacityOverride != null)
         ? (color.a * opacityOverride).clamp(0.0, 1.0)
         : color.a;
-    final int alphaAss =
-        ((1.0 - effectiveOpacity) * 255.0).round().clamp(0, 255);
+    final int alphaAss = ((1.0 - effectiveOpacity) * 255.0).round().clamp(
+      0,
+      255,
+    );
     final int red = (color.r * 255.0).round().clamp(0, 255);
     final int green = (color.g * 255.0).round().clamp(0, 255);
     final int blue = (color.b * 255.0).round().clamp(0, 255);
@@ -72,14 +74,17 @@ class AssFileWriter {
   /// Formats a [Duration] into ASS timestamp format: `H:MM:SS.cc` (centiseconds).
   static String formatAssTime(Duration duration) {
     final int hours = duration.inHours;
-    final String minutes =
-        duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final String seconds =
-        duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    final String centis =
-        (duration.inMilliseconds.remainder(1000) ~/ 10)
-            .toString()
-            .padLeft(2, '0');
+    final String minutes = duration.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    final String seconds = duration.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    final String centis = (duration.inMilliseconds.remainder(1000) ~/ 10)
+        .toString()
+        .padLeft(2, '0');
     return '$hours:$minutes:$seconds.$centis';
   }
 
@@ -175,9 +180,7 @@ class AssFileWriter {
       final text = escapeText(seg.text.trim());
       if (text.isEmpty) continue;
 
-      buffer.writeln(
-        'Dialogue: 0,$startStr,$endStr,Default,,0,0,0,,$text',
-      );
+      buffer.writeln('Dialogue: 0,$startStr,$endStr,Default,,0,0,0,,$text');
     }
 
     return buffer.toString();

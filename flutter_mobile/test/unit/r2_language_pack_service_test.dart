@@ -56,7 +56,9 @@ void main() {
         '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
       );
 
-      final pack = model.toLanguagePack(status: LanguagePackStatus.notDownloaded);
+      final pack = model.toLanguagePack(
+        status: LanguagePackStatus.notDownloaded,
+      );
       expect(pack.code, 'en');
       expect(pack.name, 'English Tiny');
       expect(pack.modelFile, 'ggml-tiny.en.bin');
@@ -148,8 +150,7 @@ void main() {
             languageCodes: ['en'],
             displayName: 'Tiny English',
             sizeBytes: 100,
-            sha256:
-                '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+            sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
           ),
         ],
       );
@@ -260,122 +261,136 @@ void main() {
       });
     }
 
-    test('manifest fetch caches to disk and flags stale when offline', () async {
-      handleRequests();
+    test(
+      'manifest fetch caches to disk and flags stale when offline',
+      () async {
+        handleRequests();
 
-      final service = R2LanguagePackService(
-        manifestUrl: '$serverBaseUrl/manifest.json',
-        r2BaseUrl: serverBaseUrl,
-        getModelsDirectory: () async => tempDir,
-      );
+        final service = R2LanguagePackService(
+          manifestUrl: '$serverBaseUrl/manifest.json',
+          r2BaseUrl: serverBaseUrl,
+          getModelsDirectory: () async => tempDir,
+        );
 
-      // 1. Initial fetch over network
-      final manifest = await service.fetchManifest();
-      expect(manifest.models.length, 1);
-      expect(service.isCatalogStale, false);
+        // 1. Initial fetch over network
+        final manifest = await service.fetchManifest();
+        expect(manifest.models.length, 1);
+        expect(service.isCatalogStale, false);
 
-      final cacheFile = File(p.join(tempDir.path, 'manifest_cache.json'));
-      expect(cacheFile.existsSync(), true);
+        final cacheFile = File(p.join(tempDir.path, 'manifest_cache.json'));
+        expect(cacheFile.existsSync(), true);
 
-      // 2. Shut down server to simulate offline state
-      await server.close(force: true);
+        // 2. Shut down server to simulate offline state
+        await server.close(force: true);
 
-      // 3. Second service instance pointing to same modelsDirectory
-      final offlineService = R2LanguagePackService(
-        manifestUrl: '$serverBaseUrl/manifest.json',
-        r2BaseUrl: serverBaseUrl,
-        getModelsDirectory: () async => tempDir,
-      );
+        // 3. Second service instance pointing to same modelsDirectory
+        final offlineService = R2LanguagePackService(
+          manifestUrl: '$serverBaseUrl/manifest.json',
+          r2BaseUrl: serverBaseUrl,
+          getModelsDirectory: () async => tempDir,
+        );
 
-      final cachedManifest = await offlineService.fetchManifest();
-      expect(cachedManifest.models.length, 1);
-      expect(offlineService.isCatalogStale, true);
-    });
+        final cachedManifest = await offlineService.fetchManifest();
+        expect(cachedManifest.models.length, 1);
+        expect(offlineService.isCatalogStale, true);
+      },
+    );
 
-    test('resumable download: 206 Partial Content appends to .part and completes', () async {
-      handleRequests();
+    test(
+      'resumable download: 206 Partial Content appends to .part and completes',
+      () async {
+        handleRequests();
 
-      final service = R2LanguagePackService(
-        manifestUrl: '$serverBaseUrl/manifest.json',
-        r2BaseUrl: serverBaseUrl,
-        getModelsDirectory: () async => tempDir,
-      );
+        final service = R2LanguagePackService(
+          manifestUrl: '$serverBaseUrl/manifest.json',
+          r2BaseUrl: serverBaseUrl,
+          getModelsDirectory: () async => tempDir,
+        );
 
-      // Pre-create partial .part file with first 40 bytes
-      final partFile = File(p.join(tempDir.path, 'ggml-test.en.bin.part'));
-      await partFile.writeAsBytes(testPayload.sublist(0, 40));
+        // Pre-create partial .part file with first 40 bytes
+        final partFile = File(p.join(tempDir.path, 'ggml-test.en.bin.part'));
+        await partFile.writeAsBytes(testPayload.sublist(0, 40));
 
-      final progressEvents = <DownloadProgress>[];
-      await for (final event in service.downloadLanguagePack('en')) {
-        progressEvents.add(event);
-      }
+        final progressEvents = <DownloadProgress>[];
+        await for (final event in service.downloadLanguagePack('en')) {
+          progressEvents.add(event);
+        }
 
-      // Check events
-      expect(progressEvents.any((e) => e.state == DownloadState.complete), true);
+        // Check events
+        expect(
+          progressEvents.any((e) => e.state == DownloadState.complete),
+          true,
+        );
 
-      // Final .bin file must exist with full content
-      final binFile = File(p.join(tempDir.path, 'ggml-test.en.bin'));
-      expect(binFile.existsSync(), true);
-      expect(binFile.readAsBytesSync(), testPayload);
+        // Final .bin file must exist with full content
+        final binFile = File(p.join(tempDir.path, 'ggml-test.en.bin'));
+        expect(binFile.existsSync(), true);
+        expect(binFile.readAsBytesSync(), testPayload);
 
-      // .part file must be cleaned up (renamed)
-      expect(partFile.existsSync(), false);
+        // .part file must be cleaned up (renamed)
+        expect(partFile.existsSync(), false);
 
-      // Metadata JSON file must exist
-      final metaFile = File(p.join(tempDir.path, 'ggml-test.en.bin.meta.json'));
-      expect(metaFile.existsSync(), true);
-      final metaJson = jsonDecode(metaFile.readAsStringSync());
-      expect(metaJson['sha256'], expectedSha256);
-      expect(metaJson['size_bytes'], testPayload.length);
-    });
+        // Metadata JSON file must exist
+        final metaFile = File(
+          p.join(tempDir.path, 'ggml-test.en.bin.meta.json'),
+        );
+        expect(metaFile.existsSync(), true);
+        final metaJson = jsonDecode(metaFile.readAsStringSync());
+        expect(metaJson['sha256'], expectedSha256);
+        expect(metaJson['size_bytes'], testPayload.length);
+      },
+    );
 
-    test('full-GET fallback: restarts from byte 0 if server returns 200 on Range', () async {
-      // Configure server to return 200 OK even when Range is sent
-      handleRequests(force200OnRange: true);
+    test(
+      'full-GET fallback: restarts from byte 0 if server returns 200 on Range',
+      () async {
+        // Configure server to return 200 OK even when Range is sent
+        handleRequests(force200OnRange: true);
 
-      final service = R2LanguagePackService(
-        manifestUrl: '$serverBaseUrl/manifest.json',
-        r2BaseUrl: serverBaseUrl,
-        getModelsDirectory: () async => tempDir,
-      );
+        final service = R2LanguagePackService(
+          manifestUrl: '$serverBaseUrl/manifest.json',
+          r2BaseUrl: serverBaseUrl,
+          getModelsDirectory: () async => tempDir,
+        );
 
-      // Pre-create partial .part file with first 40 bytes
-      final partFile = File(p.join(tempDir.path, 'ggml-test.en.bin.part'));
-      await partFile.writeAsBytes(testPayload.sublist(0, 40));
+        // Pre-create partial .part file with first 40 bytes
+        final partFile = File(p.join(tempDir.path, 'ggml-test.en.bin.part'));
+        await partFile.writeAsBytes(testPayload.sublist(0, 40));
 
-      await for (final _ in service.downloadLanguagePack('en')) {}
+        await for (final _ in service.downloadLanguagePack('en')) {}
 
-      // Final .bin file must have exactly 100 bytes (not 140)
-      final binFile = File(p.join(tempDir.path, 'ggml-test.en.bin'));
-      expect(binFile.existsSync(), true);
-      expect(binFile.lengthSync(), testPayload.length);
-      expect(binFile.readAsBytesSync(), testPayload);
-    });
+        // Final .bin file must have exactly 100 bytes (not 140)
+        final binFile = File(p.join(tempDir.path, 'ggml-test.en.bin'));
+        expect(binFile.existsSync(), true);
+        expect(binFile.lengthSync(), testPayload.length);
+        expect(binFile.readAsBytesSync(), testPayload);
+      },
+    );
 
-    test('checksum mismatch deletes .part and throws ChecksumMismatchException', () async {
-      // Server will return corrupted bytes
-      handleRequests(simulateCorruptBytes: true);
+    test(
+      'checksum mismatch deletes .part and throws ChecksumMismatchException',
+      () async {
+        // Server will return corrupted bytes
+        handleRequests(simulateCorruptBytes: true);
 
-      final service = R2LanguagePackService(
-        manifestUrl: '$serverBaseUrl/manifest.json',
-        r2BaseUrl: serverBaseUrl,
-        getModelsDirectory: () async => tempDir,
-      );
+        final service = R2LanguagePackService(
+          manifestUrl: '$serverBaseUrl/manifest.json',
+          r2BaseUrl: serverBaseUrl,
+          getModelsDirectory: () async => tempDir,
+        );
 
-      final partFile = File(p.join(tempDir.path, 'ggml-test.en.bin.part'));
-      final binFile = File(p.join(tempDir.path, 'ggml-test.en.bin'));
+        final partFile = File(p.join(tempDir.path, 'ggml-test.en.bin.part'));
+        final binFile = File(p.join(tempDir.path, 'ggml-test.en.bin'));
 
-      expect(
-        () async {
+        expect(() async {
           await for (final _ in service.downloadLanguagePack('en')) {}
-        },
-        throwsA(isA<ChecksumMismatchException>()),
-      );
+        }, throwsA(isA<ChecksumMismatchException>()));
 
-      // Neither .bin nor .part must exist on disk after mismatch
-      expect(binFile.existsSync(), false);
-      expect(partFile.existsSync(), false);
-    });
+        // Neither .bin nor .part must exist on disk after mismatch
+        expect(binFile.existsSync(), false);
+        expect(partFile.existsSync(), false);
+      },
+    );
 
     test('cancel keeps .part file intact when deletePart is false', () async {
       // Simulate slow streaming server
