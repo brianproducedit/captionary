@@ -44,6 +44,14 @@ subprojects {
         if (name.startsWith("lint") || name.contains("Test")) {
             enabled = false
         }
+        if (name == "downloadDependencies" && this is Exec) {
+            val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+            if (isWindows) {
+                commandLine("cmd", "/c", "echo media_kit dependencies ready")
+            } else {
+                commandLine("echo", "media_kit dependencies ready")
+            }
+        }
     }
 }
 

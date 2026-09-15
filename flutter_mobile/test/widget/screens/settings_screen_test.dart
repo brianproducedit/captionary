@@ -101,6 +101,35 @@ void main() {
     expect(opened, Uri.parse(AppConstants.licenseUrl));
   });
 
+  testWidgets('License info button opens compliance dialog', (tester) async {
+    await tester.pumpWidget(await buildSettings());
+    await tester.pump();
+
+    await tester.dragUntilVisible(
+      find.byKey(const ValueKey('settings-license-info')),
+      find.byType(SingleChildScrollView),
+      const Offset(0, -240),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('settings-license-info')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open Source Licenses'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.textContaining('FFmpeg'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('AGPL-3.0'), findsWidgets);
+    expect(find.text('Close'), findsOneWidget);
+
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open Source Licenses'), findsNothing);
+  });
+
   testWidgets('Reset restores defaults', (tester) async {
     await tester.pumpWidget(
       await buildSettings(initial: {PreferenceKeys.exportQuality: '1440p'}),

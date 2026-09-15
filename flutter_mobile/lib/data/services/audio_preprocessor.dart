@@ -9,20 +9,44 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../../core/wav_header_validator.dart';
 import 'audio_extraction_service.dart';
+
+typedef FFmpegExecutionRunner = Future<FFmpegSession> Function(
+  String command,
+  void Function(FFmpegSession session) completeCallback,
+);
 
 class AudioPreprocessor implements AudioExtractionService {
   static const _uuid = Uuid();
+  final Future<Directory> Function()? getTempDirectory;
+  final FFmpegExecutionRunner? ffmpegRunner;
+
   FFmpegSession? _activeSession;
   bool _cancelRequested = false;
+
+  AudioPreprocessor({
+    this.getTempDirectory,
+    this.ffmpegRunner,
+  });
 
   /// Extracts audio from [videoPath] and transcodes it to a mono 16kHz WAV file.
   /// Returns the path to the newly created audio file, or null on failure.
   @override
   Future<String?> extractAudio(String videoPath, {Duration? limit}) async {
-    final cacheDir = await getTemporaryDirectory();
-    final audioDir = Directory('${cacheDir.path}/audio');
+    if (videoPath.trim().isEmpty) {
+      debugPrint('AudioPreprocessor: videoPath is empty.');
+      return null;
+    }
 
+    final Directory cacheDir;
+    if (getTempDirectory != null) {
+      cacheDir = await getTempDirectory!();
+    } else {
+      cacheDir = await getTemporaryDirectory();
+    }
+
+    final audioDir = Directory('${cacheDir.path}/audio');
     if (!await audioDir.exists()) {
       await audioDir.create(recursive: true);
     }
@@ -38,9 +62,10 @@ class AudioPreprocessor implements AudioExtractionService {
     _cancelRequested = false;
 
     try {
-      final session = await FFmpegKit.executeAsync(command, (
-        completedSession,
-      ) async {
+      final runner = ffmpegRunner ??
+          (cmd, cb) => FFmpegKit.executeAsync(cmd, cb);
+
+      final session = await runner(command, (completedSession) async {
         _activeSession = null;
         final returnCode = await completedSession.getReturnCode();
         final isSuccess = ReturnCode.isSuccess(returnCode);
@@ -48,10 +73,23 @@ class AudioPreprocessor implements AudioExtractionService {
             _cancelRequested || ReturnCode.isCancel(returnCode);
 
         if (isSuccess && !wasCancelled) {
-          completer.complete(outputPath);
+          final outputFile = File(outputPath);
+          final validation = await WavHeaderValidator.validateFile(outputFile);
+          if (validation.isValid && validation.isWhisperCompatible) {
+            completer.complete(outputPath);
+          } else {
+            debugPrint(
+              'AudioPreprocessor: Extracted WAV failed validation: ${validation.errorMessage}',
+            );
+            if (await outputFile.exists()) {
+              await outputFile.delete();
+            }
+            completer.complete(null);
+          }
         } else {
-          if (await File(outputPath).exists()) {
-            await File(outputPath).delete();
+          final outputFile = File(outputPath);
+          if (await outputFile.exists()) {
+            await outputFile.delete();
           }
           if (!wasCancelled) {
             final logs = await completedSession.getLogsAsString();
@@ -67,8 +105,9 @@ class AudioPreprocessor implements AudioExtractionService {
       }
     } catch (error) {
       debugPrint('AudioPreprocessor FFmpeg start error: $error');
-      if (await File(outputPath).exists()) {
-        await File(outputPath).delete();
+      final outputFile = File(outputPath);
+      if (await outputFile.exists()) {
+        await outputFile.delete();
       }
       completer.complete(null);
     }

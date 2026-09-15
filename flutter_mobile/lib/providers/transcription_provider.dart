@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/models/language_pack.dart';
+import '../data/mock/mock_audio_extraction_service.dart';
 import '../data/mock/mock_transcription_service.dart';
-import '../data/services/transcription_service.dart';
+import '../data/services/audio_extraction_service.dart';
 import '../data/services/audio_preprocessor.dart';
+import '../data/services/transcription_service.dart';
 import 'backend_mode_provider.dart';
 import 'language_provider.dart';
+
+import '../data/services/whisper_transcription_service.dart';
 
 enum TranscriptionStatus { idle, extractingAudio, transcribing, success, error }
 
@@ -47,12 +50,24 @@ final transcriptionServiceProvider = Provider<TranscriptionService>((ref) {
       return MockTranscriptionService();
     case BackendMode.local:
     case BackendMode.real:
-      return MockTranscriptionService();
+      return WhisperTranscriptionService();
   }
 });
 
-final audioPreprocessorProvider = Provider<AudioPreprocessor>((ref) {
-  return AudioPreprocessor();
+final audioExtractionServiceProvider = Provider<AudioExtractionService>((ref) {
+  final mode = ref.watch(backendModeProvider);
+  switch (mode) {
+    case BackendMode.mock:
+      return MockAudioExtractionService();
+    case BackendMode.local:
+    case BackendMode.real:
+      return AudioPreprocessor();
+  }
+});
+
+/// Backwards-compatible provider alias for AudioPreprocessor.
+final audioPreprocessorProvider = Provider<AudioExtractionService>((ref) {
+  return ref.watch(audioExtractionServiceProvider);
 });
 
 class TranscriptionNotifier extends Notifier<TranscriptionState> {
@@ -63,6 +78,7 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   TranscriptionState build() {
     ref.onDispose(() {
       _transcriptionSubscription?.cancel();
+      ref.read(audioExtractionServiceProvider).cancel();
     });
     return const TranscriptionState();
   }
@@ -76,15 +92,16 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
       errorMessage: null,
     );
 
-    final preprocessor = ref.read(audioPreprocessorProvider);
-    final audioPath = await preprocessor.transcodeToMono(videoPath);
+    final extractor = ref.read(audioExtractionServiceProvider);
+    final audioPath = await extractor.extractAudio(videoPath);
 
     if (_isAborted) return;
 
     if (audioPath == null) {
       state = state.copyWith(
         status: TranscriptionStatus.error,
-        errorMessage: "Failed to extract audio from video.",
+        errorMessage:
+            "Could not extract audio. The video may contain no audio track or is unsupported.",
       );
       return;
     }
@@ -92,40 +109,24 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
     state = state.copyWith(
       status: TranscriptionStatus.transcribing,
       progress: 0.0,
-      currentAction: "Initializing Whisper Model...",
+      currentAction: "Transcribing with Whisper...",
     );
 
     final service = ref.read(transcriptionServiceProvider);
-
-    LanguagePack? activeLang;
-    try {
-      activeLang = await ref.read(activeLanguageProvider.future);
-    } catch (_) {
-      activeLang = null;
-    }
-    if (_isAborted) return;
-    final languageCode = activeLang?.code ?? 'en';
-    final modelPath = activeLang?.modelFile ?? 'dummy_model.bin';
-
-    // Simulate some artificial delay for UX and to test abort
-    await Future.delayed(const Duration(seconds: 1));
-    if (_isAborted) return;
+    final activeLang = await ref.read(activeLanguageProvider.future);
 
     _transcriptionSubscription = service
         .transcribeAudioStream(
           audioPath: audioPath,
-          languageCode: languageCode,
-          modelPath: modelPath,
+          modelPath: activeLang.modelFile,
+          languageCode: activeLang.code,
         )
         .listen(
           (segment) {
-            double currentProgress = state.progress + 0.1;
-            if (currentProgress > 0.95) currentProgress = 0.95;
+            if (_isAborted) return;
+
             state = state.copyWith(
-              status: TranscriptionStatus.transcribing,
-              progress: currentProgress,
-              currentAction:
-                  "Transcribing (${(currentProgress * 100).toInt()}%)...",
+              currentAction: "Transcribing...",
             );
           },
           onError: (e) {
@@ -149,6 +150,11 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   void abortTranscription() {
     _isAborted = true;
     _transcriptionSubscription?.cancel();
+    ref.read(audioExtractionServiceProvider).cancel();
+    final service = ref.read(transcriptionServiceProvider);
+    if (service is WhisperTranscriptionService) {
+      service.cancel();
+    }
     state = const TranscriptionState();
   }
 

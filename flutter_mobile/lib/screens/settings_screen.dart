@@ -240,8 +240,18 @@ class SettingsScreen extends ConsumerWidget {
                     context,
                     key: const ValueKey('settings-license'),
                     title: 'Open Source License',
-                    subtitle: 'AGPL-3.0',
+                    subtitle: 'AGPL-3.0 (Bundles GPL-3.0 FFmpeg)',
                     icon: Symbols.gavel,
+                    trailing: IconButton(
+                      key: const ValueKey('settings-license-info'),
+                      icon: const Icon(
+                        Symbols.info,
+                        size: 20,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      tooltip: 'License details',
+                      onPressed: () => _showLicenseDetails(context, ref),
+                    ),
                     onTap: () async {
                       final uri = Uri.parse(AppConstants.licenseUrl);
                       final opened = await ref.read(urlOpenHandlerProvider)(
@@ -405,6 +415,69 @@ class SettingsScreen extends ConsumerWidget {
         ],
         onChanged: onChanged,
       ),
+    );
+  }
+
+  void _showLicenseDetails(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceContainer,
+          title: const Text(
+            'Open Source Licenses',
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Captionary is free and open-source software licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).',
+                  style: TextStyle(color: AppColors.onSurface),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Bundled Components:',
+                  style: TextStyle(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '• FFmpeg (ffmpeg_kit_flutter_new_min_gpl): Licensed under GNU General Public License v3.0 (GPL-3.0).\n'
+                  '• Whisper (whisper_flutter_new): Licensed under GNU General Public License v3.0 (GPL-3.0).',
+                  style: TextStyle(color: AppColors.onSurfaceVariant),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Under Section 13 of AGPLv3 and Section 5 of GPLv3, combined distribution is fully permitted with complete corresponding source code made available.',
+                  style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final uri = Uri.parse(AppConstants.licenseUrl);
+                await ref.read(urlOpenHandlerProvider)(uri);
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              },
+              child: const Text('View Full AGPL Text'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

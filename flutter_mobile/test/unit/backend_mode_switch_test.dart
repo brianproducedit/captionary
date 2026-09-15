@@ -5,13 +5,19 @@ import 'package:captionary/providers/backend_mode_provider.dart';
 import 'package:captionary/providers/export_provider.dart';
 import 'package:captionary/providers/language_provider.dart';
 import 'package:captionary/providers/media_provider.dart';
+import 'package:captionary/providers/player_provider.dart';
 import 'package:captionary/providers/transcription_provider.dart';
+import 'package:captionary/data/mock/mock_audio_extraction_service.dart';
 import 'package:captionary/data/mock/mock_export_service.dart';
 import 'package:captionary/data/mock/mock_language_service.dart';
+import 'package:captionary/data/mock/mock_media_player_service.dart';
 import 'package:captionary/data/mock/mock_media_service.dart';
 import 'package:captionary/data/mock/mock_transcription_service.dart';
+import 'package:captionary/data/services/audio_preprocessor.dart';
 import 'package:captionary/data/services/ffmpeg_export_service.dart';
 import 'package:captionary/data/services/local_media_service.dart';
+import 'package:captionary/data/services/media_player_service.dart';
+import 'package:captionary/data/services/whisper_transcription_service.dart';
 
 void main() {
   group('BackendMode & Provider Switching', () {
@@ -35,9 +41,17 @@ void main() {
         container.read(transcriptionServiceProvider),
         isA<MockTranscriptionService>(),
       );
+      expect(
+        container.read(audioExtractionServiceProvider),
+        isA<MockAudioExtractionService>(),
+      );
+      expect(
+        container.read(mediaPlayerServiceProvider),
+        isA<MockMediaPlayerService>(),
+      );
     });
 
-    test('local mode switches export to FFmpeg and media to LocalMediaService', () {
+    test('local mode switches export, media, audio extraction, transcription, and player', () {
       final container = ProviderContainer(
         overrides: [backendModeProvider.overrideWithValue(BackendMode.local)],
       );
@@ -45,9 +59,21 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<FfmpegExportService>());
       expect(container.read(mediaServiceProvider), isA<LocalMediaService>());
+      expect(
+        container.read(audioExtractionServiceProvider),
+        isA<AudioPreprocessor>(),
+      );
+      expect(
+        container.read(transcriptionServiceProvider),
+        isA<WhisperTranscriptionService>(),
+      );
+      expect(
+        container.read(mediaPlayerServiceProvider),
+        isA<MediaKitMediaService>(),
+      );
     });
 
-    test('real mode switches export to FFmpeg and media to LocalMediaService', () {
+    test('real mode switches export, media, audio extraction, transcription, and player', () {
       final container = ProviderContainer(
         overrides: [backendModeProvider.overrideWithValue(BackendMode.real)],
       );
@@ -55,6 +81,18 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<FfmpegExportService>());
       expect(container.read(mediaServiceProvider), isA<LocalMediaService>());
+      expect(
+        container.read(audioExtractionServiceProvider),
+        isA<AudioPreprocessor>(),
+      );
+      expect(
+        container.read(transcriptionServiceProvider),
+        isA<WhisperTranscriptionService>(),
+      );
+      expect(
+        container.read(mediaPlayerServiceProvider),
+        isA<MediaKitMediaService>(),
+      );
     });
   });
 
