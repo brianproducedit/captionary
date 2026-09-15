@@ -39,6 +39,10 @@ class NotificationService {
   /// Set this from the app layer to handle navigation (e.g., to /donate).
   void Function(String? payload)? onNotificationTap;
 
+  /// Retrieves details if the app was launched by tapping a notification.
+  Future<NotificationAppLaunchDetails?> getNotificationAppLaunchDetails() =>
+      _plugin.getNotificationAppLaunchDetails();
+
   /// Initialize the notification plugin.
   Future<void> initialize() async {
     if (_isInitialized) return;

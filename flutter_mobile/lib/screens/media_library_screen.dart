@@ -438,9 +438,39 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       case MediaStatus.transcribed:
         variant = StatusChipVariant.ready;
         statusLabel = 'Transcribed';
+      case MediaStatus.error:
+        variant = StatusChipVariant.error;
+        statusLabel = 'Missing File';
     }
 
     void onTap() {
+      if (item.status == MediaStatus.error) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Missing Media File'),
+            content: Text(
+              'The file "${item.fileName}" could not be found in cache. It may have been moved or deleted.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Close'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  await ref.read(mediaServiceProvider).deleteMedia(item.id);
+                  ref.invalidate(recentMediaProvider);
+                },
+                child: const Text('Remove from Library'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
       if (item.status == MediaStatus.newItem) {
         context.push('/transcription', extra: item.filePath);
       } else if (item.status == MediaStatus.transcribed) {
@@ -621,12 +651,17 @@ class _MediaThumbnail extends StatelessWidget {
   }
 
   Widget _fallback(MediaItem item) {
+    final isError = item.status == MediaStatus.error;
     return ColoredBox(
-      color: AppColors.surfaceContainerHigh,
+      color: isError
+          ? AppColors.errorContainer.withValues(alpha: 0.3)
+          : AppColors.surfaceContainerHigh,
       child: Center(
         child: Icon(
-          item.isAudio ? Symbols.audio_file : Symbols.movie,
-          color: AppColors.onSurfaceVariant,
+          isError
+              ? Symbols.broken_image_rounded
+              : (item.isAudio ? Symbols.audio_file : Symbols.movie),
+          color: isError ? AppColors.error : AppColors.onSurfaceVariant,
           size: 32,
         ),
       ),

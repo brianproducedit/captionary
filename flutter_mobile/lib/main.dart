@@ -15,9 +15,12 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   await NotificationService.instance.initialize();
 
-  NotificationService.instance.onNotificationTap = (payload) {
-    debugPrint('[NotificationService] Tapped with payload: $payload');
-  };
+  final launchDetails =
+      await NotificationService.instance.getNotificationAppLaunchDetails();
+  String? initialRoute;
+  if (launchDetails?.didNotificationLaunchApp ?? false) {
+    initialRoute = launchDetails?.notificationResponse?.payload;
+  }
 
   var packageInfo = AppPackageInfo.fallback;
   try {
@@ -36,7 +39,7 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(prefs),
         appPackageInfoProvider.overrideWithValue(packageInfo),
       ],
-      child: const CaptionaryApp(),
+      child: CaptionaryApp(initialRoute: initialRoute),
     ),
   );
 }

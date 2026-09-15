@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
-enum StatusChipVariant { ready, processing, pending, newVariant }
+enum StatusChipVariant { ready, processing, pending, newVariant, error }
 
 class StatusChip extends StatelessWidget {
   final String label;
@@ -38,6 +38,10 @@ class StatusChip extends StatelessWidget {
       case StatusChipVariant.newVariant:
         bgColor = AppColors.primaryContainer;
         textColor = AppColors.onPrimaryContainer;
+        break;
+      case StatusChipVariant.error:
+        bgColor = AppColors.errorContainer;
+        textColor = AppColors.onErrorContainer;
         break;
     }
 

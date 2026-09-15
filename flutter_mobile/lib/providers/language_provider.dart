@@ -6,9 +6,17 @@ import '../data/models/language_pack.dart';
 import '../data/models/download_progress.dart';
 import '../data/mock/mock_language_service.dart';
 import '../data/services/language_pack_service.dart';
+import 'backend_mode_provider.dart';
 
 final languageServiceProvider = Provider<LanguagePackService>((ref) {
-  return MockLanguageService();
+  final mode = ref.watch(backendModeProvider);
+  switch (mode) {
+    case BackendMode.mock:
+      return MockLanguageService();
+    case BackendMode.local:
+    case BackendMode.real:
+      return MockLanguageService();
+  }
 });
 
 class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
@@ -16,6 +24,12 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
 
   @override
   Future<List<LanguagePack>> build() async {
+    ref.onDispose(() {
+      for (final sub in _activeDownloads.values) {
+        sub.cancel();
+      }
+      _activeDownloads.clear();
+    });
     final service = ref.watch(languageServiceProvider);
     // Clone the list to allow modification if needed
     final list = await service.getAvailableLanguages();

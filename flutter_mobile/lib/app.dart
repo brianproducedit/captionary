@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'theme/app_theme.dart';
 import 'providers/engagement_provider.dart';
+import 'data/services/notification_service.dart';
 
 // Screens
 import 'screens/media_library_screen.dart';
@@ -17,7 +18,14 @@ import 'screens/video_player_screen.dart';
 import 'screens/onboarding_screen.dart';
 
 class CaptionaryApp extends ConsumerStatefulWidget {
-  const CaptionaryApp({super.key});
+  final String? initialRoute;
+  final GoRouter? router;
+
+  const CaptionaryApp({
+    super.key,
+    this.initialRoute,
+    this.router,
+  });
 
   @override
   ConsumerState<CaptionaryApp> createState() => _CaptionaryAppState();
@@ -30,11 +38,36 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
   void initState() {
     super.initState();
 
-    // Initialize router with initial location based on onboarding state
+    // Initialize router with initial location based on onboarding state or initialRoute
     final hasSeenOnboarding = ref.read(engagementProvider).hasSeenOnboarding;
+    final initialLocation = widget.initialRoute ??
+        (hasSeenOnboarding ? '/library' : '/onboarding');
 
-    _router = GoRouter(
-      initialLocation: hasSeenOnboarding ? '/library' : '/onboarding',
+    _router = widget.router ?? _buildRouter(initialLocation);
+
+    NotificationService.instance.onNotificationTap = (payload) {
+      if (payload != null && payload.isNotEmpty) {
+        _router.go(payload);
+      }
+    };
+
+    // Track app open for inactivity nudge scheduling
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(engagementProvider.notifier).onAppOpened();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (NotificationService.instance.onNotificationTap != null) {
+      NotificationService.instance.onNotificationTap = null;
+    }
+    super.dispose();
+  }
+
+  GoRouter _buildRouter(String initialLocation) {
+    return GoRouter(
+      initialLocation: initialLocation,
       routes: [
         GoRoute(
           path: '/onboarding',
@@ -144,11 +177,6 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
         ),
       ],
     );
-
-    // Track app open for inactivity nudge scheduling
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(engagementProvider.notifier).onAppOpened();
-    });
   }
 
   @override

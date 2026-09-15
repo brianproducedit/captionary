@@ -7,7 +7,18 @@ import 'package:path/path.dart' as p;
 import '../../core/media_file_name.dart';
 
 class FileImportService {
+  final Future<Directory> Function()? getTempDirectory;
+  final Future<String?> Function()? filePicker;
+
+  FileImportService({
+    this.getTempDirectory,
+    this.filePicker,
+  });
+
   Future<String?> pickVideoFile() async {
+    if (filePicker != null) {
+      return filePicker!();
+    }
     PlatformFile? result = await FilePicker.pickFile(type: FileType.video);
 
     if (result != null && result.path != null) {
@@ -17,9 +28,14 @@ class FileImportService {
   }
 
   Future<String> copyToCache(String sourcePath) async {
-    final cacheDir = await getTemporaryDirectory();
-    final mediaDir = Directory('${cacheDir.path}/media');
+    final Directory cacheDir;
+    if (getTempDirectory != null) {
+      cacheDir = await getTempDirectory!();
+    } else {
+      cacheDir = await getTemporaryDirectory();
+    }
 
+    final mediaDir = Directory('${cacheDir.path}/media');
     if (!await mediaDir.exists()) {
       await mediaDir.create(recursive: true);
     }
@@ -34,8 +50,23 @@ class FileImportService {
     return destinationPath;
   }
 
+  Future<void> deleteCachedFile(String path) async {
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
   Future<void> clearMediaCache() async {
-    final cacheDir = await getTemporaryDirectory();
+    final Directory cacheDir;
+    if (getTempDirectory != null) {
+      cacheDir = await getTempDirectory!();
+    } else {
+      cacheDir = await getTemporaryDirectory();
+    }
+
     final mediaDir = Directory('${cacheDir.path}/media');
     if (await mediaDir.exists()) {
       await mediaDir.delete(recursive: true);

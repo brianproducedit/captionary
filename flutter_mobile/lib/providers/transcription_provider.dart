@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/models/language_pack.dart';
 import '../data/mock/mock_transcription_service.dart';
 import '../data/services/transcription_service.dart';
 import '../data/services/audio_preprocessor.dart';
+import 'backend_mode_provider.dart';
+import 'language_provider.dart';
 
 enum TranscriptionStatus { idle, extractingAudio, transcribing, success, error }
 
@@ -38,7 +41,14 @@ class TranscriptionState {
 }
 
 final transcriptionServiceProvider = Provider<TranscriptionService>((ref) {
-  return MockTranscriptionService();
+  final mode = ref.watch(backendModeProvider);
+  switch (mode) {
+    case BackendMode.mock:
+      return MockTranscriptionService();
+    case BackendMode.local:
+    case BackendMode.real:
+      return MockTranscriptionService();
+  }
 });
 
 final audioPreprocessorProvider = Provider<AudioPreprocessor>((ref) {
@@ -51,6 +61,9 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
 
   @override
   TranscriptionState build() {
+    ref.onDispose(() {
+      _transcriptionSubscription?.cancel();
+    });
     return const TranscriptionState();
   }
 
@@ -84,6 +97,16 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
 
     final service = ref.read(transcriptionServiceProvider);
 
+    LanguagePack? activeLang;
+    try {
+      activeLang = await ref.read(activeLanguageProvider.future);
+    } catch (_) {
+      activeLang = null;
+    }
+    if (_isAborted) return;
+    final languageCode = activeLang?.code ?? 'en';
+    final modelPath = activeLang?.modelFile ?? 'dummy_model.bin';
+
     // Simulate some artificial delay for UX and to test abort
     await Future.delayed(const Duration(seconds: 1));
     if (_isAborted) return;
@@ -91,8 +114,8 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
     _transcriptionSubscription = service
         .transcribeAudioStream(
           audioPath: audioPath,
-          languageCode: 'en',
-          modelPath: 'dummy_model.bin',
+          languageCode: languageCode,
+          modelPath: modelPath,
         )
         .listen(
           (segment) {
