@@ -17,6 +17,7 @@ import 'package:captionary/data/services/audio_preprocessor.dart';
 import 'package:captionary/data/services/ffmpeg_export_service.dart';
 import 'package:captionary/data/services/local_media_service.dart';
 import 'package:captionary/data/services/media_player_service.dart';
+import 'package:captionary/data/services/r2_language_pack_service.dart';
 import 'package:captionary/data/services/whisper_transcription_service.dart';
 
 void main() {
@@ -51,7 +52,7 @@ void main() {
       );
     });
 
-    test('local mode switches export, media, audio extraction, transcription, and player', () {
+    test('local mode switches export, media, audio extraction, transcription, language, and player', () {
       final container = ProviderContainer(
         overrides: [backendModeProvider.overrideWithValue(BackendMode.local)],
       );
@@ -59,6 +60,7 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<FfmpegExportService>());
       expect(container.read(mediaServiceProvider), isA<LocalMediaService>());
+      expect(container.read(languageServiceProvider), isA<R2LanguagePackService>());
       expect(
         container.read(audioExtractionServiceProvider),
         isA<AudioPreprocessor>(),
@@ -73,7 +75,7 @@ void main() {
       );
     });
 
-    test('real mode switches export, media, audio extraction, transcription, and player', () {
+    test('real mode switches export, media, audio extraction, transcription, language, and player', () {
       final container = ProviderContainer(
         overrides: [backendModeProvider.overrideWithValue(BackendMode.real)],
       );
@@ -81,6 +83,7 @@ void main() {
 
       expect(container.read(exportServiceProvider), isA<FfmpegExportService>());
       expect(container.read(mediaServiceProvider), isA<LocalMediaService>());
+      expect(container.read(languageServiceProvider), isA<R2LanguagePackService>());
       expect(
         container.read(audioExtractionServiceProvider),
         isA<AudioPreprocessor>(),

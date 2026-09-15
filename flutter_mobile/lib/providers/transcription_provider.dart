@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:path/path.dart' as p;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,9 +7,11 @@ import '../data/mock/mock_audio_extraction_service.dart';
 import '../data/mock/mock_transcription_service.dart';
 import '../data/services/audio_extraction_service.dart';
 import '../data/services/audio_preprocessor.dart';
+import '../data/services/caption_pipeline.dart';
 import '../data/services/transcription_service.dart';
 import 'backend_mode_provider.dart';
 import 'language_provider.dart';
+import 'subtitle_provider.dart';
 
 import '../data/services/whisper_transcription_service.dart';
 
@@ -71,90 +74,101 @@ final audioPreprocessorProvider = Provider<AudioExtractionService>((ref) {
 });
 
 class TranscriptionNotifier extends Notifier<TranscriptionState> {
-  StreamSubscription? _transcriptionSubscription;
-  bool _isAborted = false;
+  CaptionPipeline? _activePipeline;
 
   @override
   TranscriptionState build() {
     ref.onDispose(() {
-      _transcriptionSubscription?.cancel();
-      ref.read(audioExtractionServiceProvider).cancel();
+      _activePipeline?.cancel();
     });
     return const TranscriptionState();
   }
 
-  Future<void> startTranscription(String videoPath) async {
-    _isAborted = false;
+  Future<void> startTranscription(String videoPath, {String? mediaId}) async {
+    final effectiveMediaId = mediaId ?? p.basenameWithoutExtension(videoPath);
     state = state.copyWith(
       status: TranscriptionStatus.extractingAudio,
       progress: 0.0,
-      currentAction: "Extracting Audio (Mono 16kHz)...",
+      currentAction: "Importing Media...",
       errorMessage: null,
     );
 
-    final extractor = ref.read(audioExtractionServiceProvider);
-    final audioPath = await extractor.extractAudio(videoPath);
-
-    if (_isAborted) return;
-
-    if (audioPath == null) {
-      state = state.copyWith(
-        status: TranscriptionStatus.error,
-        errorMessage:
-            "Could not extract audio. The video may contain no audio track or is unsupported.",
-      );
-      return;
-    }
-
-    state = state.copyWith(
-      status: TranscriptionStatus.transcribing,
-      progress: 0.0,
-      currentAction: "Transcribing with Whisper...",
-    );
-
-    final service = ref.read(transcriptionServiceProvider);
-    final activeLang = await ref.read(activeLanguageProvider.future);
-
-    _transcriptionSubscription = service
-        .transcribeAudioStream(
-          audioPath: audioPath,
-          modelPath: activeLang.modelFile,
-          languageCode: activeLang.code,
-        )
-        .listen(
-          (segment) {
-            if (_isAborted) return;
-
+    final pipeline = CaptionPipeline(
+      audioExtractionService: ref.read(audioExtractionServiceProvider),
+      languagePackService: ref.read(languageServiceProvider),
+      transcriptionService: ref.read(transcriptionServiceProvider),
+      onStateChange: (pipelineState) {
+        switch (pipelineState.status) {
+          case CaptionPipelineStatus.idle:
+            state = const TranscriptionState();
+            break;
+          case CaptionPipelineStatus.importing:
+          case CaptionPipelineStatus.extracting:
             state = state.copyWith(
-              currentAction: "Transcribing...",
+              status: TranscriptionStatus.extractingAudio,
+              progress: pipelineState.progress,
+              currentAction: pipelineState.currentAction,
             );
-          },
-          onError: (e) {
+            break;
+          case CaptionPipelineStatus.detecting:
+          case CaptionPipelineStatus.checkingModel:
+          case CaptionPipelineStatus.downloadingModel:
+          case CaptionPipelineStatus.transcribing:
+          case CaptionPipelineStatus.merging:
+            state = state.copyWith(
+              status: TranscriptionStatus.transcribing,
+              progress: pipelineState.progress,
+              currentAction: pipelineState.currentAction,
+            );
+            break;
+          case CaptionPipelineStatus.ready:
+            state = state.copyWith(
+              status: TranscriptionStatus.success,
+              progress: 1.0,
+              currentAction: "Transcription Complete",
+            );
+            break;
+          case CaptionPipelineStatus.error:
             state = state.copyWith(
               status: TranscriptionStatus.error,
-              errorMessage: e.toString(),
+              errorMessage: pipelineState.errorMessage,
             );
-          },
-          onDone: () {
-            if (!_isAborted && state.status != TranscriptionStatus.error) {
-              state = state.copyWith(
-                status: TranscriptionStatus.success,
-                progress: 1.0,
-                currentAction: "Transcription Complete",
-              );
-            }
-          },
+            break;
+          case CaptionPipelineStatus.cancelled:
+            state = const TranscriptionState();
+            break;
+        }
+      },
+    );
+
+    _activePipeline = pipeline;
+
+    try {
+      final segments = await pipeline.run(
+        videoPath: videoPath,
+        mediaId: effectiveMediaId,
+      );
+
+      if (segments.isNotEmpty) {
+        ref.read(subtitleProvider.notifier).setSegments(segments);
+      }
+    } catch (e) {
+      if (state.status != TranscriptionStatus.error) {
+        state = state.copyWith(
+          status: TranscriptionStatus.error,
+          errorMessage: e.toString(),
         );
+      }
+    } finally {
+      if (_activePipeline == pipeline) {
+        _activePipeline = null;
+      }
+    }
   }
 
   void abortTranscription() {
-    _isAborted = true;
-    _transcriptionSubscription?.cancel();
-    ref.read(audioExtractionServiceProvider).cancel();
-    final service = ref.read(transcriptionServiceProvider);
-    if (service is WhisperTranscriptionService) {
-      service.cancel();
-    }
+    _activePipeline?.cancel();
+    _activePipeline = null;
     state = const TranscriptionState();
   }
 
@@ -163,7 +177,8 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   }
 
   void simulateError() {
-    _transcriptionSubscription?.cancel();
+    _activePipeline?.cancel();
+    _activePipeline = null;
     state = state.copyWith(
       status: TranscriptionStatus.error,
       errorMessage: "Simulated transcription engine failure.",

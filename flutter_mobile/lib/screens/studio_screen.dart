@@ -31,6 +31,8 @@ import '../widgets/caption_export_sheet.dart';
 import '../theme/app_colors_extension.dart';
 import '../core/duration_format.dart';
 import '../providers/waveform_provider.dart';
+import '../providers/caption_pipeline_provider.dart';
+import '../data/services/caption_pipeline.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -464,23 +466,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             Expanded(
               child: GhostPillButton(
                 label: 'Re-align AI',
-                onTap: () async {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) =>
-                        const Center(child: CircularProgressIndicator()),
-                  );
-                  await Future.delayed(const Duration(seconds: 2));
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                    AppToast.show(
-                      context,
-                      message: 'Re-align is not available until the caption pipeline is connected',
-                      variant: AppToastVariant.warning,
-                    );
-                  }
-                },
+                onTap: _handleRealignCaptions,
                 isFullWidth: true,
               ),
             ),
@@ -537,5 +523,139 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _handleRealignCaptions() async {
+    if (widget.videoPath.trim().isEmpty) {
+      AppToast.show(
+        context,
+        message: 'No video source loaded to re-align',
+        variant: AppToastVariant.warning,
+      );
+      return;
+    }
+
+    final pipelineNotifier = ref.read(captionPipelineProvider.notifier);
+    bool isDismissed = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final pipelineState = ref.watch(captionPipelineProvider);
+
+            return AlertDialog(
+              backgroundColor: AppColors.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  const Icon(Symbols.auto_fix_high, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Re-aligning Captions',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    pipelineState.currentAction ?? 'Processing...',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  LinearProgressIndicator(
+                    value: pipelineState.progress > 0
+                        ? pipelineState.progress
+                        : null,
+                    backgroundColor: AppColors.surfaceContainerHighest,
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    borderRadius: BorderRadius.circular(9999),
+                  ),
+                  if (pipelineState.status == CaptionPipelineStatus.error) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      pipelineState.errorMessage ?? 'An error occurred',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    pipelineNotifier.cancel();
+                    if (!isDismissed) {
+                      isDismissed = true;
+                      Navigator.of(dialogContext).pop();
+                    }
+                  },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    try {
+      final segments = await pipelineNotifier.run(
+        videoPath: widget.videoPath,
+        mediaId: 'realign_${DateTime.now().millisecondsSinceEpoch}',
+        updateSubtitlesOnSuccess: true,
+      );
+
+      if (!isDismissed && mounted) {
+        isDismissed = true;
+        Navigator.of(context).pop();
+      }
+
+      if (mounted) {
+        if (segments.isNotEmpty) {
+          AppToast.show(
+            context,
+            message:
+                'Captions re-aligned successfully (${segments.length} segments)',
+            variant: AppToastVariant.success,
+          );
+        } else {
+          AppToast.show(
+            context,
+            message: 'Re-align complete (no speech detected)',
+            variant: AppToastVariant.info,
+          );
+        }
+      }
+    } catch (e) {
+      if (!isDismissed && mounted) {
+        isDismissed = true;
+        Navigator.of(context).pop();
+      }
+      if (mounted) {
+        AppToast.show(
+          context,
+          message: 'Re-alignment failed: $e',
+          variant: AppToastVariant.error,
+        );
+      }
+    }
   }
 }

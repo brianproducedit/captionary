@@ -11,6 +11,17 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
   SubtitleNotifier([List<SubtitleSegment>? initial])
     : super(initial ?? SeedData.sampleSubtitles);
 
+  /// Replaces the current subtitles with [segments], optionally clearing the undo/redo history.
+  void setSegments(List<SubtitleSegment> segments, {bool clearHistory = true}) {
+    if (clearHistory) {
+      _undoStack.clear();
+      _redoStack.clear();
+    } else {
+      _saveState();
+    }
+    state = List.from(segments);
+  }
+
   void _saveState() {
     _undoStack.add(List.from(state));
     if (_undoStack.length > 50) {

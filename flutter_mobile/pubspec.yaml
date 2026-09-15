@@ -57,6 +57,8 @@ dependencies:
   shared_preferences: ^2.5.5
   timezone: ^0.11.1
   whisper_flutter_new: ^1.0.1
+  dio: ^5.8.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

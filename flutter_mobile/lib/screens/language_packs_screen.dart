@@ -63,7 +63,38 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
             bottom: AppSpacing.bottomNavClearance,
           ),
           children: [
-            _buildPageHeader(context),
+            _buildPageHeader(context, ref),
+            if (ref.watch(isCatalogStaleProvider)) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.attentionYellow.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.attentionYellow.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Symbols.cloud_off,
+                      size: 18,
+                      color: AppColors.attentionYellow,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Showing cached catalog. Connect to the internet to download new language packs.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.onSurface,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             _buildSearchInput(context),
             const SizedBox(height: 16),
@@ -86,7 +117,8 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
     );
   }
 
-  Widget _buildPageHeader(BuildContext context) {
+  Widget _buildPageHeader(BuildContext context, WidgetRef ref) {
+    final isStale = ref.watch(isCatalogStaleProvider);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -102,16 +134,19 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
           ),
           child: Row(
             children: [
-              const Icon(
-                Symbols.cloud_sync,
+              Icon(
+                isStale ? Symbols.cloud_off : Symbols.cloud_sync,
                 size: 16,
-                color: AppColors.primary,
+                color: isStale ? AppColors.attentionYellow : AppColors.primary,
               ),
               const SizedBox(width: 6),
               Text(
-                'R2 Sync Active',
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: AppColors.primary),
+                isStale ? 'Offline (Cached)' : 'R2 Sync Active',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: isStale
+                          ? AppColors.attentionYellow
+                          : AppColors.primary,
+                    ),
               ),
             ],
           ),
@@ -357,6 +392,18 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                   ? 'Paused'
                   : '${lang.downloadSpeedMbps?.toStringAsFixed(1) ?? 0} MB/s';
               etaText = isPaused ? '' : 'Downloading...';
+            } else if (lang.status == LanguagePackStatus.error) {
+              statusStr = 'Failed';
+              statusColor = AppColors.error;
+              actionWidget = GhostPillButton(
+                label: 'Retry',
+                icon: Symbols.refresh,
+                onTap: () {
+                  ref
+                      .read(availableLanguagesProvider.notifier)
+                      .startDownload(lang.code);
+                },
+              );
             }
 
             return Padding(

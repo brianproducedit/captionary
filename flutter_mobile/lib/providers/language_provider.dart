@@ -6,6 +6,7 @@ import '../data/models/language_pack.dart';
 import '../data/models/download_progress.dart';
 import '../data/mock/mock_language_service.dart';
 import '../data/services/language_pack_service.dart';
+import '../data/services/r2_language_pack_service.dart';
 import 'backend_mode_provider.dart';
 
 final languageServiceProvider = Provider<LanguagePackService>((ref) {
@@ -15,8 +16,17 @@ final languageServiceProvider = Provider<LanguagePackService>((ref) {
       return MockLanguageService();
     case BackendMode.local:
     case BackendMode.real:
-      return MockLanguageService();
+      return R2LanguagePackService();
   }
+});
+
+/// Indicates whether the catalog was loaded from disk cache while offline.
+final isCatalogStaleProvider = Provider<bool>((ref) {
+  final service = ref.watch(languageServiceProvider);
+  if (service is R2LanguagePackService) {
+    return service.isCatalogStale;
+  }
+  return false;
 });
 
 class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
@@ -44,7 +54,7 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     });
   }
 
-  Future<void> simulateDownload(String code) async {
+  Future<void> startDownload(String code) async {
     if (_activeDownloads.containsKey(code)) {
       final sub = _activeDownloads[code]!;
       if (sub.isPaused) {
@@ -67,12 +77,12 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
       updateLanguageState(
         pack.copyWith(
           status: LanguagePackStatus.downloading,
-          downloadProgress: 0.0,
+          downloadProgress: pack.downloadProgress,
         ),
       );
     });
 
-    // Listen to mock stream
+    // Listen to download stream
     final stream = service.downloadLanguagePack(code);
     final subscription = stream.listen(
       (progress) {
@@ -82,6 +92,8 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
             pack.copyWith(
               status: progress.state == DownloadState.complete
                   ? LanguagePackStatus.installed
+                  : progress.state == DownloadState.error
+                  ? LanguagePackStatus.error
                   : pack.status == LanguagePackStatus.paused
                   ? LanguagePackStatus.paused
                   : LanguagePackStatus.downloading,
@@ -94,6 +106,18 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
           );
         });
       },
+      onError: (err) {
+        _activeDownloads.remove(code);
+        state.whenData((packs) {
+          final pack = packs.firstWhere((p) => p.code == code);
+          updateLanguageState(
+            pack.copyWith(
+              status: LanguagePackStatus.error,
+              downloadSpeedMbps: 0.0,
+            ),
+          );
+        });
+      },
       onDone: () {
         _activeDownloads.remove(code);
       },
@@ -102,22 +126,32 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     _activeDownloads[code] = subscription;
   }
 
+  /// Backwards-compatible alias for startDownload
+  Future<void> simulateDownload(String code) => startDownload(code);
+
   void pauseDownload(String code) {
     if (_activeDownloads.containsKey(code)) {
-      _activeDownloads[code]!.pause();
-      state.whenData((packs) {
-        final pack = packs.firstWhere((p) => p.code == code);
-        updateLanguageState(
-          pack.copyWith(
-            status: LanguagePackStatus.paused,
-            downloadSpeedMbps: 0.0, // Clear speed when paused
-          ),
-        );
-      });
+      _activeDownloads[code]!.cancel();
+      _activeDownloads.remove(code);
     }
+
+    final service = ref.read(languageServiceProvider);
+    if (service is R2LanguagePackService) {
+      service.cancelDownload(code, deletePart: false);
+    }
+
+    state.whenData((packs) {
+      final pack = packs.firstWhere((p) => p.code == code);
+      updateLanguageState(
+        pack.copyWith(
+          status: LanguagePackStatus.paused,
+          downloadSpeedMbps: 0.0,
+        ),
+      );
+    });
   }
 
-  Future<void> simulateDelete(String code) async {
+  Future<void> deleteLanguagePack(String code) async {
     if (_activeDownloads.containsKey(code)) {
       _activeDownloads[code]!.cancel();
       _activeDownloads.remove(code);
@@ -133,10 +167,14 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
           status: LanguagePackStatus.notDownloaded,
           downloadProgress: 0.0,
           downloadSpeedMbps: 0.0,
+          bytesDownloaded: 0,
         ),
       );
     });
   }
+
+  /// Backwards-compatible alias for deleteLanguagePack
+  Future<void> simulateDelete(String code) => deleteLanguagePack(code);
 }
 
 final availableLanguagesProvider =
