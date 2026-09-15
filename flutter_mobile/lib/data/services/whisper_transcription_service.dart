@@ -5,9 +5,13 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
+import '../../core/async_lock.dart';
+import '../../core/performance_logger.dart';
 import '../../core/whisper_chunker.dart';
 import '../../core/whisper_output_parser.dart';
+import '../exceptions/language_pack_exceptions.dart';
 import '../models/subtitle_segment.dart';
+import 'system_memory_service.dart';
 import 'transcription_service.dart';
 
 /// Runner abstraction for executing the underlying Whisper model.
@@ -28,15 +32,17 @@ typedef WhisperEngineRunner = Future<WhisperTranscribeResponse> Function({
 class WhisperTranscriptionService implements TranscriptionService {
   final WhisperEngineRunner? _customRunner;
   final Future<Directory> Function()? getTempDirectory;
+  final SystemMemoryService? systemMemoryService;
 
   /// Global lock to guarantee only one model runs in memory at any time.
-  static final _AsyncLock _globalLock = _AsyncLock();
+  static final AsyncLock _globalLock = AsyncLock();
 
   bool _isCancelled = false;
 
   WhisperTranscriptionService({
     WhisperEngineRunner? runner,
     this.getTempDirectory,
+    this.systemMemoryService,
   }) : _customRunner = runner;
 
   /// Cancel in-flight transcription.
@@ -93,6 +99,28 @@ class WhisperTranscriptionService implements TranscriptionService {
       // 2. Prepare model file on disk
       final resolvedModelPath = await _resolveModelFile(modelPath);
 
+      // Memory threshold safety guard before model load
+      final memService = systemMemoryService ?? const SystemMemoryService();
+      final memInfo = await memService.getMemoryInfo();
+      if (!memService.canSafelyRunModel(
+        modelNameOrPath: resolvedModelPath,
+        memoryInfo: memInfo,
+      )) {
+        throw LowMemoryException(
+          'Available memory (${memInfo.availableRamGb.toStringAsFixed(1)} GB) is below safe threshold for model.',
+          availableBytes: memInfo.availableRamBytes,
+          requiredBytes: 300 * 1024 * 1024,
+        );
+      }
+
+      PerformanceLogger.recordCheckpoint(
+        'model load',
+        metadata: {
+          'model': p.basename(resolvedModelPath),
+          'availRamMb': (memInfo.availableRamBytes / (1024 * 1024)).round(),
+        },
+      );
+
       // 3. Slice audio into 30s overlapping chunks if necessary
       try {
         chunks = await WhisperChunker.chunkAudio(
@@ -117,6 +145,16 @@ class WhisperTranscriptionService implements TranscriptionService {
         if (_isCancelled) break;
 
         final chunk = chunks[i];
+
+        PerformanceLogger.recordCheckpoint(
+          'transcribe',
+          metadata: {
+            'chunk': i + 1,
+            'totalChunks': chunks.length,
+            'chunkDurationMs': chunk.duration.inMilliseconds,
+          },
+        );
+
         final WhisperTranscribeResponse response;
 
         if (_customRunner != null) {
@@ -167,6 +205,10 @@ class WhisperTranscriptionService implements TranscriptionService {
         }
       }
     } finally {
+      PerformanceLogger.recordCheckpoint(
+        'unload',
+        metadata: {'chunksCleaned': chunks.length},
+      );
       // Clean up temporary chunks
       if (chunks.isNotEmpty) {
         await WhisperChunker.cleanupChunks(chunks);
@@ -262,25 +304,5 @@ class WhisperTranscriptionService implements TranscriptionService {
     }
     if (lower.contains('large')) return WhisperModel.largeV1;
     return WhisperModel.base;
-  }
-}
-
-/// Simple asynchronous Mutex lock to enforce single-model execution.
-class _AsyncLock {
-  Completer<void>? _lock;
-
-  Future<void> acquire() async {
-    while (_lock != null) {
-      await _lock!.future;
-    }
-    _lock = Completer<void>();
-  }
-
-  void release() {
-    if (_lock != null && !_lock!.isCompleted) {
-      final lockToRelease = _lock!;
-      _lock = null;
-      lockToRelease.complete();
-    }
   }
 }

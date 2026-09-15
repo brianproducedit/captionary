@@ -4,6 +4,7 @@ import '../data/models/subtitle_segment.dart';
 import '../data/services/caption_pipeline.dart';
 import 'language_provider.dart';
 import 'subtitle_provider.dart';
+import 'system_memory_provider.dart';
 import 'transcription_provider.dart';
 
 /// Provider for creating or accessing the CaptionPipeline service.
@@ -11,11 +12,13 @@ final captionPipelineServiceProvider = Provider<CaptionPipeline>((ref) {
   final audioService = ref.watch(audioExtractionServiceProvider);
   final languageService = ref.watch(languageServiceProvider);
   final transcriptionService = ref.watch(transcriptionServiceProvider);
+  final memoryService = ref.watch(systemMemoryServiceProvider);
 
   final pipeline = CaptionPipeline(
     audioExtractionService: audioService,
     languagePackService: languageService,
     transcriptionService: transcriptionService,
+    systemMemoryService: memoryService,
   );
 
   ref.onDispose(() {
@@ -46,6 +49,7 @@ class CaptionPipelineNotifier extends Notifier<CaptionPipelineState> {
       audioExtractionService: ref.read(audioExtractionServiceProvider),
       languagePackService: ref.read(languageServiceProvider),
       transcriptionService: ref.read(transcriptionServiceProvider),
+      systemMemoryService: ref.read(systemMemoryServiceProvider),
       onStateChange: (newState) {
         state = newState;
       },

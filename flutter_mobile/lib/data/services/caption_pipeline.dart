@@ -2,13 +2,16 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 
+import '../../core/performance_logger.dart';
 import '../../core/whisper_output_parser.dart';
 import '../models/download_progress.dart';
 import '../models/language_pack.dart';
 import '../models/subtitle_segment.dart';
 import 'audio_extraction_service.dart';
 import 'language_pack_service.dart';
+import 'system_memory_service.dart';
 import 'transcription_service.dart';
 import 'whisper_transcription_service.dart';
 
@@ -137,10 +140,13 @@ class CaptionPipeline {
   String? _currentTempAudioPath;
   final List<String> _tempOutputPaths = [];
 
+  final SystemMemoryService? systemMemoryService;
+
   CaptionPipeline({
     required this.audioExtractionService,
     required this.languagePackService,
     required this.transcriptionService,
+    this.systemMemoryService,
     this.onStateChange,
   });
 
@@ -201,6 +207,11 @@ class CaptionPipeline {
     _isCancelled = false;
     _currentTempAudioPath = null;
     _tempOutputPaths.clear();
+
+    PerformanceLogger.recordCheckpoint(
+      'import',
+      metadata: {'mediaId': mediaId, 'video': p.basename(videoPath)},
+    );
 
     try {
       // 1. Idle -> Importing
@@ -315,6 +326,25 @@ class CaptionPipeline {
           orElse: () => availableLangs.first,
         ),
       );
+
+      // Memory threshold safety guard before model download / load
+      final memService = systemMemoryService ?? const SystemMemoryService();
+      final memInfo = await memService.getMemoryInfo();
+      if (!memService.canSafelyRunModel(
+        modelNameOrPath: targetPack.modelFile,
+        memoryInfo: memInfo,
+      )) {
+        final availMb = (memInfo.availableRamBytes / (1024 * 1024)).round();
+        _emit(
+          _state.copyWith(
+            status: CaptionPipelineStatus.error,
+            errorMessage:
+                'Device memory too low (< ${availMb}MB available). Please close background apps before transcribing.',
+            currentAction: 'Memory check failed',
+          ),
+        );
+        return [];
+      }
 
       bool isModelInstalled = false;
       if (targetPack.status == LanguagePackStatus.installed ||

@@ -11,8 +11,10 @@ import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new_min_gpl/statistics.dart';
 import 'package:ffmpeg_kit_flutter_new_min_gpl/ffprobe_kit.dart';
 
+import '../../core/async_lock.dart';
 import '../../core/ass_file_writer.dart';
 import '../../core/caption_export.dart';
+import '../../core/performance_logger.dart';
 import '../models/caption_style.dart';
 import '../models/export_job.dart';
 import '../models/subtitle_segment.dart';
@@ -34,6 +36,13 @@ typedef TempDirectoryResolver = Future<Directory> Function();
 typedef FFmpegCancelRunner = Future<void> Function([int? sessionId]);
 
 class FfmpegExportService implements ExportService {
+  /// Concurrency lock to enforce strictly one heavy FFmpeg job at a time.
+  static final AsyncLock _heavyJobLock = AsyncLock();
+
+  /// Visible for testing whether the heavy job lock is held.
+  @visibleForTesting
+  static bool get isHeavyJobRunning => _heavyJobLock.isLocked;
+
   final FFmpegAsyncRunner? ffmpegAsyncRunner;
   final VideoMetadataExtractor? metadataExtractor;
   final FontDirectoryResolver? fontDirResolver;
@@ -130,24 +139,31 @@ class FfmpegExportService implements ExportService {
     required Duration videoDuration,
     required StreamController<ExportJob> controller,
   }) async {
-    _cancelRequested = false;
-    final jobId = DateTime.now().millisecondsSinceEpoch.toString();
-    final sourceName = p.basename(videoPath);
+    await _heavyJobLock.acquire();
+    try {
+      _cancelRequested = false;
+      final jobId = DateTime.now().millisecondsSinceEpoch.toString();
+      final sourceName = p.basename(videoPath);
 
-    // Initial Job state
-    var job = ExportJob(
-      id: jobId,
-      sourceFileName: sourceName,
-      outputFileName: outputPath,
-      state: ExportState.encoding,
-      progress: 0.0,
-      resolution: 'Resolving…',
-      codec: preferredVideoCodec,
-      bitrateMbps: 0,
-      estimatedTimeRemaining: const Duration(seconds: 30),
-      outputSizeBytes: 0,
-      hardwareAcceleration: true,
-    );
+      PerformanceLogger.recordCheckpoint(
+        'burn-in',
+        metadata: {'phase': 'start', 'video': sourceName},
+      );
+
+      // Initial Job state
+      var job = ExportJob(
+        id: jobId,
+        sourceFileName: sourceName,
+        outputFileName: outputPath,
+        state: ExportState.encoding,
+        progress: 0.0,
+        resolution: 'Resolving…',
+        codec: preferredVideoCodec,
+        bitrateMbps: 0,
+        estimatedTimeRemaining: const Duration(seconds: 30),
+        outputSizeBytes: 0,
+        hardwareAcceleration: true,
+      );
 
     // Guard 1: Reject identical input and output paths
     try {
@@ -351,7 +367,10 @@ class FfmpegExportService implements ExportService {
       controller.add(job.copyWith(state: ExportState.error));
     }
     controller.close();
+  } finally {
+    _heavyJobLock.release();
   }
+}
 
   Future<bool> _runFfmpeg({
     required String command,
@@ -370,6 +389,10 @@ class FfmpegExportService implements ExportService {
 
       if (_cancelRequested || ReturnCode.isCancel(returnCode)) {
         _cleanupPart(partFile);
+        PerformanceLogger.recordCheckpoint(
+          'burn-in',
+          metadata: {'phase': 'complete', 'success': false, 'cancelled': true},
+        );
         completer.complete(false);
         return;
       }
@@ -391,17 +414,33 @@ class FfmpegExportService implements ExportService {
               estimatedTimeRemaining: Duration.zero,
             ),
           );
+          PerformanceLogger.recordCheckpoint(
+            'burn-in',
+            metadata: {
+              'phase': 'complete',
+              'success': true,
+              'outputBytes': size,
+            },
+          );
           completer.complete(true);
           return;
         } catch (e) {
           debugPrint('FfmpegExportService: Atomic rename failed: $e');
           _cleanupPart(partFile);
+          PerformanceLogger.recordCheckpoint(
+            'burn-in',
+            metadata: {'phase': 'complete', 'success': false, 'error': '$e'},
+          );
           completer.complete(false);
           return;
         }
       }
 
       _cleanupPart(partFile);
+      PerformanceLogger.recordCheckpoint(
+        'burn-in',
+        metadata: {'phase': 'complete', 'success': false},
+      );
       completer.complete(false);
     }
 

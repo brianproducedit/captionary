@@ -50,3 +50,15 @@ class DownloadResumeException implements Exception {
   String toString() =>
       'DownloadResumeException: $message${statusCode != null ? ' (status: $statusCode)' : ''}';
 }
+
+/// Exception thrown when available system memory is below the safe threshold before model load.
+class LowMemoryException implements Exception {
+  final String message;
+  final int? availableBytes;
+  final int? requiredBytes;
+
+  LowMemoryException(this.message, {this.availableBytes, this.requiredBytes});
+
+  @override
+  String toString() => 'LowMemoryException: $message';
+}

@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../../core/performance_logger.dart';
 import '../../core/wav_header_validator.dart';
 import 'audio_extraction_service.dart';
 
@@ -55,6 +56,12 @@ class AudioPreprocessor implements AudioExtractionService {
       outputPath: outputPath,
       limit: limit,
     );
+
+    PerformanceLogger.recordCheckpoint(
+      'extract',
+      metadata: {'phase': 'start', 'video': baseName},
+    );
+
     final completer = Completer<String?>();
     _cancelRequested = false;
 
@@ -73,6 +80,10 @@ class AudioPreprocessor implements AudioExtractionService {
           final outputFile = File(outputPath);
           final validation = await WavHeaderValidator.validateFile(outputFile);
           if (validation.isValid && validation.isWhisperCompatible) {
+            PerformanceLogger.recordCheckpoint(
+              'extract',
+              metadata: {'phase': 'complete', 'output': p.basename(outputPath)},
+            );
             completer.complete(outputPath);
           } else {
             debugPrint(

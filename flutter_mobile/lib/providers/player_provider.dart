@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
+import '../core/performance_logger.dart';
 import '../data/mock/mock_media_player_service.dart';
 import '../data/services/media_player_service.dart';
 import '../core/user_preferences.dart';
@@ -105,6 +107,17 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     super.dispose();
   }
 
+  /// Releases active media player, drops textures, and frees native decoder memory.
+  Future<void> releasePlayer() async {
+    _cancelSubscriptions();
+    final handle = _currentHandle;
+    _currentHandle = null;
+    if (handle != null) {
+      await _mediaPlayerService.dispose(handle);
+    }
+    state = PlayerState();
+  }
+
   Future<void> initPlayer(String videoPath) async {
     _cancelSubscriptions();
     if (state.handle != null) {
@@ -129,6 +142,11 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       if (prefs.autoPlay) {
         await handle.play();
       }
+
+      PerformanceLogger.recordCheckpoint(
+        'play',
+        metadata: {'video': p.basename(videoPath)},
+      );
 
       _currentHandle = handle;
       state = state.copyWith(
