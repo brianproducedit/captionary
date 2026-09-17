@@ -207,11 +207,11 @@ export async function fetchLatestRelease(options: { forceRefresh?: boolean } = {
     }
   }
 
-  // 2. Query GitHub Releases REST API (Serverless public query)
+  // 2. Query Cloudflare R2 / GitHub Releases REST API
   try {
     const res = await fetch(publicConfig.latestReleaseApiUrl, {
       headers: {
-        Accept: 'application/vnd.github.v3+json',
+        Accept: 'application/json, application/vnd.github.v3+json',
       },
     });
 
@@ -220,16 +220,16 @@ export async function fetchLatestRelease(options: { forceRefresh?: boolean } = {
       const rawAssets: any[] = Array.isArray(data.assets) ? data.assets : [];
 
       const parsedAssets: ReleaseAsset[] = rawAssets.map((asset: any) => {
-        const abi = detectAbi(asset.name || '');
+        const abi = (asset.abi as ApkAbi) || detectAbi(asset.name || '');
         return {
           name: asset.name || 'unnamed-asset',
-          downloadUrl: asset.browser_download_url || `${publicConfig.githubReleasesUrl}/latest/download/${asset.name}`,
+          downloadUrl: asset.downloadUrl || asset.browser_download_url || `${publicConfig.r2PublicBaseUrl}/${asset.name}`,
           size: asset.size || 0,
           sizeFormatted: formatBytes(asset.size || 0),
-          downloadCount: asset.download_count || 0,
+          downloadCount: asset.download_count || asset.downloadCount || 0,
           abi,
-          label: getAbiLabel(abi),
-          description: getAbiDescription(abi),
+          label: asset.label || getAbiLabel(abi),
+          description: asset.description || getAbiDescription(abi),
         };
       });
 
@@ -239,18 +239,18 @@ export async function fetchLatestRelease(options: { forceRefresh?: boolean } = {
       const x86_64 = parsedAssets.find((a) => a.abi === 'x86_64');
       const checksums = parsedAssets.find((a) => a.abi === 'checksums');
 
-      const rawTag: string = data.tag_name || `v${publicConfig.defaultVersion}`;
-      const cleanVersion = rawTag.startsWith('v') ? rawTag.slice(1) : rawTag;
+      const rawTag: string = data.tagName || data.tag_name || `v${publicConfig.defaultVersion}`;
+      const cleanVersion = data.version || (rawTag.startsWith('v') ? rawTag.slice(1) : rawTag);
 
       const releaseInfo: GitHubReleaseInfo = {
         version: cleanVersion,
         tagName: rawTag,
         name: data.name || `Captionary ${rawTag}`,
-        publishedAt: data.published_at || new Date().toISOString(),
-        publishedFormatted: formatReleaseDate(data.published_at || ''),
-        htmlUrl: data.html_url || publicConfig.githubReleasesUrl,
+        publishedAt: data.publishedAt || data.published_at || new Date().toISOString(),
+        publishedFormatted: formatReleaseDate(data.publishedAt || data.published_at || ''),
+        htmlUrl: data.htmlUrl || data.html_url || publicConfig.githubReleasesUrl,
         body: data.body || '',
-        isPrerelease: !!data.prerelease,
+        isPrerelease: !!data.prerelease || !!data.isPrerelease,
         assets: {
           universal: universal || HARDCODED_FALLBACK.assets.universal,
           arm64: arm64 || HARDCODED_FALLBACK.assets.arm64,

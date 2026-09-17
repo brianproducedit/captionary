@@ -98,6 +98,7 @@ jobs:
         working-directory: .
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL || 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev' }}
         run: |
           cd flutter_mobile/build/app/outputs/flutter-apk
           # Generate SHA256 checksums with relative filenames
@@ -110,7 +111,7 @@ jobs:
             const fs = require("fs");
             const tag = process.env.RELEASE_TAG;
             const version = tag.replace(/^v/, "");
-            const repo = process.env.GITHUB_REPOSITORY || "brianproducedit/captionary";
+            const r2Base = process.env.R2_PUBLIC_BASE_URL.replace(/\/+$/, "");
             const files = fs.readdirSync(".").filter(f => f.endsWith(".apk"));
             const assets = files.map(f => {
               const stats = fs.statSync(f);
@@ -128,7 +129,7 @@ jobs:
               }
               return {
                 name: f,
-                downloadUrl: `https://github.com/${repo}/releases/download/${tag}/${f}`,
+                downloadUrl: `${r2Base}/apks/${tag}/${f}`,
                 size: stats.size,
                 abi,
                 label
@@ -139,11 +140,11 @@ jobs:
               tagName: tag,
               name: `Captionary ${tag}`,
               publishedAt: new Date().toISOString(),
-              htmlUrl: `https://github.com/${repo}/releases/tag/${tag}`,
+              htmlUrl: `${r2Base}/apks/${tag}`,
               assets
             };
             fs.writeFileSync("latest-release.json", JSON.stringify(meta, null, 2));
-            console.log("Generated latest-release.json metadata successfully.");
+            console.log("Generated latest-release.json metadata successfully pointing to R2.");
           '
 
       - name: Verify APK signatures
@@ -155,7 +156,33 @@ jobs:
             "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | tail -n 1)/apksigner" verify --verbose "$apk"
           done
 
-      - name: Publish GitHub Release
+      - name: Upload to Cloudflare R2
+        shell: bash
+        working-directory: flutter_mobile/build/app/outputs/flutter-apk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET || 'captionary-models' }}
+        run: |
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
+            echo "::error::R2 secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID) are missing from repository secrets. Add them to repository secrets to enable automated uploads."
+            exit 1
+          fi
+
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          echo "Uploading versioned release $RELEASE_TAG to R2 bucket ${R2_BUCKET}..."
+          aws s3 cp . "s3://${R2_BUCKET}/apks/${RELEASE_TAG}/" --recursive --exclude "*" --include "*.apk" --include "SHA256SUMS.txt" --include "latest-release.json" --endpoint-url "$ENDPOINT"
+
+          echo "Updating latest/ pointer in R2..."
+          aws s3 cp . "s3://${R2_BUCKET}/apks/latest/" --recursive --exclude "*" --include "*.apk" --include "SHA256SUMS.txt" --endpoint-url "$ENDPOINT"
+
+          echo "Updating root latest-release.json in R2..."
+          aws s3 cp latest-release.json "s3://${R2_BUCKET}/apks/latest-release.json" --endpoint-url "$ENDPOINT" --content-type "application/json"
+
+          echo "All release artifacts uploaded to Cloudflare R2 successfully!"
+
+      - name: Publish Private GitHub Release Backup
         shell: bash
         working-directory: .
         env:
@@ -166,10 +193,11 @@ jobs:
             flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt \
             flutter_mobile/build/app/outputs/flutter-apk/latest-release.json \
             --generate-notes \
-            --title "Captionary $RELEASE_TAG"
+            --title "Captionary $RELEASE_TAG" || echo "GitHub release creation skipped or already exists."
 
       - name: Clean up signing files
         if: always()
         shell: bash
         working-directory: .
         run: rm -f flutter_mobile/android/key.properties flutter_mobile/android/captionary-release.jks
+

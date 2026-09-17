@@ -8,7 +8,7 @@
   "assets": [
     {
       "name": "app-release.apk",
-      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-release.apk",
+      "downloadUrl": "https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks/v1.0.0/app-release.apk",
       "size": 83886080,
       "abi": "universal",
       "label": "Universal APK (Recommended)",
@@ -16,7 +16,7 @@
     },
     {
       "name": "app-arm64-v8a-release.apk",
-      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-arm64-v8a-release.apk",
+      "downloadUrl": "https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks/v1.0.0/app-arm64-v8a-release.apk",
       "size": 47185920,
       "abi": "arm64-v8a",
       "label": "ARM64-v8a (64-bit)",
@@ -24,7 +24,7 @@
     },
     {
       "name": "app-armeabi-v7a-release.apk",
-      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-armeabi-v7a-release.apk",
+      "downloadUrl": "https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks/v1.0.0/app-armeabi-v7a-release.apk",
       "size": 41943040,
       "abi": "armeabi-v7a",
       "label": "ARMv7a (32-bit)",
@@ -32,7 +32,7 @@
     },
     {
       "name": "app-x86_64-release.apk",
-      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-x86_64-release.apk",
+      "downloadUrl": "https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks/v1.0.0/app-x86_64-release.apk",
       "size": 50331648,
       "abi": "x86_64",
       "label": "x86_64",
@@ -40,7 +40,7 @@
     },
     {
       "name": "SHA256SUMS.txt",
-      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/SHA256SUMS.txt",
+      "downloadUrl": "https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks/v1.0.0/SHA256SUMS.txt",
       "size": 512,
       "abi": "checksums",
       "label": "SHA256 Checksums",

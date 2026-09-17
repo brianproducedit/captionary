@@ -14,7 +14,7 @@ class AppConstants {
     'DONATE_WEB_URL',
     defaultValue: 'https://captionary.co.zw/donate',
   );
-  static const String licenseUrl = 'https://www.gnu.org/licenses/agpl-3.0.html';
+  static const String licenseUrl = 'https://captionary.co.zw/terms';
   static const int maxModelSizeBytes = 1024 * 1024 * 1024; // 1GB
   static const int audioSampleDurationSec = 30;
   static const double storageCapacityGB = 10.0;
