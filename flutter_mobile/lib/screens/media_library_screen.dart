@@ -7,16 +7,13 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../core/media_library_query.dart';
 import '../data/models/media_item.dart';
-import '../providers/language_provider.dart';
 import '../providers/media_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
-import '../theme/app_shadows.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../widgets/app_header.dart';
-import '../widgets/bento_grid.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/donate_banner.dart';
 import '../widgets/empty_state_widget.dart';
@@ -34,11 +31,75 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
   MediaLibrarySort _sort = MediaLibrarySort.recent;
   MediaLibraryFilter _filter = MediaLibraryFilter.all;
   bool _isGrid = true;
+  final Set<String> _selectedIds = {};
+
+  bool get _isSelecting => _selectedIds.isNotEmpty;
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
 
   Future<void> _importMedia() async {
-    final item = await ref.read(mediaServiceProvider).importVideo();
-    if (item != null) {
+    try {
+      final item = await ref.read(mediaServiceProvider).importVideo();
+      if (item != null) {
+        ref.invalidate(recentMediaProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Imported "${item.fileName}" successfully')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to import media: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteSelectedMedia() async {
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Delete $count ${count == 1 ? 'item' : 'items'}?'),
+        content: const Text(
+          'Are you sure you want to remove the selected media files from your library?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final ids = List<String>.from(_selectedIds);
+      for (final id in ids) {
+        await ref.read(mediaServiceProvider).deleteMedia(id);
+      }
+      setState(() => _selectedIds.clear());
       ref.invalidate(recentMediaProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Removed $count ${count == 1 ? 'item' : 'items'}')),
+        );
+      }
     }
   }
 
@@ -48,18 +109,48 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
 
     return Scaffold(
       extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: const AppHeader(subtitle: 'Local Media Library'),
+      extendBodyBehindAppBar: !_isSelecting,
+      appBar: _isSelecting
+          ? AppBar(
+              backgroundColor: AppColors.surfaceContainerHigh,
+              leading: IconButton(
+                icon: const Icon(Symbols.close),
+                onPressed: () => setState(() => _selectedIds.clear()),
+              ),
+              title: Text('${_selectedIds.length} Selected'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Symbols.select_all),
+                  tooltip: 'Select all',
+                  onPressed: () {
+                    final allItems = recentMediaAsync.value ?? [];
+                    setState(() {
+                      if (_selectedIds.length == allItems.length) {
+                        _selectedIds.clear();
+                      } else {
+                        _selectedIds.addAll(allItems.map((e) => e.id));
+                      }
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Symbols.delete, color: AppColors.error),
+                  tooltip: 'Delete selected',
+                  onPressed: _deleteSelectedMedia,
+                ),
+              ],
+            )
+          : const AppHeader(subtitle: 'Local Media Library'),
       body: ListView(
         padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 64.0 + 24.0,
+          top: _isSelecting
+              ? 16.0
+              : MediaQuery.of(context).padding.top + 64.0 + 16.0,
           bottom: AppSpacing.bottomNavClearance,
           left: 16.0,
           right: 16.0,
         ),
         children: [
-          _buildLanguagePackBanner(context),
-          const SizedBox(height: AppSpacing.spaceLg),
           _buildHeroImportCard(context),
           const SizedBox(height: AppSpacing.spaceMd),
           recentMediaAsync.maybeWhen(
@@ -77,65 +168,17 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
         ],
       ),
       floatingActionButton: recentMediaAsync.maybeWhen(
-        data: (items) => items.isNotEmpty
-            ? FloatingActionButton(
+        data: (items) => items.isNotEmpty && !_isSelecting
+            ? FloatingActionButton.extended(
                 onPressed: _importMedia,
-                backgroundColor: AppColors.onSecondaryFixed,
-                child: const Icon(Symbols.add, color: AppColors.allWhite),
+                backgroundColor: AppColors.primary,
+                icon: const Icon(Symbols.add, color: AppColors.allWhite),
+                label: const Text('Add Media', style: TextStyle(color: AppColors.allWhite)),
               )
             : null,
         orElse: () => null,
       ),
       bottomNavigationBar: const BottomNavBar(currentIndex: 0),
-    );
-  }
-
-  Widget _buildLanguagePackBanner(BuildContext context) {
-    final activeLanguageAsync = ref.watch(activeLanguageProvider);
-
-    return GestureDetector(
-      onTap: () => context.go('/languages'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(9999),
-          border: Border.all(color: AppColors.surfaceContainerHigh),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: AppColors.tertiary,
-                shape: BoxShape.circle,
-                boxShadow: [AppShadows.tertiaryGlow],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: activeLanguageAsync.when(
-                data: (lang) => Text(
-                  'Language Pack: ${lang.name}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                loading: () => const Text('Loading language...'),
-                error: (error, stack) => const Text('Error loading language'),
-              ),
-            ),
-            const StatusChip(label: 'Ready', variant: StatusChipVariant.ready),
-            const SizedBox(width: 8),
-            const Icon(
-              Symbols.chevron_right,
-              size: 20,
-              color: AppColors.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -391,10 +434,17 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
         }
 
         if (_isGrid) {
-          return BentoGrid(
+          return GridView.builder(
             key: const ValueKey('library-grid'),
-            animate: false,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: visible.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.76,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
             itemBuilder: (context, index) =>
                 _buildMediaCard(context, visible[index], isGrid: true),
           );
@@ -418,6 +468,7 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
     MediaItem item, {
     required bool isGrid,
   }) {
+    final isSelected = _selectedIds.contains(item.id);
     final durationStr =
         '${item.duration.inMinutes.toString().padLeft(2, '0')}:${(item.duration.inSeconds % 60).toString().padLeft(2, '0')}';
     final detailsStr =
@@ -444,6 +495,11 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
     }
 
     void onTap() {
+      if (_isSelecting) {
+        _toggleSelection(item.id);
+        return;
+      }
+
       if (item.status == MediaStatus.error) {
         showDialog(
           context: context,
@@ -486,25 +542,137 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       height: isGrid ? 120 : 72,
     );
 
+    Widget buildCardActions() {
+      return PopupMenuButton<String>(
+        key: ValueKey('card-menu-${item.id}'),
+        icon: const Icon(
+          Symbols.more_vert,
+          size: 20,
+          color: AppColors.onSurfaceVariant,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onSelected: (action) async {
+          if (action == 'studio') {
+            context.push('/studio', extra: item.filePath);
+          } else if (action == 'preview') {
+            context.push('/player', extra: item.filePath);
+          } else if (action == 'delete') {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete Video?'),
+                content: Text(
+                  'Are you sure you want to remove "${item.fileName}" from your library?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed == true) {
+              await ref.read(mediaServiceProvider).deleteMedia(item.id);
+              ref.invalidate(recentMediaProvider);
+            }
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'studio',
+            child: Row(
+              children: [
+                Icon(Symbols.edit, size: 18),
+                SizedBox(width: 8),
+                Text('Edit in Studio'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'preview',
+            child: Row(
+              children: [
+                Icon(Symbols.play_arrow, size: 18),
+                SizedBox(width: 8),
+                Text('Preview Video'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Symbols.delete, size: 18, color: AppColors.error),
+                SizedBox(width: 8),
+                Text('Remove', style: TextStyle(color: AppColors.error)),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return GestureDetector(
       key: ValueKey('media-card-${item.id}'),
       onTap: onTap,
+      onLongPress: () => _toggleSelection(item.id),
       child: GlassCard(
         padding: const EdgeInsets.all(12.0),
+        border: isSelected
+            ? Border.all(color: AppColors.primary, width: 2)
+            : null,
         child: isGrid
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  thumbnail,
-                  const SizedBox(height: 12),
+                  Stack(
+                    children: [
+                      thumbnail,
+                      if (_isSelecting)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.surfaceContainerHigh.withValues(
+                                      alpha: 0.8,
+                                    ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(
+                              isSelected ? Symbols.check : null,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   Text(
                     item.fileName,
-                    style: Theme.of(context).textTheme.bodyLarge
-                        ?.copyWith(fontWeight: FontWeight.w500),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     detailsStr,
                     style: Theme.of(context).textTheme.bodySmall
@@ -512,27 +680,48 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
+                  const Spacer(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       StatusChip(label: statusLabel, variant: variant),
-                      if (item.status != MediaStatus.newItem)
-                        IconButton(
-                          icon: const Icon(Symbols.edit, size: 20),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          color: AppColors.primary,
-                          onPressed: () =>
-                              context.push('/studio', extra: item.filePath),
-                        ),
+                      buildCardActions(),
                     ],
                   ),
                 ],
               )
             : Row(
                 children: [
-                  SizedBox(width: 96, child: thumbnail),
+                  Stack(
+                    children: [
+                      SizedBox(width: 96, child: thumbnail),
+                      if (_isSelecting)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.surfaceContainerHigh.withValues(
+                                      alpha: 0.8,
+                                    ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(3),
+                            child: Icon(
+                              isSelected ? Symbols.check : null,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -558,17 +747,7 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             StatusChip(label: statusLabel, variant: variant),
-                            if (item.status != MediaStatus.newItem)
-                              IconButton(
-                                icon: const Icon(Symbols.edit, size: 20),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                color: AppColors.primary,
-                                onPressed: () => context.push(
-                                  '/studio',
-                                  extra: item.filePath,
-                                ),
-                              ),
+                            buildCardActions(),
                           ],
                         ),
                       ],

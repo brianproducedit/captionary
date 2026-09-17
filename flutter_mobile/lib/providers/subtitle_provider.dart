@@ -188,6 +188,34 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
     _saveState();
     state = SubtitleTimeline.delete(state, target.index);
   }
+
+  void addSegmentAt(
+    Duration startTime, {
+    Duration length = const Duration(seconds: 2),
+    Duration? mediaDuration,
+    String defaultText = 'New Caption',
+  }) {
+    _saveState();
+    final effectiveEnd = mediaDuration != null &&
+            mediaDuration > startTime &&
+            startTime + length > mediaDuration
+        ? mediaDuration
+        : startTime + length;
+
+    final unselected = [
+      for (final s in state) s.copyWith(isSelected: false),
+    ];
+    final newSegment = SubtitleSegment(
+      index: unselected.length + 1,
+      startTime: startTime,
+      endTime: effectiveEnd > startTime
+          ? effectiveEnd
+          : startTime + const Duration(milliseconds: 500),
+      text: defaultText,
+      isSelected: true,
+    );
+    state = SubtitleTimeline.reindex([...unselected, newSegment]);
+  }
 }
 
 final subtitleProvider =

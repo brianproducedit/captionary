@@ -1,11 +1,11 @@
 class AppConstants {
   static const String r2BaseUrl = String.fromEnvironment(
     'R2_BASE_URL',
-    defaultValue: 'https://models.captionary.co.zw',
+    defaultValue: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev',
   );
   static const String manifestUrl = String.fromEnvironment(
     'MANIFEST_URL',
-    defaultValue: 'https://models.captionary.co.zw/manifest.json',
+    defaultValue: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/manifest.json',
   );
 
   /// Canonical donate portal URL. Keep in sync with

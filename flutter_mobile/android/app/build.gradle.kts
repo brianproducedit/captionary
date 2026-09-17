@@ -12,6 +12,33 @@ if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
+val envProperties = Properties()
+val envFiles = listOf(
+    rootProject.file("../../.env"),
+    rootProject.file("../.env"),
+    rootProject.file(".env")
+)
+for (file in envFiles) {
+    if (file.exists()) {
+        file.bufferedReader().use { reader ->
+            reader.forEachLine { line ->
+                val trimmed = line.trim()
+                if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && trimmed.contains("=")) {
+                    val parts = trimmed.split("=", limit = 2)
+                    envProperties[parts[0].trim()] = parts[1].trim()
+                }
+            }
+        }
+        break
+    }
+}
+
+val admobAppId = (envProperties["ADMOB_APP_ID"] as? String)
+    ?.takeIf { it.isNotBlank() }
+    ?: System.getenv("ADMOB_APP_ID")
+    ?.takeIf { it.isNotBlank() }
+    ?: "ca-app-pub-3940256099942544~3347511713"
+
 android {
     namespace = "com.captionary.captionary"
     compileSdk = flutter.compileSdkVersion
@@ -36,6 +63,8 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        manifestPlaceholders["ADMOB_APP_ID"] = admobAppId
     }
 
     signingConfigs {

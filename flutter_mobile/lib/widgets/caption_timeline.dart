@@ -9,7 +9,6 @@ import '../data/models/subtitle_segment.dart';
 import '../providers/player_provider.dart';
 import '../providers/subtitle_provider.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_shadows.dart';
 import 'draggable_timeline_chip.dart';
 import 'glass_card.dart';
 import 'waveform_painter.dart';
@@ -231,7 +230,7 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
                             ),
                           ),
                           Positioned(
-                            left: mapping.timeToX(player.position) - 6,
+                            left: mapping.timeToX(player.position) - 16,
                             top: 0,
                             bottom: 0,
                             child: GestureDetector(
@@ -243,25 +242,57 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
                                 _seekToX(mapping, x);
                               },
                               child: SizedBox(
-                                width: 12,
-                                child: Center(
-                                  child: Container(
-                                    width: 2,
-                                    color: AppColors.secondary,
-                                    child: Align(
-                                      alignment: Alignment.topCenter,
+                                width: 32,
+                                child: Stack(
+                                  alignment: Alignment.topCenter,
+                                  children: [
+                                    Positioned(
+                                      top: 14,
+                                      bottom: 0,
                                       child: Container(
-                                        width: 8,
-                                        height: 8,
-                                        margin: const EdgeInsets.only(top: 2),
+                                        width: 2.5,
                                         decoration: const BoxDecoration(
                                           color: AppColors.secondary,
-                                          shape: BoxShape.circle,
-                                          boxShadow: [AppShadows.glowSupport],
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0x664589FF),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                  ),
+                                    Positioned(
+                                      top: 0,
+                                      child: Container(
+                                        width: 26,
+                                        height: 18,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.secondary,
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(6),
+                                            topRight: Radius.circular(6),
+                                            bottomLeft: Radius.circular(2),
+                                            bottomRight: Radius.circular(2),
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0x80000000),
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Center(
+                                          child: Icon(
+                                            Symbols.arrow_drop_down,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -350,6 +381,10 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
           style: Theme.of(context).textTheme.labelMedium
               ?.copyWith(color: AppColors.onSurfaceVariant),
         ),
+        _tool(Symbols.add_circle, 'Add Caption at Playhead', () {
+          final pos = ref.read(playerProvider).position;
+          notifier.addSegmentAt(pos, mediaDuration: duration);
+        }),
         _tool(Symbols.zoom_out, 'Zoom out', () {
           setState(() {
             _pixelsPerSecond = TimelineMapping.clampZoom(

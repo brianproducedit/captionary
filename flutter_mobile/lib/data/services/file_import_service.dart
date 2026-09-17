@@ -16,7 +16,9 @@ class FileImportService {
     if (filePicker != null) {
       return filePicker!();
     }
-    PlatformFile? result = await FilePicker.pickFile(type: FileType.video);
+    final result = await FilePicker.pickFile(
+      type: FileType.video,
+    );
 
     if (result != null && result.path != null) {
       return result.path;

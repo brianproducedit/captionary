@@ -1,0 +1,162 @@
+name: Upload Whisper Models to R2
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_upload:
+        description: 'Force re-upload of all models even if already present in R2'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  upload-models:
+    name: Ingest & Upload Whisper Models to Cloudflare R2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify R2 Secrets
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
+            echo "::error::R2 secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID) are missing from repository secrets."
+            exit 1
+          fi
+          echo "R2 credentials verified."
+
+      - name: Process, Verify, and Upload Models
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET || 'captionary-models' }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL || 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev' }}
+          FORCE_UPLOAD: ${{ inputs.force_upload }}
+        run: |
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          mkdir -p models_workdir
+          cd models_workdir
+
+          # List of official whisper.cpp models to maintain in R2
+          # Format: ID|FILENAME|LANG_TYPE|DISPLAY_NAME|REC_RAM|MIN_SDK|QUANT
+          MODELS=(
+            "tiny.en|ggml-tiny.en.bin|en|English Tiny|4|21|none"
+            "tiny|ggml-tiny.bin|multi|Multilingual Tiny|4|21|none"
+            "tiny.q5_1|ggml-tiny-q5_1.bin|multi|Multilingual Tiny (Q5_1)|3|21|q5_1"
+            "base.en|ggml-base.en.bin|en|English Base|4|21|none"
+            "base|ggml-base.bin|multi|Multilingual Base|4|21|none"
+            "base.q5_1|ggml-base-q5_1.bin|multi|Multilingual Base (Q5_1)|4|21|q5_1"
+            "small|ggml-small.bin|multi|Multilingual Small|6|24|none"
+          )
+
+          MANIFEST_MODELS="[]"
+
+          for item in "${MODELS[@]}"; do
+            IFS="|" read -r ID FILENAME LANG_TYPE DISPLAY_NAME REC_RAM MIN_SDK QUANT <<< "$item"
+            HF_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${FILENAME}"
+            R2_TARGET="s3://${R2_BUCKET}/models/${FILENAME}"
+            
+            echo "--------------------------------------------------------"
+            echo "Processing model: $ID ($FILENAME)"
+
+            # Check if file already exists in R2
+            EXISTS=false
+            if [ "$FORCE_UPLOAD" != "true" ]; then
+              if aws s3 ls "$R2_TARGET" --endpoint-url "$ENDPOINT" > /dev/null 2>&1; then
+                echo "Model $FILENAME already exists in R2. Checking metadata..."
+                EXISTS=true
+              fi
+            fi
+
+            if [ "$EXISTS" = "false" ]; then
+              echo "Downloading $FILENAME from Hugging Face: $HF_URL ..."
+              curl -L -f -o "$FILENAME" "$HF_URL" --retry 3 --retry-delay 5
+              
+              FILE_SIZE=$(stat -c%s "$FILENAME")
+              SHA256=$(sha256sum "$FILENAME" | awk '{print $1}')
+              echo "Downloaded: Size=$FILE_SIZE bytes, SHA256=$SHA256"
+
+              echo "Uploading $FILENAME to Cloudflare R2: $R2_TARGET ..."
+              aws s3 cp "$FILENAME" "$R2_TARGET" --endpoint-url "$ENDPOINT" --content-type "application/octet-stream"
+              echo "Upload of $FILENAME complete."
+            else
+              # If already on R2 and not locally downloaded, get metadata from Hugging Face or download head
+              echo "Model already on R2. Fetching SHA256 & size metadata..."
+              curl -L -f -o "$FILENAME" "$HF_URL" --retry 3 --retry-delay 5
+              FILE_SIZE=$(stat -c%s "$FILENAME")
+              SHA256=$(sha256sum "$FILENAME" | awk '{print $1}')
+            fi
+
+            # Clean up local file to conserve runner disk space
+            rm -f "$FILENAME"
+
+            # Determine language codes
+            if [ "$LANG_TYPE" = "en" ]; then
+              LANG_CODES='["en"]'
+            else
+              # Multilingual Whisper supports 99 languages including African, European, Asian languages
+              LANG_CODES='["sn","zu","nso","sw","yo","af","xh","st","tn","ts","ss","ve","nr","en","fr","pt","es","ar","de","it","nl","ru","hi","zh","ja","ko"]'
+            fi
+
+            # Append to Node manifest generator JSON
+            node -e "
+              const fs = require('fs');
+              let list = [];
+              if (fs.existsSync('manifest_data.json')) {
+                list = JSON.parse(fs.readFileSync('manifest_data.json', 'utf8'));
+              }
+              list.push({
+                id: '$ID',
+                engine: 'whisper_flutter_new',
+                file: 'models/$FILENAME',
+                language_codes: $LANG_CODES,
+                display_name: '$DISPLAY_NAME',
+                size_bytes: parseInt('$FILE_SIZE', 10),
+                sha256: '$SHA256',
+                quantization: '$QUANT',
+                bundled: false,
+                min_android_sdk: parseInt('$MIN_SDK', 10),
+                recommended_ram_gb: parseInt('$REC_RAM', 10),
+                license: 'MIT',
+                source_url: '$HF_URL'
+              });
+              fs.writeFileSync('manifest_data.json', JSON.stringify(list, null, 2));
+            "
+          done
+
+          echo "--------------------------------------------------------"
+          echo "Generating final manifest.json..."
+          node -e "
+            const fs = require('fs');
+            const models = JSON.parse(fs.readFileSync('manifest_data.json', 'utf8'));
+            const r2Base = process.env.R2_PUBLIC_BASE_URL.replace(/\/+$/, '');
+            const manifest = {
+              schema_version: 1,
+              catalog_version: Date.now(),
+              updated_at: new Date().toISOString(),
+              base_url: r2Base,
+              default_language: 'en',
+              models: models
+            };
+            fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
+            console.log('Manifest generated with ' + models.length + ' models.');
+          "
+
+          cat manifest.json
+
+          echo "Uploading manifest.json to R2 root..."
+          aws s3 cp manifest.json "s3://${R2_BUCKET}/manifest.json" --endpoint-url "$ENDPOINT" --content-type "application/json"
+          echo "R2 models and manifest.json synchronization complete!"

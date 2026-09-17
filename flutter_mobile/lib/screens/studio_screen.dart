@@ -22,6 +22,7 @@ import '../data/models/subtitle_segment.dart';
 import '../data/models/caption_style.dart';
 import '../providers/player_provider.dart';
 import '../providers/engagement_provider.dart';
+import '../providers/media_provider.dart';
 
 import '../theme/app_spacing.dart';
 import '../widgets/app_toast.dart';
@@ -47,6 +48,8 @@ class StudioScreen extends ConsumerStatefulWidget {
 }
 
 class _StudioScreenState extends ConsumerState<StudioScreen> {
+  bool _isEditMode = true;
+
   @override
   void initState() {
     super.initState();
@@ -69,116 +72,247 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     super.deactivate();
   }
 
+  Future<void> _importAndOpenVideo() async {
+    try {
+      final mediaService = ref.read(mediaServiceProvider);
+      final item = await mediaService.importVideo();
+      if (item != null && mounted) {
+        context.pushReplacement('/studio', extra: item.filePath);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          message: 'Failed to import video: $e',
+          variant: AppToastVariant.error,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final style = ref.watch(captionStyleProvider);
     final segments = ref.watch(subtitleProvider);
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       extendBody: true,
-      appBar: const AppHeader(subtitle: 'Studio'),
+      appBar: isLandscape ? null : const AppHeader(subtitle: 'Studio'),
+      bottomNavigationBar:
+          isLandscape ? null : const BottomNavBar(currentIndex: 2),
       body: SafeArea(
         bottom: false,
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            if (orientation == Orientation.landscape) {
-              return Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            16.0,
-                            16.0,
-                            16.0,
-                            0,
-                          ),
-                          child: _buildTopToolbar(context),
-                        ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              16.0,
-                              0,
-                              8.0,
-                              16.0,
-                            ),
-                            child: _buildVideoCanvas(context, style, segments),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: ListView(
-                      padding: const EdgeInsets.only(
-                        left: 8.0,
-                        right: 16.0,
-                        bottom: AppSpacing.bottomNavClearance,
-                      ),
-                      children: [
-                        _buildTimelineStudio(context),
-                        const SizedBox(height: 16),
-                        _buildActionButtons(context),
-                        const SizedBox(height: 42),
-                        const AdBannerWidget(),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            }
+        child: isLandscape
+            ? _buildLandscapeLayout(context, style, segments)
+            : _buildPortraitLayout(context, style, segments),
+      ),
+    );
+  }
 
-            return Column(
+  Widget _buildLandscapeLayout(
+    BuildContext context,
+    CaptionStyle style,
+    List<SubtitleSegment> segments,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 5,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 8.0, 8.0),
+            child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
-                  child: _buildTopToolbar(context),
-                ),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: _buildVideoCanvas(context, style, segments),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                _buildTopToolbar(context),
+                const SizedBox(height: 8),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.only(
-                      left: 16.0,
-                      right: 16.0,
-                      bottom: AppSpacing.bottomNavClearance,
-                    ),
-                    children: [
-                      _buildTimelineStudio(context),
-                      const SizedBox(height: 16),
-                      _buildActionButtons(context),
-                      const SizedBox(height: 42),
-                      const AdBannerWidget(),
-                    ],
-                  ),
+                  child: _buildVideoCanvas(context, style, segments),
                 ),
               ],
-            );
-          },
+            ),
+          ),
         ),
-      ),
+        Expanded(
+          flex: 4,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(8.0, 8.0, 16.0, 16.0),
+            children: [
+              if (_isEditMode) ...[
+                _buildTimelineStudio(context),
+                const SizedBox(height: 12),
+                _buildActionButtons(context),
+              ] else ...[
+                _buildPreviewModeCard(context),
+              ],
+              const SizedBox(height: 16),
+              const AdBannerWidget(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     // Mock add segment
-      //     ScaffoldMessenger.of(context)
-      //         .showSnackBar(const SnackBar(content: Text('Added new segment')));
-      //   },
-      //   backgroundColor: AppColors.primaryContainer,
-      //   child: const Icon(Symbols.add, color: AppColors.onPrimaryContainer),
-      // ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+  Widget _buildPortraitLayout(
+    BuildContext context,
+    CaptionStyle style,
+    List<SubtitleSegment> segments,
+  ) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+          child: _buildTopToolbar(context),
+        ),
+        const SizedBox(height: 12),
+        Flexible(
+          flex: _isEditMode ? 4 : 7,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: _buildVideoCanvas(context, style, segments),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          flex: _isEditMode ? 6 : 3,
+          child: ListView(
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              bottom: AppSpacing.bottomNavClearance,
+            ),
+            children: [
+              if (_isEditMode) ...[
+                _buildTimelineStudio(context),
+                const SizedBox(height: 16),
+                _buildActionButtons(context),
+              ] else ...[
+                _buildPreviewModeCard(context),
+              ],
+              const SizedBox(height: 24),
+              const AdBannerWidget(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPreviewModeCard(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Symbols.visibility,
+                color: AppColors.tertiary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Preview Mode',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isEditMode = true;
+                  });
+                },
+                icon: const Icon(Symbols.edit, size: 16),
+                label: const Text('Edit Studio'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Clean viewing mode for subtitle playback. Tap video to Play/Pause, double tap sides to seek +/-10s.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GhostPillButton(
+                  label: 'Export Captions',
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => const CaptionExportSheet(),
+                    );
+                  },
+                  isFullWidth: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GradientPillButton(
+                  label: 'Burn to Video',
+                  icon: Symbols.local_fire_department,
+                  onTap: () {
+                    final exportService = ref.read(exportServiceProvider);
+                    final segments = ref.read(subtitleProvider);
+                    final style = ref.read(captionStyleProvider);
+                    final duration = ref.read(playerProvider).duration;
+
+                    final timestamp = DateTime.now().millisecondsSinceEpoch;
+                    final outputPath =
+                        '${widget.videoPath}_captionary_$timestamp.mp4';
+
+                    final stream = exportService.burnCaptions(
+                      videoPath: widget.videoPath,
+                      segments: segments,
+                      style: style,
+                      outputPath: outputPath,
+                      videoDuration: duration,
+                    );
+
+                    final job = ExportJob(
+                      id: 'mock_export_1',
+                      sourceFileName: 'Source_Video.mp4',
+                      outputFileName: 'Output_Video.mp4',
+                      state: ExportState.encoding,
+                      progress: 0.0,
+                      resolution: '1080x1920',
+                      codec: 'h264',
+                      bitrateMbps: 8,
+                      estimatedTimeRemaining: const Duration(seconds: 50),
+                      outputSizeBytes: 0,
+                      hardwareAcceleration: true,
+                    );
+
+                    ref.read(activeExportJobProvider.notifier).startJob(
+                          job,
+                          stream,
+                          onComplete: () {
+                            ref
+                                .read(engagementProvider.notifier)
+                                .onExportCompleted();
+                          },
+                          onCancel: () => exportService.cancel(),
+                        );
+                    context.push('/export');
+                  },
+                  isFullWidth: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -187,9 +321,11 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         Theme.of(context).extension<AppColorsExtension>() ??
         AppColorsExtension.defaultTheme;
     final subtitleNotifier = ref.watch(subtitleProvider.notifier);
+    final playerState = ref.watch(playerProvider);
+    final playerNotifier = ref.read(playerProvider.notifier);
 
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
       borderRadius: 9999.0,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -197,36 +333,54 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           Row(
             children: [
               IconButton(
-                icon: const Icon(Symbols.arrow_back_ios_new, size: 20),
+                icon: const Icon(Symbols.arrow_back_ios_new, size: 18),
                 color: colors.onSurface,
                 onPressed: () => context.pop(),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.error,
+                decoration: BoxDecoration(
+                  color: playerState.isPlaying
+                      ? AppColors.tertiary
+                      : AppColors.error,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: Color(0x66FFB4AB), blurRadius: 8),
+                    BoxShadow(
+                      color: playerState.isPlaying
+                          ? const Color(0x6642A547)
+                          : const Color(0x66FFB4AB),
+                      blurRadius: 6,
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
-                formatClockHms(ref.watch(playerProvider).position),
+                formatClockHms(playerState.position),
                 style: AppTypography.captionCode.copyWith(
                   color: colors.onSurface,
                   fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
+              ),
+              const SizedBox(width: 6),
+              // Return to Beginning
+              _buildIconButton(
+                Symbols.first_page,
+                tooltip: 'Return to 00:00:00',
+                onTap: () => playerNotifier.seekTo(Duration.zero),
               ),
             ],
           ),
           Row(
             children: [
+              // Speed control
+              _buildSpeedSelector(context, playerState, playerNotifier),
+              const SizedBox(width: 6),
               _buildIconButton(
                 Symbols.undo,
                 tooltip: 'Undo',
@@ -234,7 +388,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                     ? () => subtitleNotifier.undo()
                     : null,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _buildIconButton(
                 Symbols.redo,
                 tooltip: 'Redo',
@@ -242,18 +396,67 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                     ? () => subtitleNotifier.redo()
                     : null,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
+              // Demarcation: View Mode vs Edit Mode
               _buildIconButton(
-                Symbols.visibility,
-                tooltip: 'Preview in Player',
+                _isEditMode ? Symbols.visibility : Symbols.edit,
+                tooltip: _isEditMode
+                    ? 'Switch to View Mode'
+                    : 'Switch to Edit Studio',
                 onTap: () {
-                  context.pushReplacement('/player', extra: widget.videoPath);
+                  setState(() {
+                    _isEditMode = !_isEditMode;
+                  });
                 },
               ),
-              const SizedBox(width: 8),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSpeedSelector(
+    BuildContext context,
+    PlayerState playerState,
+    PlayerNotifier playerNotifier,
+  ) {
+    return PopupMenuButton<double>(
+      tooltip: 'Playback Speed',
+      initialValue: playerState.playbackSpeed,
+      onSelected: (speed) {
+        playerNotifier.setPlaybackSpeed(speed);
+      },
+      itemBuilder: (context) => [
+        for (final s in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0])
+          PopupMenuItem(
+            value: s,
+            child: Text(
+              '${s}x',
+              style: TextStyle(
+                fontWeight: s == playerState.playbackSpeed
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+                color: s == playerState.playbackSpeed
+                    ? AppColors.primary
+                    : AppColors.onSurface,
+              ),
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          '${playerState.playbackSpeed}x',
+          style: AppTypography.captionCode.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+          ),
+        ),
       ),
     );
   }
@@ -288,11 +491,99 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     );
   }
 
+  Widget _buildEmptyVideoState(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.6),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Symbols.movie_edit,
+                size: 28,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No Video Loaded',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Select a video from your library or import one to begin editing.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => context.go('/library'),
+                  icon: const Icon(Symbols.video_library, size: 16),
+                  label: const Text('Media Library'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _importAndOpenVideo,
+                  icon: const Icon(Symbols.add, size: 16),
+                  label: const Text('Import Video'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.onSurface,
+                    side: const BorderSide(color: AppColors.outlineVariant),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoCanvas(
     BuildContext context,
     CaptionStyle style,
     List<SubtitleSegment> segments,
   ) {
+    if (widget.videoPath.trim().isEmpty) {
+      return _buildEmptyVideoState(context);
+    }
+
     final playerState = ref.watch(playerProvider);
 
     Widget playerWidget;
@@ -302,10 +593,17 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              playerState.error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.onSurface),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Symbols.error, color: AppColors.error, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  playerState.error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.onSurface),
+                ),
+              ],
             ),
           ),
         ),
