@@ -107,17 +107,6 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     super.dispose();
   }
 
-  /// Releases active media player, drops textures, and frees native decoder memory.
-  Future<void> releasePlayer() async {
-    _cancelSubscriptions();
-    final handle = _currentHandle;
-    _currentHandle = null;
-    if (handle != null) {
-      await _mediaPlayerService.dispose(handle);
-    }
-    state = PlayerState();
-  }
-
   Future<void> initPlayer(String videoPath) async {
     _cancelSubscriptions();
     if (state.handle != null) {
@@ -211,6 +200,9 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       });
     }
   }
+
+  /// Alias for [disposePlayer] to release textures and decoders.
+  Future<void> releasePlayer() => disposePlayer();
 
   Future<void> togglePlay() async {
     final handle = state.handle;

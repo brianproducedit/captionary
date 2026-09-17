@@ -11,6 +11,7 @@ import 'package:captionary/data/models/subtitle_segment.dart';
 import 'package:captionary/data/services/audio_extraction_service.dart';
 import 'package:captionary/data/services/caption_pipeline.dart';
 import 'package:captionary/data/services/language_pack_service.dart';
+import 'package:captionary/data/services/system_memory_service.dart';
 import 'package:captionary/data/services/transcription_service.dart';
 import 'package:captionary/providers/caption_pipeline_provider.dart';
 import 'package:captionary/providers/language_provider.dart';
@@ -764,6 +765,52 @@ void main() {
       final subtitles = container.read(subtitleProvider);
       expect(subtitles.length, 1);
       expect(subtitles.first.text, 'Transcribed from TranscriptionNotifier');
+    });
+
+    test('aborts with error state when available RAM is below required model threshold', () async {
+      final audioService = TestAudioExtractionService(tempDir: tempDir);
+      final langService = TestLanguagePackService(
+        languages: [
+          LanguagePack(
+            code: 'en',
+            name: 'English',
+            nativeName: 'English',
+            region: 'Global',
+            modelFile: dummyModelFile.path,
+            sizeBytes: 1000000,
+            sha256: 'deadbeef',
+            accuracy: 'High',
+            engine: 'whisper_flutter_new',
+            isBundled: true,
+            priority: 1,
+            status: LanguagePackStatus.installed,
+            downloadProgress: 1.0,
+          ),
+        ],
+      );
+      final transService = TestTranscriptionService();
+
+      // System memory service reporting only 50 MB available (too low for any whisper model)
+      const lowMemoryService = SystemMemoryService(
+        overrideTotalRamBytes: 2 * 1024 * 1024 * 1024,
+        overrideAvailableRamBytes: 50 * 1024 * 1024,
+      );
+
+      final pipeline = CaptionPipeline(
+        audioExtractionService: audioService,
+        languagePackService: langService,
+        transcriptionService: transService,
+        systemMemoryService: lowMemoryService,
+      );
+
+      final segments = await pipeline.run(
+        videoPath: dummyVideoFile.path,
+        mediaId: 'low_mem_test',
+      );
+
+      expect(segments, isEmpty);
+      expect(pipeline.state.status, CaptionPipelineStatus.error);
+      expect(pipeline.state.errorMessage, contains('Device memory too low'));
     });
   });
 }

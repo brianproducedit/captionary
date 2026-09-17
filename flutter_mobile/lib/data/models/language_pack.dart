@@ -15,6 +15,8 @@ class LanguagePack {
   final double? downloadSpeedMbps;
   final int? bytesDownloaded;
 
+  final int recommendedRamGb;
+
   LanguagePack({
     required this.code,
     required this.name,
@@ -31,6 +33,7 @@ class LanguagePack {
     required this.downloadProgress,
     this.downloadSpeedMbps,
     this.bytesDownloaded,
+    this.recommendedRamGb = 4,
   });
 
   LanguagePack copyWith({
@@ -49,6 +52,7 @@ class LanguagePack {
     double? downloadProgress,
     double? downloadSpeedMbps,
     int? bytesDownloaded,
+    int? recommendedRamGb,
   }) {
     return LanguagePack(
       code: code ?? this.code,
@@ -66,6 +70,7 @@ class LanguagePack {
       downloadProgress: downloadProgress ?? this.downloadProgress,
       downloadSpeedMbps: downloadSpeedMbps ?? this.downloadSpeedMbps,
       bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
+      recommendedRamGb: recommendedRamGb ?? this.recommendedRamGb,
     );
   }
 }

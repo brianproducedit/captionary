@@ -32,6 +32,10 @@ import '../theme/app_colors_extension.dart';
 import '../core/duration_format.dart';
 import '../providers/waveform_provider.dart';
 import '../providers/caption_pipeline_provider.dart';
+
+import 'package:path/path.dart' as p;
+
+import '../core/performance_logger.dart';
 import '../data/services/caption_pipeline.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
@@ -46,11 +50,23 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.videoPath.isNotEmpty) {
+      PerformanceLogger.recordCheckpoint(
+        'import',
+        metadata: {'video': p.basename(widget.videoPath)},
+      );
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.videoPath.isNotEmpty) {
         ref.read(playerProvider.notifier).initPlayer(widget.videoPath);
       }
     });
+  }
+
+  @override
+  void deactivate() {
+    ref.read(playerProvider.notifier).releasePlayer();
+    super.deactivate();
   }
 
   @override

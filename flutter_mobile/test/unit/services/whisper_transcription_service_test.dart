@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 import 'package:captionary/core/wav_header_validator.dart';
+import 'package:captionary/data/exceptions/language_pack_exceptions.dart';
+import 'package:captionary/data/services/system_memory_service.dart';
 import 'package:captionary/data/services/whisper_transcription_service.dart';
 
 void main() {
@@ -196,6 +198,38 @@ void main() {
 
       // Assert that at most 1 runner was executing concurrently
       expect(maxConcurrent, 1);
+    });
+
+    test('throws LowMemoryException when available RAM is below threshold', () async {
+      const lowMemService = SystemMemoryService(
+        overrideTotalRamBytes: 2 * 1024 * 1024 * 1024,
+        overrideAvailableRamBytes: 50 * 1024 * 1024,
+      );
+
+      final service = WhisperTranscriptionService(
+        getTempDirectory: () async => tempDir,
+        systemMemoryService: lowMemService,
+        runner: ({
+          required String audioPath,
+          required String modelPath,
+          required String languageCode,
+        }) async {
+          return WhisperTranscribeResponse(
+            type: 'text',
+            text: 'Should not run',
+            segments: [],
+          );
+        },
+      );
+
+      expect(
+        () => service.transcribeAudio(
+          audioPath: testWavFile.path,
+          languageCode: 'en',
+          modelPath: testModelFile.path,
+        ),
+        throwsA(isA<LowMemoryException>()),
+      );
     });
   });
 }

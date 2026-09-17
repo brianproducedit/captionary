@@ -16,7 +16,9 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/ghost_pill_button.dart';
 import '../theme/app_typography.dart';
 import '../providers/language_provider.dart';
+import '../providers/system_memory_provider.dart';
 import '../data/models/language_pack.dart';
+import '../data/services/system_memory_service.dart';
 import '../widgets/download_progress_bar.dart';
 
 class LanguagePacksScreen extends ConsumerStatefulWidget {
@@ -248,6 +250,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
 
   Widget _buildStorageSummary(BuildContext context, WidgetRef ref) {
     final asyncLangs = ref.watch(availableLanguagesProvider);
+    final memInfo = ref.watch(systemMemoryInfoProvider).asData?.value;
 
     return Container(
       padding: const EdgeInsets.all(20.0),
@@ -256,33 +259,77 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
         borderRadius: BorderRadius.circular(24.0),
         border: Border.all(color: AppColors.surfaceContainerHigh),
       ),
-      child: asyncLangs.when(
-        data: (langs) {
-          double usedStorageGB = 2.0; // Base system size
-          for (var lang in langs) {
-            if (lang.status == LanguagePackStatus.installed ||
-                lang.status == LanguagePackStatus.bundled) {
-              usedStorageGB += lang.sizeBytes / 1000000000;
-            } else if (lang.status == LanguagePackStatus.downloading) {
-              usedStorageGB +=
-                  (lang.sizeBytes * lang.downloadProgress) / 1000000000;
-            }
-          }
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (memInfo != null) ...[
+            Row(
+              children: [
+                Icon(
+                  memInfo.tier == DeviceRamTier.low
+                      ? Symbols.warning
+                      : Symbols.memory,
+                  size: 18,
+                  color: memInfo.tier == DeviceRamTier.low
+                      ? AppColors.attentionYellow
+                      : AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  switch (memInfo.tier) {
+                    DeviceRamTier.low => 'Low RAM Tier (<4GB)',
+                    DeviceRamTier.standard => 'Standard RAM Tier (4–6GB)',
+                    DeviceRamTier.high => 'High RAM Tier (≥6GB)',
+                  },
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: memInfo.tier == DeviceRamTier.low
+                        ? AppColors.attentionYellow
+                        : AppColors.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${memInfo.totalRamGb.toStringAsFixed(1)}GB Total • ${memInfo.availableRamGb.toStringAsFixed(1)}GB Free',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+          asyncLangs.when(
+            data: (langs) {
+              double usedStorageGB = 2.0; // Base system size
+              for (var lang in langs) {
+                if (lang.status == LanguagePackStatus.installed ||
+                    lang.status == LanguagePackStatus.bundled) {
+                  usedStorageGB += lang.sizeBytes / 1000000000;
+                } else if (lang.status == LanguagePackStatus.downloading) {
+                  usedStorageGB +=
+                      (lang.sizeBytes * lang.downloadProgress) / 1000000000;
+                }
+              }
 
-          return DownloadProgressBar(
-            packs: langs,
-            totalStorageGB: 10.0,
-            usedStorageGB: usedStorageGB,
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const SizedBox(),
+              return DownloadProgressBar(
+                packs: langs,
+                totalStorageGB: 10.0,
+                usedStorageGB: usedStorageGB,
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => const SizedBox(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLanguageCardsList(BuildContext context, WidgetRef ref) {
     final asyncLangs = ref.watch(availableLanguagesProvider);
+    final memInfo = ref.watch(systemMemoryInfoProvider).asData?.value;
+    final deviceTier = memInfo?.tier ?? DeviceRamTier.standard;
 
     return asyncLangs.when(
       data: (langs) {
@@ -297,18 +344,47 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
 
         return Column(
           children: filteredLangs.map((lang) {
+            final isLowTierRestricted =
+                deviceTier == DeviceRamTier.low && lang.recommendedRamGb >= 6;
+
+            String? ramNote;
+            if (isLowTierRestricted) {
+              ramNote = '⚠️ Requires 6GB+ RAM (Device is Low Tier <4GB)';
+            } else if (deviceTier == DeviceRamTier.low &&
+                lang.recommendedRamGb == 4) {
+              ramNote = '4GB RAM recommended (Low Tier device)';
+            } else if (deviceTier == DeviceRamTier.standard &&
+                lang.recommendedRamGb <= 4) {
+              ramNote = '✓ Recommended for your device';
+            } else if (deviceTier == DeviceRamTier.high) {
+              ramNote = '✓ Fully compatible with High Tier device';
+            }
+
             String statusStr = 'Available';
             Color statusColor = AppColors.onSurfaceVariant;
-            Widget actionWidget = GhostPillButton(
-              label:
-                  'Download (${(lang.sizeBytes / 1000000).toStringAsFixed(0)}MB)',
-              icon: Symbols.download,
-              onTap: () {
-                ref
-                    .read(availableLanguagesProvider.notifier)
-                    .simulateDownload(lang.code);
-              },
-            );
+            Widget actionWidget;
+
+            if (isLowTierRestricted &&
+                lang.status == LanguagePackStatus.notDownloaded) {
+              actionWidget = GhostPillButton(
+                label: 'High RAM',
+                icon: Symbols.warning,
+                onTap: () {
+                  _showLowRamWarningDialog(context, lang, memInfo);
+                },
+              );
+            } else {
+              actionWidget = GhostPillButton(
+                label:
+                    'Download (${(lang.sizeBytes / 1000000).toStringAsFixed(0)}MB)',
+                icon: Symbols.download,
+                onTap: () {
+                  ref
+                      .read(availableLanguagesProvider.notifier)
+                      .simulateDownload(lang.code);
+                },
+              );
+            }
             double? progress;
             String? progressText;
             String? etaText;
@@ -427,6 +503,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                   progress: progress,
                   progressText: progressText,
                   etaText: etaText,
+                  description: ramNote,
                 ),
               ),
             );
@@ -435,6 +512,40 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Future<void> _showLowRamWarningDialog(
+    BuildContext context,
+    LanguagePack lang,
+    SystemMemoryInfo? memInfo,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceContainerHigh,
+          title: const Row(
+            children: [
+              Icon(Symbols.warning, color: AppColors.attentionYellow),
+              SizedBox(width: 8),
+              Text('High RAM Model'),
+            ],
+          ),
+          content: Text(
+            '${lang.name} (${lang.accuracy}) requires at least ${lang.recommendedRamGb}GB RAM, '
+            'but your device has ${memInfo?.totalRamGb.toStringAsFixed(1) ?? "<4"}GB total RAM (Low Tier).\n\n'
+            'Running this model will likely cause an out-of-memory crash. '
+            'Please use Tiny or Base models for smooth performance on this device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 
