@@ -5,7 +5,8 @@ class AppConstants {
   );
   static const String manifestUrl = String.fromEnvironment(
     'MANIFEST_URL',
-    defaultValue: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/manifest.json',
+    defaultValue:
+        'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/manifest.json',
   );
 
   /// Canonical donate portal URL. Keep in sync with

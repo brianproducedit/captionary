@@ -196,15 +196,14 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
     String defaultText = 'New Caption',
   }) {
     _saveState();
-    final effectiveEnd = mediaDuration != null &&
+    final effectiveEnd =
+        mediaDuration != null &&
             mediaDuration > startTime &&
             startTime + length > mediaDuration
         ? mediaDuration
         : startTime + length;
 
-    final unselected = [
-      for (final s in state) s.copyWith(isSelected: false),
-    ];
+    final unselected = [for (final s in state) s.copyWith(isSelected: false)];
     final newSegment = SubtitleSegment(
       index: unselected.length + 1,
       startTime: startTime,

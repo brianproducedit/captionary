@@ -1,3 +1,1 @@
-# Google AdMob Authorized Digital Sellers (app-ads.txt) for Captionary
-# Replace pub-0000000000000000 with your actual AdMob Publisher ID from admob.google.com -> Settings -> Account Information
 google.com, pub-7902021855339227, DIRECT, f08c47fec0942fa0

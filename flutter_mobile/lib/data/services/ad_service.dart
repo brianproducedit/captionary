@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -72,7 +73,9 @@ class AdService {
           onAdLoaded(ad as BannerAd);
         },
         onAdFailedToLoad: (ad, error) {
-          debugPrint('[AdService] BannerAd failed to load: ${error.message} (code ${error.code})');
+          debugPrint(
+            '[AdService] BannerAd failed to load: ${error.message} (code ${error.code})',
+          );
           ad.dispose();
           onAdFailedToLoad(ad as BannerAd, error);
         },

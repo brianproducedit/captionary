@@ -5,19 +5,20 @@ import 'package:captionary/core/ad_placement_policy.dart';
 import 'package:captionary/widgets/ad_banner_widget.dart';
 
 void main() {
-  testWidgets('AdBannerWidget renders placeholder fallback in test environment', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: Scaffold(body: AdBannerWidget())),
-      ),
-    );
-    await tester.pump();
+  testWidgets(
+    'AdBannerWidget renders placeholder fallback in test environment',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(home: Scaffold(body: AdBannerWidget())),
+        ),
+      );
+      await tester.pump();
 
-    // In test environment (non-mobile), the fallback placeholder is shown
-    expect(find.text(AdBannerWidget.placeholderLabel), findsOneWidget);
-  });
+      // In test environment (non-mobile), the fallback placeholder is shown
+      expect(find.text(AdBannerWidget.placeholderLabel), findsOneWidget);
+    },
+  );
 
   testWidgets('AdBannerWidget has correct default height', (tester) async {
     await tester.pumpWidget(

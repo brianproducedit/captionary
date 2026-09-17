@@ -100,8 +100,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     return Scaffold(
       extendBody: true,
       appBar: isLandscape ? null : const AppHeader(subtitle: 'Studio'),
-      bottomNavigationBar:
-          isLandscape ? null : const BottomNavBar(currentIndex: 2),
+      bottomNavigationBar: isLandscape
+          ? null
+          : const BottomNavBar(currentIndex: 2),
       body: SafeArea(
         bottom: false,
         child: isLandscape
@@ -127,9 +128,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
               children: [
                 _buildTopToolbar(context),
                 const SizedBox(height: 8),
-                Expanded(
-                  child: _buildVideoCanvas(context, style, segments),
-                ),
+                Expanded(child: _buildVideoCanvas(context, style, segments)),
               ],
             ),
           ),
@@ -236,9 +235,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           const SizedBox(height: 8),
           Text(
             'Clean viewing mode for subtitle playback. Tap video to Play/Pause, double tap sides to seek +/-10s.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           Row(
@@ -294,7 +292,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                       hardwareAcceleration: true,
                     );
 
-                    ref.read(activeExportJobProvider.notifier).startJob(
+                    ref
+                        .read(activeExportJobProvider.notifier)
+                        .startJob(
                           job,
                           stream,
                           onComplete: () {
@@ -531,9 +531,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             Text(
               'Select a video from your library or import one to begin editing.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
             Wrap(

@@ -58,9 +58,9 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import media: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to import media: $e')));
       }
     }
   }
@@ -97,7 +97,9 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       ref.invalidate(recentMediaProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed $count ${count == 1 ? 'item' : 'items'}')),
+          SnackBar(
+            content: Text('Removed $count ${count == 1 ? 'item' : 'items'}'),
+          ),
         );
       }
     }
@@ -173,7 +175,10 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                 onPressed: _importMedia,
                 backgroundColor: AppColors.primary,
                 icon: const Icon(Symbols.add, color: AppColors.allWhite),
-                label: const Text('Add Media', style: TextStyle(color: AppColors.allWhite)),
+                label: const Text(
+                  'Add Media',
+                  style: TextStyle(color: AppColors.allWhite),
+                ),
               )
             : null,
         orElse: () => null,

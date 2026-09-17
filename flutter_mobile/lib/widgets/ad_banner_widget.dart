@@ -88,7 +88,9 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHigh.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12.0),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
