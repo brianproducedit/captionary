@@ -165,212 +165,213 @@ class FfmpegExportService implements ExportService {
         hardwareAcceleration: true,
       );
 
-    // Guard 1: Reject identical input and output paths
-    try {
-      final canonicalIn = p.canonicalize(videoPath);
-      final canonicalOut = p.canonicalize(outputPath);
-      if (canonicalIn == canonicalOut) {
-        controller.add(
-          job.copyWith(
-            state: ExportState.error,
-            fallbackReason:
-                'Output path cannot be identical to input video path.',
-          ),
-        );
-        controller.close();
-        return;
-      }
-    } catch (_) {
-      if (videoPath == outputPath) {
-        controller.add(
-          job.copyWith(
-            state: ExportState.error,
-            fallbackReason:
-                'Output path cannot be identical to input video path.',
-          ),
-        );
-        controller.close();
-        return;
-      }
-    }
-
-    // Guard 2: Source video must exist
-    if (!File(videoPath).existsSync()) {
-      controller.add(
-        job.copyWith(
-          state: ExportState.error,
-          fallbackReason: 'Source video file does not exist: $videoPath',
-        ),
-      );
-      controller.close();
-      return;
-    }
-
-    controller.add(job);
-
-    // Resolve directories and files
-    final Directory tempDir = tempDirResolver != null
-        ? await tempDirResolver!()
-        : await getTemporaryDirectory();
-
-    final partOutputPath = '$outputPath.part';
-    final partFile = File(partOutputPath);
-    final finalOutputFile = File(outputPath);
-
-    // Ensure destination directory exists
-    try {
-      final parentDir = finalOutputFile.parent;
-      if (!parentDir.existsSync()) {
-        parentDir.createSync(recursive: true);
-      }
-    } catch (_) {}
-
-    // Clean up any stale .part file from previous failed run
-    if (partFile.existsSync()) {
+      // Guard 1: Reject identical input and output paths
       try {
-        partFile.deleteSync();
+        final canonicalIn = p.canonicalize(videoPath);
+        final canonicalOut = p.canonicalize(outputPath);
+        if (canonicalIn == canonicalOut) {
+          controller.add(
+            job.copyWith(
+              state: ExportState.error,
+              fallbackReason:
+                  'Output path cannot be identical to input video path.',
+            ),
+          );
+          controller.close();
+          return;
+        }
+      } catch (_) {
+        if (videoPath == outputPath) {
+          controller.add(
+            job.copyWith(
+              state: ExportState.error,
+              fallbackReason:
+                  'Output path cannot be identical to input video path.',
+            ),
+          );
+          controller.close();
+          return;
+        }
+      }
+
+      // Guard 2: Source video must exist
+      if (!File(videoPath).existsSync()) {
+        controller.add(
+          job.copyWith(
+            state: ExportState.error,
+            fallbackReason: 'Source video file does not exist: $videoPath',
+          ),
+        );
+        controller.close();
+        return;
+      }
+
+      controller.add(job);
+
+      // Resolve directories and files
+      final Directory tempDir = tempDirResolver != null
+          ? await tempDirResolver!()
+          : await getTemporaryDirectory();
+
+      final partOutputPath = '$outputPath.part';
+      final partFile = File(partOutputPath);
+      final finalOutputFile = File(outputPath);
+
+      // Ensure destination directory exists
+      try {
+        final parentDir = finalOutputFile.parent;
+        if (!parentDir.existsSync()) {
+          parentDir.createSync(recursive: true);
+        }
       } catch (_) {}
-    }
 
-    // Resolve resolution and duration from probe
-    int width = 1080;
-    int height = 1920;
-    var resolvedDuration = videoDuration;
-    String resolutionStr = '1080x1920';
-
-    try {
-      final meta = metadataExtractor != null
-          ? await metadataExtractor!(videoPath)
-          : await _extractMetadata(videoPath);
-
-      if (meta != null) {
-        final res = meta['resolution'] as String?;
-        if (res != null && res.contains('x') && res != 'Unknown') {
-          resolutionStr = res;
-          final parts = res.split('x');
-          width = int.tryParse(parts[0]) ?? 1080;
-          height = int.tryParse(parts[1]) ?? 1920;
-        }
-        final dur = meta['duration'] as Duration?;
-        if (dur != null && dur > Duration.zero) {
-          resolvedDuration = dur;
-        }
+      // Clean up any stale .part file from previous failed run
+      if (partFile.existsSync()) {
+        try {
+          partFile.deleteSync();
+        } catch (_) {}
       }
-    } catch (e) {
-      debugPrint('FfmpegExportService: Metadata extraction failed: $e');
-    }
 
-    job = job.copyWith(resolution: resolutionStr);
-    controller.add(job);
+      // Resolve resolution and duration from probe
+      int width = 1080;
+      int height = 1920;
+      var resolvedDuration = videoDuration;
+      String resolutionStr = '1080x1920';
 
-    // Prepare font directory (Lexend)
-    final String? fontsDir = fontDirResolver != null
-        ? await fontDirResolver!()
-        : await _ensureFontExtracted(tempDir);
+      try {
+        final meta = metadataExtractor != null
+            ? await metadataExtractor!(videoPath)
+            : await _extractMetadata(videoPath);
 
-    // Attempt 1: ASS burn-in
-    final assFile = File('${tempDir.path}/subs_$jobId.ass');
-    final srtFile = File('${tempDir.path}/subs_$jobId.srt');
+        if (meta != null) {
+          final res = meta['resolution'] as String?;
+          if (res != null && res.contains('x') && res != 'Unknown') {
+            resolutionStr = res;
+            final parts = res.split('x');
+            width = int.tryParse(parts[0]) ?? 1080;
+            height = int.tryParse(parts[1]) ?? 1920;
+          }
+          final dur = meta['duration'] as Duration?;
+          if (dur != null && dur > Duration.zero) {
+            resolvedDuration = dur;
+          }
+        }
+      } catch (e) {
+        debugPrint('FfmpegExportService: Metadata extraction failed: $e');
+      }
 
-    try {
-      final assContent = AssFileWriter.generate(
-        segments: segments,
-        style: style,
-        playResX: width,
-        playResY: height,
-      );
-      await assFile.writeAsString(assContent);
+      job = job.copyWith(resolution: resolutionStr);
+      controller.add(job);
 
-      final escapedAssPath = escapeFilterPath(assFile.path);
-      final filterString = fontsDir != null && fontsDir.isNotEmpty
-          ? "ass='$escapedAssPath':fontsdir='${escapeFilterPath(fontsDir)}'"
-          : "ass='$escapedAssPath'";
+      // Prepare font directory (Lexend)
+      final String? fontsDir = fontDirResolver != null
+          ? await fontDirResolver!()
+          : await _ensureFontExtracted(tempDir);
 
-      final success = await _runFfmpeg(
-        command:
-            "-y -i \"$videoPath\" -vf \"$filterString\" -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"",
-        job: job,
-        videoDuration: resolvedDuration,
-        partFile: partFile,
-        finalFile: finalOutputFile,
-        controller: controller,
-      );
+      // Attempt 1: ASS burn-in
+      final assFile = File('${tempDir.path}/subs_$jobId.ass');
+      final srtFile = File('${tempDir.path}/subs_$jobId.srt');
 
-      if (success) {
+      try {
+        final assContent = AssFileWriter.generate(
+          segments: segments,
+          style: style,
+          playResX: width,
+          playResY: height,
+        );
+        await assFile.writeAsString(assContent);
+
+        final escapedAssPath = escapeFilterPath(assFile.path);
+        final filterString = fontsDir != null && fontsDir.isNotEmpty
+            ? "ass='$escapedAssPath':fontsdir='${escapeFilterPath(fontsDir)}'"
+            : "ass='$escapedAssPath'";
+
+        final success = await _runFfmpeg(
+          command:
+              "-y -i \"$videoPath\" -vf \"$filterString\" -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"",
+          job: job,
+          videoDuration: resolvedDuration,
+          partFile: partFile,
+          finalFile: finalOutputFile,
+          controller: controller,
+        );
+
+        if (success) {
+          _safeDelete(assFile);
+          controller.close();
+          return;
+        }
+      } catch (e) {
+        debugPrint('FfmpegExportService: ASS burn-in attempt error: $e');
+      } finally {
         _safeDelete(assFile);
+      }
+
+      if (_cancelRequested) {
+        _cleanupPart(partFile);
+        controller.add(job.copyWith(state: ExportState.cancelled));
         controller.close();
         return;
       }
-    } catch (e) {
-      debugPrint('FfmpegExportService: ASS burn-in attempt error: $e');
-    } finally {
-      _safeDelete(assFile);
-    }
 
-    if (_cancelRequested) {
+      // Attempt 2: Fallback to SRT burn-in with force_style
+      debugPrint(
+        'FfmpegExportService: ASS burn-in failed; falling back to SRT burn-in with user-visible reason.',
+      );
+      job = job.copyWith(
+        fallbackReason: 'Styled ASS filter unavailable; fell back to standard SRT captions.',
+      );
+      controller.add(job);
+
+      try {
+        final srtContent = CaptionExport.srt(segments);
+        await srtFile.writeAsString(srtContent);
+
+        final escapedSrtPath = escapeFilterPath(srtFile.path);
+        final alignment = AssFileWriter.assAlignment(
+          style.position,
+          style.textAlign,
+        );
+        final forceStyle = 'FontSize=${style.fontSize},Alignment=$alignment';
+
+        // Use mpeg4 fallback if preferred codec failed
+        final videoCodec = preferredVideoCodec == 'libx264'
+            ? 'libx264'
+            : 'mpeg4';
+        final srtCommand =
+            "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'\" -c:v $videoCodec -c:a copy \"$partOutputPath\"";
+
+        final success = await _runFfmpeg(
+          command: srtCommand,
+          job: job,
+          videoDuration: resolvedDuration,
+          partFile: partFile,
+          finalFile: finalOutputFile,
+          controller: controller,
+        );
+
+        if (success) {
+          controller.close();
+          return;
+        }
+      } catch (e) {
+        debugPrint('FfmpegExportService: SRT fallback failed: $e');
+      } finally {
+        _safeDelete(srtFile);
+      }
+
+      // Both attempts failed or canceled
       _cleanupPart(partFile);
-      controller.add(job.copyWith(state: ExportState.cancelled));
-      controller.close();
-      return;
-    }
-
-    // Attempt 2: Fallback to SRT burn-in with force_style
-    debugPrint(
-      'FfmpegExportService: ASS burn-in failed; falling back to SRT burn-in with user-visible reason.',
-    );
-    job = job.copyWith(
-      fallbackReason:
-          'Styled ASS filter unavailable; fell back to standard SRT captions.',
-    );
-    controller.add(job);
-
-    try {
-      final srtContent = CaptionExport.srt(segments);
-      await srtFile.writeAsString(srtContent);
-
-      final escapedSrtPath = escapeFilterPath(srtFile.path);
-      final alignment = AssFileWriter.assAlignment(
-        style.position,
-        style.textAlign,
-      );
-      final forceStyle = 'FontSize=${style.fontSize},Alignment=$alignment';
-
-      // Use mpeg4 fallback if preferred codec failed
-      final videoCodec = preferredVideoCodec == 'libx264' ? 'libx264' : 'mpeg4';
-      final srtCommand =
-          "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'\" -c:v $videoCodec -c:a copy \"$partOutputPath\"";
-
-      final success = await _runFfmpeg(
-        command: srtCommand,
-        job: job,
-        videoDuration: resolvedDuration,
-        partFile: partFile,
-        finalFile: finalOutputFile,
-        controller: controller,
-      );
-
-      if (success) {
-        controller.close();
-        return;
+      if (_cancelRequested) {
+        controller.add(job.copyWith(state: ExportState.cancelled));
+      } else {
+        controller.add(job.copyWith(state: ExportState.error));
       }
-    } catch (e) {
-      debugPrint('FfmpegExportService: SRT fallback failed: $e');
+      controller.close();
     } finally {
-      _safeDelete(srtFile);
+      _heavyJobLock.release();
     }
-
-    // Both attempts failed or canceled
-    _cleanupPart(partFile);
-    if (_cancelRequested) {
-      controller.add(job.copyWith(state: ExportState.cancelled));
-    } else {
-      controller.add(job.copyWith(state: ExportState.error));
-    }
-    controller.close();
-  } finally {
-    _heavyJobLock.release();
   }
-}
 
   Future<bool> _runFfmpeg({
     required String command,

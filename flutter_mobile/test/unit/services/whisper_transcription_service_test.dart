@@ -200,36 +200,40 @@ void main() {
       expect(maxConcurrent, 1);
     });
 
-    test('throws LowMemoryException when available RAM is below threshold', () async {
-      const lowMemService = SystemMemoryService(
-        overrideTotalRamBytes: 2 * 1024 * 1024 * 1024,
-        overrideAvailableRamBytes: 50 * 1024 * 1024,
-      );
+    test(
+      'throws LowMemoryException when available RAM is below threshold',
+      () async {
+        const lowMemService = SystemMemoryService(
+          overrideTotalRamBytes: 2 * 1024 * 1024 * 1024,
+          overrideAvailableRamBytes: 50 * 1024 * 1024,
+        );
 
-      final service = WhisperTranscriptionService(
-        getTempDirectory: () async => tempDir,
-        systemMemoryService: lowMemService,
-        runner: ({
-          required String audioPath,
-          required String modelPath,
-          required String languageCode,
-        }) async {
-          return WhisperTranscribeResponse(
-            type: 'text',
-            text: 'Should not run',
-            segments: [],
-          );
-        },
-      );
+        final service = WhisperTranscriptionService(
+          getTempDirectory: () async => tempDir,
+          systemMemoryService: lowMemService,
+          runner:
+              ({
+                required String audioPath,
+                required String modelPath,
+                required String languageCode,
+              }) async {
+                return WhisperTranscribeResponse(
+                  type: 'text',
+                  text: 'Should not run',
+                  segments: [],
+                );
+              },
+        );
 
-      expect(
-        () => service.transcribeAudio(
-          audioPath: testWavFile.path,
-          languageCode: 'en',
-          modelPath: testModelFile.path,
-        ),
-        throwsA(isA<LowMemoryException>()),
-      );
-    });
+        expect(
+          () => service.transcribeAudio(
+            audioPath: testWavFile.path,
+            languageCode: 'en',
+            modelPath: testModelFile.path,
+          ),
+          throwsA(isA<LowMemoryException>()),
+        );
+      },
+    );
   });
 }

@@ -291,9 +291,8 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                 const Spacer(),
                 Text(
                   '${memInfo.totalRamGb.toStringAsFixed(1)}GB Total • ${memInfo.availableRamGb.toStringAsFixed(1)}GB Free',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: AppColors.onSurfaceVariant),
                 ),
               ],
             ),

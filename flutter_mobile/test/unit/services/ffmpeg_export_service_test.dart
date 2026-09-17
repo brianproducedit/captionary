@@ -311,48 +311,51 @@ void main() {
     expect(finalFile.existsSync(), isFalse);
   });
 
-  test('enforces single heavy job concurrency lock during burnCaptions', () async {
-    final outputPath1 = '${tempDir.path}/out1.mp4';
-    final outputPath2 = '${tempDir.path}/out2.mp4';
-    int runningJobs = 0;
-    int maxConcurrentJobs = 0;
+  test(
+    'enforces single heavy job concurrency lock during burnCaptions',
+    () async {
+      final outputPath1 = '${tempDir.path}/out1.mp4';
+      final outputPath2 = '${tempDir.path}/out2.mp4';
+      int runningJobs = 0;
+      int maxConcurrentJobs = 0;
 
-    final service = FfmpegExportService(
-      tempDirResolver: () async => tempDir,
-      fontDirResolver: () async => tempDir.path,
-      metadataExtractor: (path) async => {
-        'resolution': '1080x1920',
-        'duration': const Duration(seconds: 5),
-      },
-      ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
-        runningJobs++;
-        if (runningJobs > maxConcurrentJobs) {
-          maxConcurrentJobs = runningJobs;
-        }
-        await Future.delayed(const Duration(milliseconds: 30));
-        runningJobs--;
-        onComplete(FakeSession(id: 1, code: ReturnCode(0)));
-      },
-    );
+      final service = FfmpegExportService(
+        tempDirResolver: () async => tempDir,
+        fontDirResolver: () async => tempDir.path,
+        metadataExtractor: (path) async => {
+          'resolution': '1080x1920',
+          'duration': const Duration(seconds: 5),
+        },
+        ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
+          runningJobs++;
+          if (runningJobs > maxConcurrentJobs) {
+            maxConcurrentJobs = runningJobs;
+          }
+          await Future.delayed(const Duration(milliseconds: 30));
+          runningJobs--;
+          onComplete(FakeSession(id: 1, code: ReturnCode(0)));
+        },
+      );
 
-    final stream1 = service.burnCaptions(
-      videoPath: sampleVideo.path,
-      segments: segments,
-      style: style,
-      outputPath: outputPath1,
-      videoDuration: const Duration(seconds: 5),
-    );
-    final stream2 = service.burnCaptions(
-      videoPath: sampleVideo.path,
-      segments: segments,
-      style: style,
-      outputPath: outputPath2,
-      videoDuration: const Duration(seconds: 5),
-    );
+      final stream1 = service.burnCaptions(
+        videoPath: sampleVideo.path,
+        segments: segments,
+        style: style,
+        outputPath: outputPath1,
+        videoDuration: const Duration(seconds: 5),
+      );
+      final stream2 = service.burnCaptions(
+        videoPath: sampleVideo.path,
+        segments: segments,
+        style: style,
+        outputPath: outputPath2,
+        videoDuration: const Duration(seconds: 5),
+      );
 
-    await Future.wait([stream1.toList(), stream2.toList()]);
+      await Future.wait([stream1.toList(), stream2.toList()]);
 
-    expect(maxConcurrentJobs, 1);
-    expect(FfmpegExportService.isHeavyJobRunning, isFalse);
-  });
+      expect(maxConcurrentJobs, 1);
+      expect(FfmpegExportService.isHeavyJobRunning, isFalse);
+    },
+  );
 }

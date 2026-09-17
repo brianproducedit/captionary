@@ -68,7 +68,10 @@ void main() {
         );
       }
 
-      expect(PerformanceLogger.history.length, PerformanceLogger.maxHistorySize);
+      expect(
+        PerformanceLogger.history.length,
+        PerformanceLogger.maxHistorySize,
+      );
       // The oldest 10 items should have been discarded (first remaining iteration is 10)
       expect(PerformanceLogger.history.first.metadata?['iteration'], 10);
       expect(PerformanceLogger.history.last.metadata?['iteration'], 59);

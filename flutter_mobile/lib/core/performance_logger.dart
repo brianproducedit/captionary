@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 /// Single recorded memory and performance checkpoint.
@@ -23,7 +24,9 @@ class PerformanceCheckpoint {
 
   @override
   String toString() {
-    final meta = (metadata != null && metadata!.isNotEmpty) ? ' | $metadata' : '';
+    final meta = (metadata != null && metadata!.isNotEmpty)
+        ? ' | $metadata'
+        : '';
     return '[PERF][$phase] RSS: ${rssMb.toStringAsFixed(1)}MB (peak: ${maxRssMb.toStringAsFixed(1)}MB)$meta';
   }
 }
@@ -32,7 +35,8 @@ class PerformanceCheckpoint {
 /// `import`, `play`, `extract`, `model load`, `transcribe`, `unload`, and `burn-in`.
 class PerformanceLogger {
   static const int maxHistorySize = 50;
-  static final Queue<PerformanceCheckpoint> _history = Queue<PerformanceCheckpoint>();
+  static final Queue<PerformanceCheckpoint> _history =
+      Queue<PerformanceCheckpoint>();
   static void Function(String message)? onLog;
 
   /// Records a checkpoint for the given lifecycle [phase].

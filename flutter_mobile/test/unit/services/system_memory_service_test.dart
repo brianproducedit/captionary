@@ -6,54 +6,60 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('SystemMemoryInfo and DeviceRamTier', () {
-    test('classifies < 3.8 GB as low tier (accounting for 4GB OS carve-outs)', () {
-      // 2 GB device
-      const info2Gb = SystemMemoryInfo(
-        totalRamBytes: 2 * 1024 * 1024 * 1024,
-        availableRamBytes: 800 * 1024 * 1024,
-        thresholdBytes: 400 * 1024 * 1024,
-        isLowMemory: false,
-        currentRssBytes: 100 * 1024 * 1024,
-        maxRssBytes: 150 * 1024 * 1024,
-      );
-      expect(info2Gb.tier, DeviceRamTier.low);
-      expect(info2Gb.totalRamGb, closeTo(2.0, 0.1));
+    test(
+      'classifies < 3.8 GB as low tier (accounting for 4GB OS carve-outs)',
+      () {
+        // 2 GB device
+        const info2Gb = SystemMemoryInfo(
+          totalRamBytes: 2 * 1024 * 1024 * 1024,
+          availableRamBytes: 800 * 1024 * 1024,
+          thresholdBytes: 400 * 1024 * 1024,
+          isLowMemory: false,
+          currentRssBytes: 100 * 1024 * 1024,
+          maxRssBytes: 150 * 1024 * 1024,
+        );
+        expect(info2Gb.tier, DeviceRamTier.low);
+        expect(info2Gb.totalRamGb, closeTo(2.0, 0.1));
 
-      // 3.5 GB device (budget phone)
-      const info35Gb = SystemMemoryInfo(
-        totalRamBytes: 3500 * 1024 * 1024,
-        availableRamBytes: 1200 * 1024 * 1024,
-        thresholdBytes: 400 * 1024 * 1024,
-        isLowMemory: false,
-        currentRssBytes: 100 * 1024 * 1024,
-        maxRssBytes: 150 * 1024 * 1024,
-      );
-      expect(info35Gb.tier, DeviceRamTier.low);
-    });
+        // 3.5 GB device (budget phone)
+        const info35Gb = SystemMemoryInfo(
+          totalRamBytes: 3500 * 1024 * 1024,
+          availableRamBytes: 1200 * 1024 * 1024,
+          thresholdBytes: 400 * 1024 * 1024,
+          isLowMemory: false,
+          currentRssBytes: 100 * 1024 * 1024,
+          maxRssBytes: 150 * 1024 * 1024,
+        );
+        expect(info35Gb.tier, DeviceRamTier.low);
+      },
+    );
 
-    test('classifies 3.8 GB to 5.8 GB as standard tier (physical 4GB & 5GB)', () {
-      // Physical 4 GB device with kernel carve-outs reporting ~3.8 GB
-      const info4Gb = SystemMemoryInfo(
-        totalRamBytes: 3850 * 1024 * 1024,
-        availableRamBytes: 1800 * 1024 * 1024,
-        thresholdBytes: 400 * 1024 * 1024,
-        isLowMemory: false,
-        currentRssBytes: 100 * 1024 * 1024,
-        maxRssBytes: 150 * 1024 * 1024,
-      );
-      expect(info4Gb.tier, DeviceRamTier.standard);
+    test(
+      'classifies 3.8 GB to 5.8 GB as standard tier (physical 4GB & 5GB)',
+      () {
+        // Physical 4 GB device with kernel carve-outs reporting ~3.8 GB
+        const info4Gb = SystemMemoryInfo(
+          totalRamBytes: 3850 * 1024 * 1024,
+          availableRamBytes: 1800 * 1024 * 1024,
+          thresholdBytes: 400 * 1024 * 1024,
+          isLowMemory: false,
+          currentRssBytes: 100 * 1024 * 1024,
+          maxRssBytes: 150 * 1024 * 1024,
+        );
+        expect(info4Gb.tier, DeviceRamTier.standard);
 
-      // Exact 4 GiB
-      const info4GiB = SystemMemoryInfo(
-        totalRamBytes: 4 * 1024 * 1024 * 1024,
-        availableRamBytes: 2 * 1024 * 1024 * 1024,
-        thresholdBytes: 500 * 1024 * 1024,
-        isLowMemory: false,
-        currentRssBytes: 120 * 1024 * 1024,
-        maxRssBytes: 200 * 1024 * 1024,
-      );
-      expect(info4GiB.tier, DeviceRamTier.standard);
-    });
+        // Exact 4 GiB
+        const info4GiB = SystemMemoryInfo(
+          totalRamBytes: 4 * 1024 * 1024 * 1024,
+          availableRamBytes: 2 * 1024 * 1024 * 1024,
+          thresholdBytes: 500 * 1024 * 1024,
+          isLowMemory: false,
+          currentRssBytes: 120 * 1024 * 1024,
+          maxRssBytes: 200 * 1024 * 1024,
+        );
+        expect(info4GiB.tier, DeviceRamTier.standard);
+      },
+    );
 
     test('classifies >= 5.8 GB as high tier (6GB, 8GB, 12GB devices)', () {
       // 6 GB physical device with carve-outs reporting ~5.8 GB
@@ -172,8 +178,14 @@ void main() {
       expect(SystemMemoryService.recommendedRamGbForModel('ggml-tiny.bin'), 2);
       expect(SystemMemoryService.recommendedRamGbForModel('ggml-base.bin'), 4);
       expect(SystemMemoryService.recommendedRamGbForModel('ggml-small.bin'), 4);
-      expect(SystemMemoryService.recommendedRamGbForModel('ggml-medium.bin'), 6);
-      expect(SystemMemoryService.recommendedRamGbForModel('ggml-large-v2.bin'), 8);
+      expect(
+        SystemMemoryService.recommendedRamGbForModel('ggml-medium.bin'),
+        6,
+      );
+      expect(
+        SystemMemoryService.recommendedRamGbForModel('ggml-large-v2.bin'),
+        8,
+      );
     });
   });
 
