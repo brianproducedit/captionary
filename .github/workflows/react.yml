@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  deployments: write
 
 jobs:
   static-portal:
@@ -35,11 +36,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build static portal
-        run: npm run build
-
       - name: Lint static portal
         run: npm run lint
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build static portal
+        run: npm run build
 
       - name: Upload static build artifact
         uses: actions/upload-artifact@v4
@@ -47,3 +51,43 @@ jobs:
           name: react-portal-dist-${{ github.sha }}
           path: react_frontend/dist
           if-no-files-found: error
+
+  deploy:
+    name: Deploy to Cloudflare Pages
+    needs: static-portal
+    runs-on: ubuntu-latest
+    # Only deploy on push to main or manual trigger (not PRs to main, not develop)
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: react-portal-dist-${{ github.sha }}
+          path: dist
+
+      - name: Check Cloudflare secrets
+        id: check-secrets
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloudflare secrets not configured. Skipping deployment. Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to repository secrets."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        if: steps.check-secrets.outputs.configured == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=captionary --commit-dirty=true
+
+      - name: Deployment summary
+        if: steps.check-secrets.outputs.configured == 'true'
+        run: |
+          echo "### ✅ Deployed to Cloudflare Pages" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Project:** captionary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Branch:** ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Commit:** ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
