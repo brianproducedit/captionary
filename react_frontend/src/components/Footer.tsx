@@ -49,6 +49,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="flex items-center" style={{ gap: 'var(--spacing-space-md)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-label-md)' }}>
+          <NavLink to="/download" className="transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>Download APK</NavLink>
           <NavLink to="/" className="transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>Donate</NavLink>
           <NavLink to="/about" className="transition-colors" style={{ color: 'var(--color-on-surface-variant)' }}>About</NavLink>
         </div>

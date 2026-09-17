@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import captionaryLogo from '../assets/images/captionary_logo.png';
 
 const navItems = [
+  { label: 'Download', path: '/download' },
   { label: 'Donate', path: '/' },
   { label: 'About', path: '/about' },
 ];
@@ -107,6 +108,19 @@ export const DesktopNavbar: React.FC = () => {
 
         {/* Right Actions */}
         <div className="flex items-center" style={{ gap: 'var(--spacing-space-sm)' }}>
+          <NavLink
+            to="/download"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border transition-colors hover:bg-gray-800 shrink-0 whitespace-nowrap text-xs font-semibold"
+            style={{
+              padding: 'var(--spacing-space-xs) var(--spacing-space-md)',
+              backgroundColor: 'var(--color-surface-container-high)',
+              borderColor: 'rgba(33, 150, 243, 0.4)',
+              color: 'var(--color-primary)',
+            }}
+          >
+            <span>Get App</span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-tertiary)' }} />
+          </NavLink>
           <NavLink
             to="/donate"
             className="rounded-full bg-gradient-to-r transition-all shrink-0 whitespace-nowrap"

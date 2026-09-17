@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "tagName": "v1.0.0",
+  "name": "Captionary v1.0.0 — Offline AI Speech Studio",
+  "publishedAt": "2026-09-17T08:00:00Z",
+  "htmlUrl": "https://github.com/brianproducedit/captionary/releases/tag/v1.0.0",
+  "body": "### What's New in Captionary v1.0.0\n\n- **100% On-Device AI Captioning:** Whisper AI transcription running natively on your Android device with zero cloud audio uploads.\n- **Studio & Subtitle Stylization:** Timeline editing, customizable ASS/SRT subtitles, TikTok Bold & IG Highlight presets, and real-time preview.\n- **Direct Video Burn-in:** Hardware-accelerated video export with styled subtitles directly embedded.\n- **Multi-language Support:** Downloadable offline language packs cached locally from R2.\n- **RAM & Performance Protection:** Dynamic memory tiering and safety guards protecting devices from OOM errors.",
+  "assets": [
+    {
+      "name": "app-release.apk",
+      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-release.apk",
+      "size": 83886080,
+      "abi": "universal",
+      "label": "Universal APK (Recommended)",
+      "description": "Compatible with all Android devices (ARM64, ARMv7, x86_64). Single installation file."
+    },
+    {
+      "name": "app-arm64-v8a-release.apk",
+      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-arm64-v8a-release.apk",
+      "size": 47185920,
+      "abi": "arm64-v8a",
+      "label": "ARM64-v8a (64-bit)",
+      "description": "Optimized, smaller download size for modern Android smartphones (2017+)."
+    },
+    {
+      "name": "app-armeabi-v7a-release.apk",
+      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-armeabi-v7a-release.apk",
+      "size": 41943040,
+      "abi": "armeabi-v7a",
+      "label": "ARMv7a (32-bit)",
+      "description": "For older or entry-level 32-bit Android phones."
+    },
+    {
+      "name": "app-x86_64-release.apk",
+      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/app-x86_64-release.apk",
+      "size": 50331648,
+      "abi": "x86_64",
+      "label": "x86_64",
+      "description": "For Android emulators, ChromeOS Chromebooks, and Intel-powered devices."
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "downloadUrl": "https://github.com/brianproducedit/captionary/releases/latest/download/SHA256SUMS.txt",
+      "size": 512,
+      "abi": "checksums",
+      "label": "SHA256 Checksums",
+      "description": "Cryptographic checksums for verifying APK integrity."
+    }
+  ]
+}

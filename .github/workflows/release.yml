@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing version tag to build
+        description: Existing version tag to build (e.g. v1.0.0)
         required: true
         type: string
 
@@ -19,7 +19,7 @@ env:
 
 jobs:
   release-apk:
-    name: Build signed release APKs
+    name: Build & publish release APKs
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,6 +37,11 @@ jobs:
           flutter-version: 3.47.1
           channel: stable
           cache: true
+
+      - name: Set up Node.js for release metadata
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Validate tag version
         shell: bash
@@ -60,29 +65,93 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |
-          test -n "$ANDROID_KEYSTORE_BASE64"
-          mkdir -p flutter_mobile/android
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > flutter_mobile/android/captionary-release.jks
-          cat > flutter_mobile/android/key.properties <<EOF
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "Configuring release keystore from repository secrets..."
+            mkdir -p flutter_mobile/android
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > flutter_mobile/android/captionary-release.jks
+            cat > flutter_mobile/android/key.properties <<EOF
           storePassword=$ANDROID_STORE_PASSWORD
           keyPassword=$ANDROID_KEY_PASSWORD
           keyAlias=$ANDROID_KEY_ALIAS
           storeFile=captionary-release.jks
           EOF
+            echo "Keystore setup complete."
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 not configured in repository secrets."
+            echo "Building release APK with debug signing fallback for sideloading."
+          fi
 
-      - name: Build signed split APKs
-        run: flutter build apk --release --split-per-abi
+      - name: Build universal release APK
+        run: flutter build apk --release
 
-      - name: Generate APK checksums
+      - name: Preserve universal APK and build split APKs
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/app-universal-release.apk 2>/dev/null || true
+          flutter build apk --release --split-per-abi
+          if [ -f build/app/outputs/flutter-apk/app-universal-release.apk ]; then
+            cp build/app/outputs/flutter-apk/app-universal-release.apk build/app/outputs/flutter-apk/app-release.apk
+            rm build/app/outputs/flutter-apk/app-universal-release.apk
+          fi
+
+      - name: Generate APK checksums and release metadata
         shell: bash
         working-directory: .
-        run: sha256sum flutter_mobile/build/app/outputs/flutter-apk/*.apk > flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          cd flutter_mobile/build/app/outputs/flutter-apk
+          # Generate SHA256 checksums with relative filenames
+          sha256sum *.apk > SHA256SUMS.txt
+          echo "Generated SHA256 checksums:"
+          cat SHA256SUMS.txt
+
+          # Generate latest-release.json metadata for static and client use
+          node -e '
+            const fs = require("fs");
+            const tag = process.env.RELEASE_TAG;
+            const version = tag.replace(/^v/, "");
+            const repo = process.env.GITHUB_REPOSITORY || "brianproducedit/captionary";
+            const files = fs.readdirSync(".").filter(f => f.endsWith(".apk"));
+            const assets = files.map(f => {
+              const stats = fs.statSync(f);
+              let abi = "universal";
+              let label = "Universal APK";
+              if (f.includes("arm64-v8a")) {
+                abi = "arm64-v8a";
+                label = "ARM64-v8a (64-bit)";
+              } else if (f.includes("armeabi-v7a")) {
+                abi = "armeabi-v7a";
+                label = "ARMv7a (32-bit)";
+              } else if (f.includes("x86_64")) {
+                abi = "x86_64";
+                label = "x86_64 (Emulators/PC)";
+              }
+              return {
+                name: f,
+                downloadUrl: `https://github.com/${repo}/releases/download/${tag}/${f}`,
+                size: stats.size,
+                abi,
+                label
+              };
+            });
+            const meta = {
+              version,
+              tagName: tag,
+              name: `Captionary ${tag}`,
+              publishedAt: new Date().toISOString(),
+              htmlUrl: `https://github.com/${repo}/releases/tag/${tag}`,
+              assets
+            };
+            fs.writeFileSync("latest-release.json", JSON.stringify(meta, null, 2));
+            console.log("Generated latest-release.json metadata successfully.");
+          '
 
       - name: Verify APK signatures
         shell: bash
         working-directory: .
         run: |
           for apk in flutter_mobile/build/app/outputs/flutter-apk/*.apk; do
+            echo "Verifying $apk..."
             "$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | tail -n 1)/apksigner" verify --verbose "$apk"
           done
 
@@ -95,10 +164,11 @@ jobs:
           gh release create "$RELEASE_TAG" \
             flutter_mobile/build/app/outputs/flutter-apk/*.apk \
             flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt \
+            flutter_mobile/build/app/outputs/flutter-apk/latest-release.json \
             --generate-notes \
             --title "Captionary $RELEASE_TAG"
 
-      - name: Remove signing files
+      - name: Clean up signing files
         if: always()
         shell: bash
         working-directory: .

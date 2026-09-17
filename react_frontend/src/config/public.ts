@@ -11,4 +11,11 @@ export const publicConfig = {
   cryptoAddress: '',
   cryptoNetwork: 'Polygon (USDT/USDC)',
   licenseUrl: 'https://www.gnu.org/licenses/agpl-3.0.html',
+  githubRepo: 'brianproducedit/captionary',
+  githubUrl: 'https://github.com/brianproducedit/captionary',
+  githubReleasesUrl: 'https://github.com/brianproducedit/captionary/releases',
+  latestReleaseApiUrl: 'https://api.github.com/repos/brianproducedit/captionary/releases/latest',
+  defaultVersion: '1.0.0',
+  minAndroidVersion: 'Android 8.0+ (API 26)',
+  recommendedRam: '4 GB+ RAM',
 } as const;
