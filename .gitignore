@@ -42,13 +42,13 @@ key.properties
 **/pnpm-debug.log*
 
 # Generated model files and local model staging
-models/
+/models/
 r2/manifest.json
 r2/checksums.sha256
 scripts/node_modules/
 **/assets/models/*.bin
-*.bin
 docs/
+*.bin
 
 # IDE and OS files
 .idea/
