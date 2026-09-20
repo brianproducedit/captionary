@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:captionary/theme/app_gradients.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -547,14 +548,14 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
           },
         ),
         const SizedBox(height: 32),
-        // Community support banner
+        // Pro upgrade teaser banner
         GestureDetector(
-          onTap: () => context.push('/donate'),
+          onTap: () => context.push('/pro'),
           child: Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16.0),
+              borderRadius: BorderRadius.circular(18.0),
               border: Border.all(color: AppColors.surfaceContainerHigh),
             ),
             child: Column(
@@ -563,41 +564,56 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Symbols.favorite,
-                      size: 16,
-                      color: AppColors.secondary,
+                      Symbols.workspace_premium,
+                      size: 18,
+                      color: AppColors.primary,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Captionary is community funded',
-                      style: Theme.of(context).textTheme.labelMedium,
+                      'Want Watermark-Free 1080p Video?',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.allWhite,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
-                  'Join creators from SN, ZW, SA in keeping the open models free.',
+                  'Unlock 24-Hour Passes (\$0.99) or Lifetime Creator Pro (\$7.99) via local mobile money & Web Sync Code.',
                   style: Theme.of(context).textTheme.bodySmall
                       ?.copyWith(color: AppColors.onSurfaceVariant),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
+                    horizontal: 18.0,
                     vertical: 8.0,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.secondaryContainer,
+                    gradient: AppGradients.primaryGradient,
                     borderRadius: BorderRadius.circular(9999),
-                    boxShadow: const [AppShadows.glowSupport],
+                    boxShadow: const [AppShadows.tertiaryGlow],
                   ),
-                  child: Text(
-                    'Buy a Coffee ☕',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.onSecondaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Symbols.diamond,
+                        size: 14,
+                        color: AppColors.baseCanvas,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Explore Pro Plans',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: AppColors.baseCanvas,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -11,6 +11,7 @@ import 'screens/media_library_screen.dart';
 import 'screens/language_packs_screen.dart';
 import 'screens/studio_screen.dart';
 import 'screens/donate_screen.dart';
+import 'screens/upgrade_pro_screen.dart';
 import 'screens/export_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/transcription_screen.dart';
@@ -122,6 +123,16 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
           },
         ),
         GoRoute(
+          path: '/pro',
+          pageBuilder: (context, state) => CustomTransitionPage(
+            child: const UpgradeProScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+          ),
+        ),
+        GoRoute(
           path: '/donate',
           pageBuilder: (context, state) => CustomTransitionPage(
             child: const DonateScreen(),
@@ -134,10 +145,10 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
         GoRoute(
           path: '/payment',
           redirect: (context, state) {
-            return '/donate';
+            return '/pro';
           },
         ),
-        GoRoute(path: '/support', redirect: (context, state) => '/donate'),
+        GoRoute(path: '/support', redirect: (context, state) => '/pro'),
         GoRoute(
           path: '/export',
           pageBuilder: (context, state) => CustomTransitionPage(

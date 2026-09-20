@@ -110,6 +110,9 @@ class AssFileWriter {
     int playResX = 1080,
     int playResY = 1920,
     String scriptTitle = 'Captionary Subtitles',
+    bool showWatermark = false,
+    String watermarkText = 'Captioned by Captionary',
+    Duration? videoDuration,
   }) {
     final buffer = StringBuffer();
 
@@ -161,6 +164,18 @@ class AssFileWriter {
       '1,0,0,0,100,100,0,0,$borderStyle,$outline,$shadow,'
       '$alignment,$marginL,$marginR,$marginV,1',
     );
+
+    if (showWatermark) {
+      final int wmFontSize = (playResY * 0.022).round().clamp(16, 28);
+      final int wmMarginR = (playResX * 0.035).round().clamp(24, 76);
+      final int wmMarginV = (playResY * 0.025).round().clamp(24, 48);
+      buffer.writeln(
+        'Style: Watermark,Lexend,$wmFontSize,'
+        '&H40FFFFFF,&H000000FF,&H40000000,&H80000000,'
+        '1,0,0,0,100,100,0,0,1,1.5,0.8,'
+        '9,24,$wmMarginR,$wmMarginV,1',
+      );
+    }
     buffer.writeln();
 
     // 3. Events
@@ -172,6 +187,18 @@ class AssFileWriter {
     // Sort segments monotonically by startTime
     final sorted = List<SubtitleSegment>.from(segments)
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    if (showWatermark) {
+      final Duration watermarkEnd = videoDuration ??
+          (sorted.isNotEmpty
+              ? sorted.last.endTime + const Duration(seconds: 5)
+              : const Duration(hours: 1));
+      final String endStr = formatAssTime(watermarkEnd);
+      final String safeWatermark = escapeText(watermarkText);
+      buffer.writeln(
+        'Dialogue: 1,0:00:00.00,$endStr,Watermark,,0,0,0,,$safeWatermark',
+      );
+    }
 
     for (final seg in sorted) {
       if (seg.startTime >= seg.endTime) continue;

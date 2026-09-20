@@ -32,6 +32,7 @@ typedef VideoMetadataExtractor = Future<Map<String, dynamic>?> Function(
 );
 
 typedef FontDirectoryResolver = Future<String?> Function();
+typedef LogoPathResolver = Future<String?> Function();
 typedef TempDirectoryResolver = Future<Directory> Function();
 typedef FFmpegCancelRunner = Future<void> Function([int? sessionId]);
 
@@ -46,6 +47,7 @@ class FfmpegExportService implements ExportService {
   final FFmpegAsyncRunner? ffmpegAsyncRunner;
   final VideoMetadataExtractor? metadataExtractor;
   final FontDirectoryResolver? fontDirResolver;
+  final LogoPathResolver? logoPathResolver;
   final TempDirectoryResolver? tempDirResolver;
   final FFmpegCancelRunner? cancelRunner;
   final String preferredVideoCodec;
@@ -58,6 +60,7 @@ class FfmpegExportService implements ExportService {
     this.ffmpegAsyncRunner,
     this.metadataExtractor,
     this.fontDirResolver,
+    this.logoPathResolver,
     this.tempDirResolver,
     this.cancelRunner,
     this.preferredVideoCodec = 'libx264',
@@ -104,6 +107,8 @@ class FfmpegExportService implements ExportService {
     required CaptionStyle style,
     required String outputPath,
     required Duration videoDuration,
+    bool includeWatermark = false,
+    int targetMaxResolution = 720,
   }) {
     final StreamController<ExportJob> controller =
         StreamController<ExportJob>();
@@ -115,6 +120,8 @@ class FfmpegExportService implements ExportService {
       outputPath: outputPath,
       videoDuration: videoDuration,
       controller: controller,
+      includeWatermark: includeWatermark,
+      targetMaxResolution: targetMaxResolution,
     );
 
     return controller.stream;
@@ -138,6 +145,8 @@ class FfmpegExportService implements ExportService {
     required String outputPath,
     required Duration videoDuration,
     required StreamController<ExportJob> controller,
+    bool includeWatermark = false,
+    int targetMaxResolution = 720,
   }) async {
     await _heavyJobLock.acquire();
     try {
@@ -260,6 +269,28 @@ class FfmpegExportService implements ExportService {
         debugPrint('FfmpegExportService: Metadata extraction failed: $e');
       }
 
+      // Resolution constraints (e.g. 720p cap for free tier)
+      int outWidth = width;
+      int outHeight = height;
+      if (targetMaxResolution <= 720 && (width > 720 || height > 720)) {
+        if (width <= height) {
+          // Portrait (vertical video, e.g. 1080x1920 -> 720x1280)
+          if (width > 720) {
+            outWidth = 720;
+            outHeight = ((height * 720) / width).round();
+            if (outHeight % 2 != 0) outHeight -= 1;
+          }
+        } else {
+          // Landscape (horizontal video, e.g. 1920x1080 -> 1280x720)
+          if (height > 720) {
+            outHeight = 720;
+            outWidth = ((width * 720) / height).round();
+            if (outWidth % 2 != 0) outWidth -= 1;
+          }
+        }
+        resolutionStr = '${outWidth}x$outHeight';
+      }
+
       job = job.copyWith(resolution: resolutionStr);
       controller.add(job);
 
@@ -267,6 +298,15 @@ class FfmpegExportService implements ExportService {
       final String? fontsDir = fontDirResolver != null
           ? await fontDirResolver!()
           : await _ensureFontExtracted(tempDir);
+
+      // Prepare logo file if watermark requested
+      final String? logoPath = includeWatermark
+          ? (logoPathResolver != null
+              ? await logoPathResolver!()
+              : await _ensureLogoExtracted(tempDir))
+          : null;
+      final bool hasLogo = logoPath != null && File(logoPath).existsSync();
+      final bool needsScale = outWidth != width || outHeight != height;
 
       // Attempt 1: ASS burn-in
       final assFile = File('${tempDir.path}/subs_$jobId.ass');
@@ -276,19 +316,37 @@ class FfmpegExportService implements ExportService {
         final assContent = AssFileWriter.generate(
           segments: segments,
           style: style,
-          playResX: width,
-          playResY: height,
+          playResX: outWidth,
+          playResY: outHeight,
+          showWatermark: includeWatermark,
+          watermarkText: 'Captioned by Captionary',
+          videoDuration: resolvedDuration,
         );
         await assFile.writeAsString(assContent);
 
         final escapedAssPath = escapeFilterPath(assFile.path);
-        final filterString = fontsDir != null && fontsDir.isNotEmpty
+        final baseAssFilter = fontsDir != null && fontsDir.isNotEmpty
             ? "ass='$escapedAssPath':fontsdir='${escapeFilterPath(fontsDir)}'"
             : "ass='$escapedAssPath'";
 
+        final String command;
+        if (hasLogo) {
+          final scalePrefix = needsScale ? "scale=$outWidth:$outHeight," : "";
+          final filterComplex =
+              "[0:v]$scalePrefix$baseAssFilter[vsub];"
+              "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
+              "[vsub][logo]overlay=W-w-24:24[vout]";
+          command =
+              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"";
+        } else {
+          final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
+          final filterString = "$baseAssFilter$scaleSuffix";
+          command =
+              "-y -i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"";
+        }
+
         final success = await _runFfmpeg(
-          command:
-              "-y -i \"$videoPath\" -vf \"$filterString\" -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"",
+          command: command,
           job: job,
           videoDuration: resolvedDuration,
           partFile: partFile,
@@ -319,7 +377,8 @@ class FfmpegExportService implements ExportService {
         'FfmpegExportService: ASS burn-in failed; falling back to SRT burn-in with user-visible reason.',
       );
       job = job.copyWith(
-        fallbackReason: 'Styled ASS filter unavailable; fell back to standard SRT captions.',
+        fallbackReason:
+            'Styled ASS filter unavailable; fell back to standard SRT captions.',
       );
       controller.add(job);
 
@@ -338,8 +397,20 @@ class FfmpegExportService implements ExportService {
         final videoCodec = preferredVideoCodec == 'libx264'
             ? 'libx264'
             : 'mpeg4';
-        final srtCommand =
-            "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'\" -c:v $videoCodec -c:a copy \"$partOutputPath\"";
+        final String srtCommand;
+        if (hasLogo) {
+          final scalePrefix = needsScale ? "scale=$outWidth:$outHeight," : "";
+          final filterComplex =
+              "[0:v]${scalePrefix}subtitles='$escapedSrtPath':force_style='$forceStyle'[vsub];"
+              "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
+              "[vsub][logo]overlay=W-w-24:24[vout]";
+          srtCommand =
+              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec -c:a copy \"$partOutputPath\"";
+        } else {
+          final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
+          srtCommand =
+              "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'$scaleSuffix\" -map 0:a? -c:v $videoCodec -c:a copy \"$partOutputPath\"";
+        }
 
         final success = await _runFfmpeg(
           command: srtCommand,
@@ -514,6 +585,28 @@ class FfmpegExportService implements ExportService {
       return fontsDir.path;
     } catch (e) {
       debugPrint('FfmpegExportService: Could not extract font asset: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _ensureLogoExtracted(Directory tempDir) async {
+    try {
+      final logoFile = File('${tempDir.path}/captionary_logo.png');
+      if (logoFile.existsSync() && logoFile.lengthSync() > 0) {
+        return logoFile.path;
+      }
+
+      final ByteData data = await rootBundle.load(
+        'assets/images/captionary_logo.png',
+      );
+      final List<int> bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
+      await logoFile.writeAsBytes(bytes, flush: true);
+      return logoFile.path;
+    } catch (e) {
+      debugPrint('FfmpegExportService: Could not extract logo asset: $e');
       return null;
     }
   }

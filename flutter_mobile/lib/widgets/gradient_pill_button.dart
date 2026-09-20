@@ -32,12 +32,15 @@ class GradientPillButton extends StatelessWidget {
           Icon(icon, size: 20, color: AppColors.allWhite),
           const SizedBox(width: 8),
         ],
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: AppColors.allWhite,
-            // color: AppColors.onPrimary,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppColors.allWhite,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ),
       ],

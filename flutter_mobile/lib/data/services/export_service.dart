@@ -10,6 +10,8 @@ abstract class ExportService {
     required CaptionStyle style,
     required String outputPath,
     required Duration videoDuration,
+    bool includeWatermark = false,
+    int targetMaxResolution = 720,
   });
   Future<String> exportSRT(List<SubtitleSegment> segments);
   Future<String> exportVTT(List<SubtitleSegment> segments);

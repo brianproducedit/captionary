@@ -27,7 +27,7 @@ class BottomNavBar extends StatelessWidget {
         context.go('/studio');
         break;
       case 3:
-        context.go('/donate');
+        context.go('/pro');
         break;
     }
   }
@@ -76,8 +76,8 @@ class BottomNavBar extends StatelessWidget {
                         onTap: () => _onItemTapped(context, 2),
                       ),
                       _NavBarItem(
-                        icon: Symbols.local_cafe,
-                        label: 'Donate',
+                        icon: Symbols.workspace_premium,
+                        label: 'Pro',
                         isSelected: currentIndex == 3,
                         onTap: () => _onItemTapped(context, 3),
                       ),

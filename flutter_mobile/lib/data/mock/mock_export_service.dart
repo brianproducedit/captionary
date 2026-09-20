@@ -12,6 +12,8 @@ class MockExportService implements ExportService {
     required CaptionStyle style,
     required String outputPath,
     required Duration videoDuration,
+    bool includeWatermark = false,
+    int targetMaxResolution = 720,
   }) async* {
     _isCancelled = false;
     for (int i = 0; i <= 50; i++) {

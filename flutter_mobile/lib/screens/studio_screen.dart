@@ -29,6 +29,7 @@ import '../widgets/app_toast.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/caption_timeline.dart';
 import '../widgets/caption_export_sheet.dart';
+import '../widgets/export_options_sheet.dart';
 import '../theme/app_colors_extension.dart';
 import '../core/duration_format.dart';
 import '../providers/waveform_provider.dart';
@@ -261,50 +262,60 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   label: 'Burn to Video',
                   icon: Symbols.local_fire_department,
                   onTap: () {
-                    final exportService = ref.read(exportServiceProvider);
-                    final segments = ref.read(subtitleProvider);
-                    final style = ref.read(captionStyleProvider);
-                    final duration = ref.read(playerProvider).duration;
+                    ExportOptionsSheet.show(
+                      context,
+                      onConfirmExport: ({
+                        required bool includeWatermark,
+                        required int targetMaxResolution,
+                      }) {
+                        final exportService = ref.read(exportServiceProvider);
+                        final segments = ref.read(subtitleProvider);
+                        final style = ref.read(captionStyleProvider);
+                        final duration = ref.read(playerProvider).duration;
 
-                    final timestamp = DateTime.now().millisecondsSinceEpoch;
-                    final outputPath =
-                        '${widget.videoPath}_captionary_$timestamp.mp4';
+                        final timestamp = DateTime.now().millisecondsSinceEpoch;
+                        final outputPath =
+                            '${widget.videoPath}_captionary_$timestamp.mp4';
 
-                    final stream = exportService.burnCaptions(
-                      videoPath: widget.videoPath,
-                      segments: segments,
-                      style: style,
-                      outputPath: outputPath,
-                      videoDuration: duration,
-                    );
-
-                    final job = ExportJob(
-                      id: 'mock_export_1',
-                      sourceFileName: 'Source_Video.mp4',
-                      outputFileName: 'Output_Video.mp4',
-                      state: ExportState.encoding,
-                      progress: 0.0,
-                      resolution: '1080x1920',
-                      codec: 'h264',
-                      bitrateMbps: 8,
-                      estimatedTimeRemaining: const Duration(seconds: 50),
-                      outputSizeBytes: 0,
-                      hardwareAcceleration: true,
-                    );
-
-                    ref
-                        .read(activeExportJobProvider.notifier)
-                        .startJob(
-                          job,
-                          stream,
-                          onComplete: () {
-                            ref
-                                .read(engagementProvider.notifier)
-                                .onExportCompleted();
-                          },
-                          onCancel: () => exportService.cancel(),
+                        final stream = exportService.burnCaptions(
+                          videoPath: widget.videoPath,
+                          segments: segments,
+                          style: style,
+                          outputPath: outputPath,
+                          videoDuration: duration,
+                          includeWatermark: includeWatermark,
+                          targetMaxResolution: targetMaxResolution,
                         );
-                    context.push('/export');
+
+                        final job = ExportJob(
+                          id: 'export_$timestamp',
+                          sourceFileName: 'Source_Video.mp4',
+                          outputFileName: outputPath,
+                          state: ExportState.encoding,
+                          progress: 0.0,
+                          resolution: '${targetMaxResolution}p',
+                          codec: 'h264',
+                          bitrateMbps: 8,
+                          estimatedTimeRemaining: const Duration(seconds: 50),
+                          outputSizeBytes: 0,
+                          hardwareAcceleration: true,
+                        );
+
+                        ref
+                            .read(activeExportJobProvider.notifier)
+                            .startJob(
+                              job,
+                              stream,
+                              onComplete: () {
+                                ref
+                                    .read(engagementProvider.notifier)
+                                    .onExportCompleted();
+                              },
+                              onCancel: () => exportService.cancel(),
+                            );
+                        context.push('/export');
+                      },
+                    );
                   },
                   isFullWidth: true,
                 ),
