@@ -212,9 +212,10 @@ class AssFileWriter {
 
       if (style.position == SubtitlePosition.custom) {
         final posX = (playResX / 2.0).round();
-        final posY = ((playResY * (style.customY + 1.0)) / 2.0)
-            .round()
-            .clamp(40, playResY - 40);
+        final posY = ((playResY * (style.customY + 1.0)) / 2.0).round().clamp(
+          40,
+          playResY - 40,
+        );
         buffer.writeln(
           'Dialogue: 0,$startStr,$endStr,Default,,0,0,0,,{\\pos($posX,$posY)}$text',
         );

@@ -159,8 +159,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 4,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
       ),
       const CatalogModel(
         id: 'base',
@@ -202,8 +201,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 4,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
       ),
       const CatalogModel(
         id: 'tiny',
@@ -245,8 +243,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 3,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
       ),
     ],
   );

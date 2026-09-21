@@ -48,8 +48,9 @@ class SubtitleOverlay extends StatelessWidget {
     }
 
     final double topPad = style.position == SubtitlePosition.top ? 16.0 : 6.0;
-    final double bottomPad =
-        style.position == SubtitlePosition.bottom ? 10.0 : 6.0;
+    final double bottomPad = style.position == SubtitlePosition.bottom
+        ? 10.0
+        : 6.0;
 
     return AnimatedOpacity(
       opacity: segment != null ? 1.0 : 0.0,
@@ -69,7 +70,7 @@ class SubtitleOverlay extends StatelessWidget {
                   behavior: HitTestBehavior.opaque,
                   onVerticalDragUpdate: onPositionDelta != null
                       ? (details) =>
-                          onPositionDelta!(details.primaryDelta ?? 0.0)
+                            onPositionDelta!(details.primaryDelta ?? 0.0)
                       : null,
                   child: _buildOverlay(context),
                 ),

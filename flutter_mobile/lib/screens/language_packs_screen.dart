@@ -333,15 +333,19 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
     return asyncLangs.when(
       data: (langs) {
         final filteredLangs = langs.where((lang) {
-          final matchesSearch = _searchQuery.isEmpty ||
+          final matchesSearch =
+              _searchQuery.isEmpty ||
               lang.name.toLowerCase().contains(_searchQuery) ||
               lang.nativeName.toLowerCase().contains(_searchQuery) ||
               lang.code.toLowerCase().contains(_searchQuery);
 
-          final matchesRegion = _activeRegion == 'All' ||
+          final matchesRegion =
+              _activeRegion == 'All' ||
               lang.region.toLowerCase().contains(_activeRegion.toLowerCase()) ||
               (_activeRegion == 'Americas' &&
-                  (lang.code == 'es' || lang.code == 'pt' || lang.code == 'en')) ||
+                  (lang.code == 'es' ||
+                      lang.code == 'pt' ||
+                      lang.code == 'en')) ||
               (_activeRegion == 'Europe' &&
                   (lang.code == 'en' ||
                       lang.code == 'fr' ||
@@ -613,7 +617,9 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
     );
 
     if (result == true && mounted) {
-      ref.read(availableLanguagesProvider.notifier).deleteLanguagePack(lang.code);
+      ref
+          .read(availableLanguagesProvider.notifier)
+          .deleteLanguagePack(lang.code);
     }
   }
 
