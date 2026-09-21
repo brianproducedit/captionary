@@ -12,12 +12,16 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String subtitle;
   final List<Widget>? actions;
+  final bool showBackButton;
+  final bool showDonatePill;
 
   const AppHeader({
     super.key,
     this.title = 'Captionary',
     required this.subtitle,
     this.actions,
+    this.showBackButton = false,
+    this.showDonatePill = true,
   });
 
   @override
@@ -44,31 +48,32 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar Placeholder
-              GestureDetector(
-                onTap: () => context.push('/settings'),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  // decoration: const BoxDecoration(
-                  //   shape: BoxShape.circle,
-                  //   gradient: AppGradients.primaryGradient,
-                  // ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Symbols.settings,
-                    size: 30,
+              // Back Button or Settings Avatar
+              if (showBackButton)
+                IconButton(
+                  icon: const Icon(
+                    Symbols.arrow_back_ios_new,
+                    size: 20,
                     color: AppColors.allWhite,
                   ),
-                  // child: Text(
-                  //   'KO',
-                  //   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  //         color: AppColors.onPrimaryContainer,
-                  //         fontWeight: FontWeight.bold,
-                  //       ),
-                  // ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                )
+              else
+                GestureDetector(
+                  onTap: () => context.push('/settings'),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Symbols.settings,
+                      size: 30,
+                      color: AppColors.allWhite,
+                    ),
+                  ),
                 ),
-              ),
               const SizedBox(width: 12),
               // Title and Subtitle
               Expanded(
@@ -97,7 +102,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
               if (actions != null) ...?actions,
               if (actions != null) const SizedBox(width: 12),
               // Donate Pill
-              DonatePill(onTap: () => context.push('/donate')),
+              if (showDonatePill)
+                DonatePill(onTap: () => context.push('/donate')),
             ],
           ),
         ),

@@ -336,93 +336,99 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     final playerNotifier = ref.read(playerProvider.notifier);
 
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       borderRadius: 9999.0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Symbols.arrow_back_ios_new, size: 18),
-                color: colors.onSurface,
-                onPressed: () => context.pop(),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: playerState.isPlaying
-                      ? AppColors.tertiary
-                      : AppColors.error,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: playerState.isPlaying
-                          ? const Color(0x6642A547)
-                          : const Color(0x66FFB4AB),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                formatClockHms(playerState.position),
-                style: AppTypography.captionCode.copyWith(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Symbols.arrow_back_ios_new, size: 16),
                   color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+                  onPressed: () => context.pop(),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
                 ),
-              ),
-              const SizedBox(width: 6),
-              // Return to Beginning
-              _buildIconButton(
-                Symbols.first_page,
-                tooltip: 'Return to 00:00:00',
-                onTap: () => playerNotifier.seekTo(Duration.zero),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              // Speed control
-              _buildSpeedSelector(context, playerState, playerNotifier),
-              const SizedBox(width: 6),
-              _buildIconButton(
-                Symbols.undo,
-                tooltip: 'Undo',
-                onTap: subtitleNotifier.canUndo
-                    ? () => subtitleNotifier.undo()
-                    : null,
-              ),
-              const SizedBox(width: 6),
-              _buildIconButton(
-                Symbols.redo,
-                tooltip: 'Redo',
-                onTap: subtitleNotifier.canRedo
-                    ? () => subtitleNotifier.redo()
-                    : null,
-              ),
-              const SizedBox(width: 6),
-              // Demarcation: View Mode vs Edit Mode
-              _buildIconButton(
-                _isEditMode ? Symbols.visibility : Symbols.edit,
-                tooltip: _isEditMode
-                    ? 'Switch to View Mode'
-                    : 'Switch to Edit Studio',
-                onTap: () {
-                  setState(() {
-                    _isEditMode = !_isEditMode;
-                  });
-                },
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 6),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: playerState.isPlaying
+                        ? AppColors.tertiary
+                        : AppColors.error,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: playerState.isPlaying
+                            ? const Color(0x6642A547)
+                            : const Color(0x66FFB4AB),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  formatClockHms(playerState.position),
+                  style: AppTypography.captionCode.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Return to Beginning
+                _buildIconButton(
+                  Symbols.first_page,
+                  tooltip: 'Return to 00:00:00',
+                  onTap: () => playerNotifier.seekTo(Duration.zero),
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Speed control
+                _buildSpeedSelector(context, playerState, playerNotifier),
+                const SizedBox(width: 4),
+                _buildIconButton(
+                  Symbols.undo,
+                  tooltip: 'Undo',
+                  onTap: subtitleNotifier.canUndo
+                      ? () => subtitleNotifier.undo()
+                      : null,
+                ),
+                const SizedBox(width: 4),
+                _buildIconButton(
+                  Symbols.redo,
+                  tooltip: 'Redo',
+                  onTap: subtitleNotifier.canRedo
+                      ? () => subtitleNotifier.redo()
+                      : null,
+                ),
+                const SizedBox(width: 4),
+                // Demarcation: View Mode vs Edit Mode
+                _buildIconButton(
+                  _isEditMode ? Symbols.visibility : Symbols.edit,
+                  tooltip: _isEditMode
+                      ? 'Switch to View Mode'
+                      : 'Switch to Edit Studio',
+                  onTap: () {
+                    setState(() {
+                      _isEditMode = !_isEditMode;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -456,7 +462,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           ),
       ],
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(8),
@@ -482,8 +488,8 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          width: 32,
-          height: 32,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: onTap != null
                 ? AppColors.surfaceContainerHigh
@@ -492,7 +498,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           ),
           child: Icon(
             icon,
-            size: 18,
+            size: 16,
             color: onTap != null
                 ? AppColors.onSurface
                 : AppColors.onSurfaceVariant,
@@ -503,78 +509,81 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
   }
 
   Widget _buildEmptyVideoState(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(16.0),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.6),
-          ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.6),
         ),
+      ),
+      child: SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 52,
-              height: 52,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: AppColors.primaryContainer.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Symbols.movie_edit,
-                size: 28,
+                size: 22,
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               'No Video Loaded',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.onSurface,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               'Select a video from your library or import one to begin editing.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: AppColors.onSurfaceVariant),
+                  ?.copyWith(color: AppColors.onSurfaceVariant, fontSize: 11),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
-              runSpacing: 8,
+              runSpacing: 6,
               alignment: WrapAlignment.center,
               children: [
                 FilledButton.icon(
                   onPressed: () => context.go('/library'),
-                  icon: const Icon(Symbols.video_library, size: 16),
-                  label: const Text('Media Library'),
+                  icon: const Icon(Symbols.video_library, size: 15),
+                  label: const Text('Media Library', style: TextStyle(fontSize: 12)),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
                 OutlinedButton.icon(
                   onPressed: _importAndOpenVideo,
-                  icon: const Icon(Symbols.add, size: 16),
-                  label: const Text('Import Video'),
+                  icon: const Icon(Symbols.add, size: 15),
+                  label: const Text('Import Video', style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.onSurface,
                     side: const BorderSide(color: AppColors.outlineVariant),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
               ],

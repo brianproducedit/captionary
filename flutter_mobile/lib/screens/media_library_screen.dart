@@ -286,27 +286,39 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       children: [
         Row(
           children: [
-            Text(
-              'Media Library',
-              style: Theme.of(context).textTheme.headlineSmall,
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Media Library',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 2.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    child: Text(
+                      visibleCount?.toString() ?? '…',
+                      key: const ValueKey('library-count'),
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8.0,
-                vertical: 2.0,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: Text(
-                visibleCount?.toString() ?? '…',
-                key: const ValueKey('library-count'),
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ),
-            const Spacer(),
+            const SizedBox(width: 8),
             DropdownButtonHideUnderline(
               child: DropdownButton<MediaLibrarySort>(
                 key: const ValueKey('library-sort'),
@@ -441,12 +453,13 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
         if (_isGrid) {
           return GridView.builder(
             key: const ValueKey('library-grid'),
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: visible.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.76,
+              childAspectRatio: 0.63,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -544,7 +557,7 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
     final thumbnail = _MediaThumbnail(
       item: item,
       durationLabel: durationStr,
-      height: isGrid ? 120 : 72,
+      height: isGrid ? 104 : 72,
     );
 
     Widget buildCardActions() {

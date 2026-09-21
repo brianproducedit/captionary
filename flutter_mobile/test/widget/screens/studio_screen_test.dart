@@ -58,4 +58,19 @@ void main() {
     expect(find.text('VTT'), findsOneWidget);
     expect(find.text('ASS'), findsOneWidget);
   });
+
+  testWidgets('StudioScreen renders without overflow on phone dimensions', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('No Video Loaded'), findsOneWidget);
+  });
 }
+
