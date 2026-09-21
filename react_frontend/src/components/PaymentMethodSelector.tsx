@@ -30,7 +30,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
 
   return (
     <div className="w-full flex flex-col gap-[var(--spacing-space-lg)]">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[var(--spacing-gutter-desktop)] items-stretch">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-stretch">
         {PAYMENT_METHODS.map((method) => {
           const enabled = isMethodEnabled(method.id);
           const isSelected = selectedMethod === method.id;
@@ -50,7 +50,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                   onSelectMethod(method.id);
                 }
               }}
-              className={`group relative p-[var(--spacing-space-lg)] rounded-lg transition-all duration-300 flex flex-col justify-between shadow-xl ${
+              className={`group relative p-4 sm:p-5 rounded-2xl transition-all duration-300 flex flex-col justify-between shadow-xl ${
                 enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-55'
               } ${
                 isSelected && enabled
@@ -158,36 +158,35 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       </div>
 
       <div
-        className="p-[var(--spacing-space-lg)] rounded-DEFAULT border"
+        className="p-4 sm:p-6 rounded-2xl border"
         style={{
           backgroundColor: 'var(--color-surface-container-low)',
           borderColor: 'var(--color-surface-container-high)',
         }}
       >
         {selectedMethod === 'crypto' && cryptoLive && (
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-[var(--spacing-space-md)]">
-            <div className="flex items-start gap-[var(--spacing-space-md)]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0"
                 style={{ backgroundColor: 'rgba(255, 193, 7, 0.25)', color: 'var(--color-attention-yellow)' }}
               >
-                <MaterialIcon icon="account_balance_wallet" className="text-[24px]" />
+                <MaterialIcon icon="account_balance_wallet" className="text-[22px] sm:text-[24px]" />
               </div>
               <div className="flex flex-col">
                 <h4
-                  className="font-semibold"
+                  className="font-semibold text-base sm:text-lg"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-headline-sm)',
                     color: 'var(--color-on-surface)',
                   }}
                 >
                   {publicConfig.cryptoNetwork}
                 </h4>
                 <p
+                  className="text-xs sm:text-sm"
                   style={{
                     fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-body-sm)',
                     color: 'var(--color-on-surface-variant)',
                   }}
                 >
@@ -195,9 +194,9 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full lg:w-auto min-w-0">
+            <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full sm:w-auto min-w-0">
               <span
-                className="truncate font-mono text-xs px-3 py-1.5 rounded-full"
+                className="truncate font-mono text-xs px-3 py-1.5 rounded-full text-center xs:text-left"
                 style={{
                   backgroundColor: 'var(--color-surface-container-high)',
                   color: 'var(--color-primary)',
@@ -208,7 +207,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
               <button
                 type="button"
                 onClick={handleCopyAddress}
-                className="shrink-0 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 cursor-pointer"
+                className="shrink-0 px-4 py-1.5 rounded-full font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
                 style={{
                   backgroundColor: copied ? 'var(--color-tertiary)' : 'var(--color-surface-container-highest)',
                   color: copied ? '#000' : 'var(--color-on-surface)',

@@ -36,16 +36,16 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
   return (
     <div className="w-full flex flex-col gap-[var(--spacing-space-xl)]">
       {/* Quick Preset Amount Pill Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[var(--spacing-space-sm)] p-[var(--spacing-space-sm)] rounded-DEFAULT"
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl"
            style={{ backgroundColor: 'var(--color-surface-container-low)' }}>
-        <div className="flex items-center gap-[var(--spacing-space-xs)] px-[var(--spacing-space-xs)]">
+        <div className="flex items-center gap-[var(--spacing-space-xs)] px-1">
           <MaterialIcon icon="tune" className="text-[20px]" style={{ color: 'var(--color-primary)' }} />
           <span className="font-semibold" style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-label-md)', color: 'var(--color-on-surface)' }}>
             Quick Amount Select:
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-[var(--spacing-space-xs)]">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {quickAmounts.map((amt) => {
             const isSelected = selectedAmount === amt && selectedTier !== 'custom';
             return (
@@ -53,7 +53,7 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
                 key={amt}
                 type="button"
                 onClick={() => handleQuickAmountClick(amt)}
-                className={`px-[var(--spacing-space-md)] py-[var(--spacing-space-xxs)] rounded-full font-bold transition-all duration-200 cursor-pointer flex items-center gap-1 ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold transition-all duration-200 cursor-pointer flex items-center gap-1 ${
                   isSelected
                     ? 'shadow-[0_0_16px_rgba(33,150,243,0.45)] scale-105'
                     : 'hover:bg-[var(--color-surface-bright)]'
@@ -74,7 +74,7 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
           <button
             type="button"
             onClick={() => onSelectTier('custom', customAmount)}
-            className={`px-[var(--spacing-space-md)] py-[var(--spacing-space-xxs)] rounded-full font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1 ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1 ${
               selectedTier === 'custom'
                 ? 'shadow-[0_0_16px_rgba(134,3,156,0.45)] scale-105'
                 : 'hover:bg-[var(--color-surface-bright)]'
@@ -93,10 +93,10 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
       </div>
 
       {/* Featured Tier Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--spacing-gutter-desktop)] items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-stretch">
         {/* Tier 1: Coffee Supporter ($3) */}
         <div
-          className={`group relative cursor-pointer p-[var(--spacing-space-xl)] rounded-lg transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between shadow-lg ${
+          className={`group relative cursor-pointer p-5 sm:p-6 md:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between shadow-lg ${
             selectedTier === 'coffee' ? 'ring-2 ring-[var(--color-primary-container)]' : ''
           }`}
           style={{ backgroundColor: 'var(--color-surface-container-low)' }}
@@ -157,7 +157,7 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
 
         {/* Tier 2: Language Champion ($10 - Popular) */}
         <div
-          className={`group relative cursor-pointer p-[var(--spacing-space-xl)] rounded-lg transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between shadow-2xl overflow-hidden ${
+          className={`group relative cursor-pointer p-5 sm:p-6 md:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between shadow-2xl overflow-hidden ${
             selectedTier === 'language' ? 'ring-2 ring-[var(--color-primary-container)]' : ''
           }`}
           style={{
@@ -223,7 +223,7 @@ export const DonationAmountSelector: React.FC<DonationAmountSelectorProps> = ({
 
         {/* Tier 3: Custom Fuel / Any Scale */}
         <div
-          className={`group relative p-[var(--spacing-space-xl)] rounded-lg transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between shadow-lg ${
+          className={`group relative p-5 sm:p-6 md:p-8 rounded-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between shadow-lg ${
             selectedTier === 'custom' || (selectedAmount !== 3 && selectedAmount !== 10) ? 'ring-2 ring-[var(--color-primary-container)]' : ''
           }`}
           style={{ backgroundColor: 'var(--color-surface-container-low)' }}

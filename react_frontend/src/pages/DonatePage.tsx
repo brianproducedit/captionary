@@ -134,27 +134,27 @@ export const DonatePage: React.FC = () => {
               >
                 <img
                   alt="Captionary Open-Source Foundation Emblem"
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover"
+                  className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full object-cover"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuABENpPUIXPkO4lnSGrJU05nCximKB9kEW7pOOMQfgK2gAUrISb0UxrqwSA-vSTLPVKbFk5sbril5e8I8X3NMupNT_iczaq3ca6NxhiTxC7syftruEOThHdJpbJx_vT4QRjnUsDp8XN8H_FM9dgP9ZanhfS7Aq7GusGxaO8gBIsc2Sz9JSXm0dg7X9qDsmEJaWBUpXuMOfv3GLDiNL4dN3qp-_t2qTRgZG-2XB0LMrGHRRAFBd_fVmuDFvswISP90w-kw"
                 />
               </div>
             </div>
 
             <div
-              className="inline-flex items-center gap-[var(--spacing-space-xs)] px-[var(--spacing-space-md)] py-[var(--spacing-space-xxs)] rounded-full shadow-sm mb-[var(--spacing-space-md)]"
+              className="inline-flex items-center gap-[var(--spacing-space-xs)] px-3 sm:px-[var(--spacing-space-md)] py-1 sm:py-[var(--spacing-space-xxs)] rounded-full shadow-sm mb-3 sm:mb-[var(--spacing-space-md)]"
               style={{ backgroundColor: 'var(--color-surface-container-high)' }}
             >
               <span className="w-2 h-2 rounded-full shadow-[0_0_8px_#4CAF50] animate-ping" style={{ backgroundColor: 'var(--color-tertiary)' }}></span>
               <span
-                className="uppercase tracking-widest font-semibold"
-                style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-caption-code)', color: 'var(--color-tertiary)' }}
+                className="uppercase tracking-widest font-semibold text-[10px] sm:text-[11px]"
+                style={{ fontFamily: 'var(--font-body)', color: 'var(--color-tertiary)' }}
               >
                 Open-Source & Serverless Initiative
               </span>
             </div>
 
             <h1
-              className="tracking-tight max-w-3xl mb-[var(--spacing-space-sm)] font-bold leading-tight text-[length:var(--text-display-lg-mobile)] md:text-[length:var(--text-display-lg)]"
+              className="tracking-tight max-w-3xl mb-2 sm:mb-[var(--spacing-space-sm)] font-bold leading-tight text-2xl sm:text-4xl md:text-5xl"
               style={{ fontFamily: 'var(--font-display)', color: 'var(--color-on-surface)' }}
             >
               Donate Independent{' '}
@@ -167,18 +167,18 @@ export const DonatePage: React.FC = () => {
             </h1>
 
             <p
-              className="max-w-2xl mb-[var(--spacing-space-xl)] leading-relaxed"
-              style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-body-lg)', color: 'var(--color-on-surface-variant)' }}
+              className="max-w-2xl mb-6 sm:mb-[var(--spacing-space-xl)] text-sm sm:text-base md:text-lg leading-relaxed px-2"
+              style={{ fontFamily: 'var(--font-body)', color: 'var(--color-on-surface-variant)' }}
             >
-              Captionary is 100% free, serverless, and ad-light. Help keep regional African language speech-to-text models accessible,
+              Captionary is serverless, and ad-light. Help keep regional African language speech-to-text models accessible,
               privacy-respecting, and uncensored for creators worldwide.
             </p>
 
             <div
-              className="inline-flex items-center gap-[var(--spacing-space-sm)] px-[var(--spacing-space-lg)] py-[var(--spacing-space-xs)] rounded-full shadow-md"
+              className="inline-flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 sm:py-2.5 rounded-2xl sm:rounded-full shadow-md max-w-full text-center sm:text-left"
               style={{ backgroundColor: 'var(--color-surface-container-lowest)' }}
             >
-              <div className="flex -space-x-2 overflow-hidden">
+              <div className="flex -space-x-2 overflow-hidden shrink-0">
                 <span
                   className="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold"
                   style={{
@@ -213,10 +213,10 @@ export const DonatePage: React.FC = () => {
                   KE
                 </span>
               </div>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-label-md)', color: 'var(--color-on-surface)' }}>
+              <span className="text-xs sm:text-sm font-medium" style={{ fontFamily: 'var(--font-body)', color: 'var(--color-on-surface)' }}>
                 Independent creators & researchers keeping regional speech free
               </span>
-              <MaterialIcon icon="verified" className="text-[18px]" style={{ color: 'var(--color-tertiary)' }} />
+              <MaterialIcon icon="verified" className="text-[18px] shrink-0" style={{ color: 'var(--color-tertiary)' }} />
             </div>
           </section>
 

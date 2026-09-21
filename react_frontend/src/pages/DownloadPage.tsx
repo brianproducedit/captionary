@@ -51,11 +51,11 @@ export const DownloadPage: React.FC = () => {
     if (loading && !release) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border animate-pulse"
-              style={{
-                backgroundColor: 'var(--color-surface-container-high)',
-                color: 'var(--color-on-surface-variant)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-              }}>
+          style={{
+            backgroundColor: 'var(--color-surface-container-high)',
+            color: 'var(--color-on-surface-variant)',
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+          }}>
           <MaterialIcon icon="sync" className="text-sm animate-spin" />
           Checking Releases...
         </span>
@@ -65,11 +65,11 @@ export const DownloadPage: React.FC = () => {
     if (release.source === 'live') {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-              style={{
-                backgroundColor: 'rgba(66, 165, 71, 0.15)',
-                color: 'var(--color-tertiary)',
-                borderColor: 'rgba(66, 165, 71, 0.35)',
-              }}>
+          style={{
+            backgroundColor: 'rgba(66, 165, 71, 0.15)',
+            color: 'var(--color-tertiary)',
+            borderColor: 'rgba(66, 165, 71, 0.35)',
+          }}>
           <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-tertiary)' }} />
           Live GitHub Releases
         </span>
@@ -78,11 +78,11 @@ export const DownloadPage: React.FC = () => {
     if (release.source === 'cache') {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-              style={{
-                backgroundColor: 'rgba(33, 150, 243, 0.15)',
-                color: 'var(--color-primary)',
-                borderColor: 'rgba(33, 150, 243, 0.35)',
-              }}>
+          style={{
+            backgroundColor: 'rgba(33, 150, 243, 0.15)',
+            color: 'var(--color-primary)',
+            borderColor: 'rgba(33, 150, 243, 0.35)',
+          }}>
           <MaterialIcon icon="cached" className="text-sm" />
           Cached Release Data
         </span>
@@ -90,11 +90,11 @@ export const DownloadPage: React.FC = () => {
     }
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border"
-            style={{
-              backgroundColor: 'rgba(255, 193, 7, 0.15)',
-              color: 'var(--color-attention-yellow)',
-              borderColor: 'rgba(255, 193, 7, 0.35)',
-            }}>
+        style={{
+          backgroundColor: 'rgba(255, 193, 7, 0.15)',
+          color: 'var(--color-attention-yellow)',
+          borderColor: 'rgba(255, 193, 7, 0.35)',
+        }}>
         <MaterialIcon icon="offline_bolt" className="text-sm" />
         Offline Release Mirror
       </span>
@@ -102,79 +102,79 @@ export const DownloadPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-10"
-         style={{
-           paddingLeft: 'var(--spacing-margin-mobile)',
-           paddingRight: 'var(--spacing-margin-mobile)',
-         }}>
+    <div className="max-w-7xl mx-auto py-6 sm:py-10"
+      style={{
+        paddingLeft: 'var(--spacing-margin-mobile)',
+        paddingRight: 'var(--spacing-margin-mobile)',
+      }}>
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl border text-center p-8 sm:p-14 mb-12"
-               style={{
-                 backgroundColor: 'var(--color-surface-container-lowest)',
-                 borderColor: 'rgba(64, 71, 82, 0.4)',
-                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
-               }}>
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl border text-center p-5 sm:p-10 md:p-14 mb-8 sm:mb-12"
+        style={{
+          backgroundColor: 'var(--color-surface-container-lowest)',
+          borderColor: 'rgba(64, 71, 82, 0.4)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
+        }}>
         {/* Glow ambient effects */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none"
-             style={{ background: 'radial-gradient(circle, #2196f3 0%, #86039c 100%)' }} />
+          style={{ background: 'radial-gradient(circle, #2196f3 0%, #86039c 100%)' }} />
 
         <div className="relative z-10 flex flex-col items-center max-w-3xl mx-auto">
           {/* Header Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-                  style={{
-                    backgroundColor: 'var(--color-surface-container-high)',
-                    color: 'var(--color-on-surface-variant)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                  }}>
+              style={{
+                backgroundColor: 'var(--color-surface-container-high)',
+                color: 'var(--color-on-surface-variant)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}>
               <MaterialIcon icon="android" className="text-sm" style={{ color: 'var(--color-tertiary)' }} />
               Android Mobile App
             </span>
             {getStatusBadge()}
             {release && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
-                    style={{
-                      backgroundColor: 'rgba(158, 202, 255, 0.15)',
-                      color: 'var(--color-primary)',
-                      border: '1px solid rgba(158, 202, 255, 0.3)',
-                    }}>
+                style={{
+                  backgroundColor: 'rgba(158, 202, 255, 0.15)',
+                  color: 'var(--color-primary)',
+                  border: '1px solid rgba(158, 202, 255, 0.3)',
+                }}>
                 v{release.version}
               </span>
             )}
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4"
-              style={{
-                fontFamily: 'var(--font-display)',
-                color: 'var(--color-on-surface)',
-                lineHeight: 1.15,
-              }}>
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-3 sm:mb-4"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--color-on-surface)',
+              lineHeight: 1.15,
+            }}>
             Download <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">Captionary</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mb-8 leading-relaxed"
-             style={{ color: 'var(--color-on-surface-variant)' }}>
+          <p className="text-sm sm:text-base md:text-lg text-gray-300 max-w-2xl mb-6 sm:mb-8 leading-relaxed"
+            style={{ color: 'var(--color-on-surface-variant)' }}>
             On-device AI speech captioning and video subtitling studio for African creators.
             100% offline, privacy-first, with zero cloud uploads and zero telemetry.
           </p>
 
-          {/* Primary Action Button */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md">
+          {/* Primary Action Button & Refresh Button */}
+          <div className="flex items-center justify-center gap-2.5 sm:gap-4 w-full max-w-md mx-auto">
             <a
               href={universalAsset?.downloadUrl || `${publicConfig.githubReleasesUrl}/latest/download/app-release.apk`}
               download
-              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-full font-semibold transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="flex-1 min-w-0 flex items-center justify-center gap-2.5 sm:gap-3 px-4 sm:px-8 py-3.5 sm:py-4 rounded-full font-semibold transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
               style={{
                 backgroundImage: 'linear-gradient(to right, var(--color-primary-container), var(--color-secondary-container))',
                 color: 'var(--color-on-primary)',
                 boxShadow: '0 8px 24px rgba(33, 150, 243, 0.35)',
               }}
             >
-              <MaterialIcon icon="download" className="text-2xl" />
-              <div className="flex flex-col text-left">
-                <span className="text-sm font-bold">Download Universal APK</span>
-                <span className="text-xs opacity-90">
-                  {universalAsset?.sizeFormatted || '~80 MB'} · Works on all Android phones
+              <MaterialIcon icon="download" className="text-xl sm:text-2xl shrink-0" />
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-xs sm:text-sm font-bold truncate">Download Universal APK</span>
+                <span className="text-[11px] sm:text-xs opacity-90 truncate">
+                  {universalAsset?.sizeFormatted || '~80 MB'} · All Android phones
                 </span>
               </div>
             </a>
@@ -183,7 +183,8 @@ export const DownloadPage: React.FC = () => {
               onClick={() => loadReleaseData(true)}
               disabled={refreshing}
               title="Check for latest release updates"
-              className="flex items-center justify-center p-4 rounded-full border transition-colors hover:bg-gray-800"
+              aria-label="Check for latest release updates"
+              className="shrink-0 flex items-center justify-center p-3.5 sm:p-4 rounded-full border transition-colors hover:bg-gray-800 cursor-pointer"
               style={{
                 borderColor: 'rgba(64, 71, 82, 0.5)',
                 backgroundColor: 'var(--color-surface-container-high)',
@@ -195,7 +196,7 @@ export const DownloadPage: React.FC = () => {
           </div>
 
           {/* Sub-meta */}
-          <div className="flex flex-wrap items-center justify-center gap-6 mt-6 text-xs text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-5 sm:mt-6 text-xs text-gray-400">
             <span className="inline-flex items-center gap-1.5">
               <MaterialIcon icon="security" className="text-sm" style={{ color: 'var(--color-tertiary)' }} />
               AGPL-3.0 Open Source
@@ -213,7 +214,7 @@ export const DownloadPage: React.FC = () => {
       </section>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center justify-center gap-2 mb-8 overflow-x-auto pb-2">
+      <div className="flex items-center sm:justify-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none px-1 -mx-1">
         {[
           { id: 'all', label: 'All APK Downloads', icon: 'apps' },
           { id: 'guide', label: 'Installation Guide', icon: 'help_outline' },
@@ -222,7 +223,7 @@ export const DownloadPage: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all"
+            className="shrink-0 whitespace-nowrap flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer"
             style={{
               backgroundColor: activeTab === tab.id ? 'var(--color-surface-container-highest)' : 'var(--color-surface-container-low)',
               color: activeTab === tab.id ? 'var(--color-on-surface)' : 'var(--color-on-surface-variant)',
@@ -293,10 +294,10 @@ export const DownloadPage: React.FC = () => {
 
           {/* Cryptographic Verification Card */}
           <div className="rounded-2xl border p-6 sm:p-8"
-               style={{
-                 backgroundColor: 'var(--color-surface-container-low)',
-                 borderColor: 'rgba(64, 71, 82, 0.3)',
-               }}>
+            style={{
+              backgroundColor: 'var(--color-surface-container-low)',
+              borderColor: 'rgba(64, 71, 82, 0.3)',
+            }}>
             <div className="flex items-center gap-3 mb-4">
               <MaterialIcon icon="verified_user" className="text-2xl" style={{ color: 'var(--color-tertiary)' }} />
               <div>
@@ -310,11 +311,11 @@ export const DownloadPage: React.FC = () => {
             </div>
 
             <div className="rounded-xl p-4 font-mono text-xs overflow-x-auto border flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                 style={{
-                   backgroundColor: 'var(--color-base-canvas)',
-                   borderColor: 'rgba(64, 71, 82, 0.4)',
-                   color: 'var(--color-primary-fixed-dim)',
-                 }}>
+              style={{
+                backgroundColor: 'var(--color-base-canvas)',
+                borderColor: 'rgba(64, 71, 82, 0.4)',
+                color: 'var(--color-primary-fixed-dim)',
+              }}>
               <span className="truncate">
                 sha256sum -c SHA256SUMS.txt
               </span>
@@ -349,11 +350,11 @@ export const DownloadPage: React.FC = () => {
           </div>
 
           {/* Open Source Transparency Banner */}
-          <div className="rounded-2xl border p-6 flex flex-col md:flex-row items-center justify-between gap-6"
-               style={{
-                 backgroundColor: 'var(--color-surface-container-lowest)',
-                 borderColor: 'rgba(64, 71, 82, 0.3)',
-               }}>
+          {/* <div className="rounded-2xl border p-6 flex flex-col md:flex-row items-center justify-between gap-6"
+            style={{
+              backgroundColor: 'var(--color-surface-container-lowest)',
+              borderColor: 'rgba(64, 71, 82, 0.3)',
+            }}>
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-xl shrink-0" style={{ backgroundColor: 'var(--color-surface-container-high)' }}>
                 <MaterialIcon icon="code" className="text-2xl" style={{ color: 'var(--color-primary)' }} />
@@ -383,17 +384,17 @@ export const DownloadPage: React.FC = () => {
               <MaterialIcon icon="open_in_new" className="text-base" />
               View Source on GitHub
             </a>
-          </div>
+          </div> */}
         </div>
       )}
 
       {/* TAB 2: INSTALLATION GUIDE */}
       {activeTab === 'guide' && (
         <div className="rounded-2xl border p-6 sm:p-10"
-             style={{
-               backgroundColor: 'var(--color-surface-container-low)',
-               borderColor: 'rgba(64, 71, 82, 0.3)',
-             }}>
+          style={{
+            backgroundColor: 'var(--color-surface-container-low)',
+            borderColor: 'rgba(64, 71, 82, 0.3)',
+          }}>
           <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-on-surface)' }}>
             How to Install Captionary APK on Android
           </h2>
@@ -429,11 +430,11 @@ export const DownloadPage: React.FC = () => {
           </div>
 
           <div className="mt-8 p-4 rounded-xl border flex items-center gap-3 text-xs"
-               style={{
-                 backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                 borderColor: 'rgba(255, 193, 7, 0.25)',
-                 color: 'var(--color-on-surface)',
-               }}>
+            style={{
+              backgroundColor: 'rgba(255, 193, 7, 0.1)',
+              borderColor: 'rgba(255, 193, 7, 0.25)',
+              color: 'var(--color-on-surface)',
+            }}>
             <MaterialIcon icon="info" className="text-lg shrink-0" style={{ color: 'var(--color-attention-yellow)' }} />
             <span>
               Google Play Protect may show a prompt saying "Unrecognized App". Tap <strong>"More Details"</strong> and then <strong>"Install anyway"</strong>.
@@ -446,10 +447,10 @@ export const DownloadPage: React.FC = () => {
       {/* TAB 3: HARDWARE & DEVICE SPECS */}
       {activeTab === 'hardware' && (
         <div className="rounded-2xl border p-6 sm:p-10"
-             style={{
-               backgroundColor: 'var(--color-surface-container-low)',
-               borderColor: 'rgba(64, 71, 82, 0.3)',
-             }}>
+          style={{
+            backgroundColor: 'var(--color-surface-container-low)',
+            borderColor: 'rgba(64, 71, 82, 0.3)',
+          }}>
           <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-on-surface)' }}>
             Hardware Specs & Memory Tiering (B11)
           </h2>
@@ -530,44 +531,44 @@ const ApkCard: React.FC<ApkCardProps> = ({
   isPrimary = false,
 }) => {
   return (
-    <div className={`relative rounded-2xl border p-6 flex flex-col justify-between transition-all duration-200 ${isPrimary ? 'ring-1' : ''}`}
-         style={{
-           backgroundColor: isPrimary ? 'var(--color-surface-container)' : 'var(--color-surface-container-low)',
-           borderColor: isPrimary ? 'rgba(33, 150, 243, 0.5)' : 'rgba(64, 71, 82, 0.3)',
-           boxShadow: isPrimary ? '0 4px 20px rgba(33, 150, 243, 0.15)' : 'none',
-         }}>
+    <div className={`relative rounded-2xl border p-5 sm:p-6 flex flex-col justify-between transition-all duration-200 ${isPrimary ? 'ring-1' : ''}`}
+      style={{
+        backgroundColor: isPrimary ? 'var(--color-surface-container)' : 'var(--color-surface-container-low)',
+        borderColor: isPrimary ? 'rgba(33, 150, 243, 0.5)' : 'rgba(64, 71, 82, 0.3)',
+        boxShadow: isPrimary ? '0 4px 20px rgba(33, 150, 243, 0.15)' : 'none',
+      }}>
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                style={{
-                  color: badgeColor,
-                  borderColor: `${badgeColor}40`,
-                  backgroundColor: `${badgeColor}15`,
-                }}>
+            style={{
+              color: badgeColor,
+              borderColor: `${badgeColor}40`,
+              backgroundColor: `${badgeColor}15`,
+            }}>
             {badge}
           </span>
           <span className="text-xs font-mono text-gray-400">{size}</span>
         </div>
 
-        <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--color-on-surface)' }}>
+        <h3 className="text-lg sm:text-xl font-bold mb-2" style={{ color: 'var(--color-on-surface)' }}>
           {title}
         </h3>
 
-        <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-on-surface-variant)' }}>
+        <p className="text-xs sm:text-sm leading-relaxed mb-6" style={{ color: 'var(--color-on-surface-variant)' }}>
           {description}
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4 pt-4 border-t"
-           style={{ borderColor: 'rgba(64, 71, 82, 0.3)' }}>
-        <span className="font-mono text-xs text-gray-400 truncate max-w-[160px] sm:max-w-[200px]" title={fileName}>
+      <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 pt-4 border-t"
+        style={{ borderColor: 'rgba(64, 71, 82, 0.3)' }}>
+        <span className="font-mono text-xs text-gray-400 truncate max-w-full xs:max-w-[160px] sm:max-w-[200px]" title={fileName}>
           {fileName}
         </span>
 
         <a
           href={downloadUrl}
           download
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105"
+          className="w-full xs:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105 active:scale-95"
           style={{
             backgroundColor: isPrimary ? 'var(--color-primary-container)' : 'var(--color-surface-container-high)',
             color: isPrimary ? 'var(--color-on-primary)' : 'var(--color-on-surface)',
@@ -592,17 +593,17 @@ interface GuideStepProps {
 const GuideStep: React.FC<GuideStepProps> = ({ step, icon, title, description }) => {
   return (
     <div className="rounded-xl border p-5 flex flex-col justify-between"
-         style={{
-           backgroundColor: 'var(--color-surface-container)',
-           borderColor: 'rgba(64, 71, 82, 0.3)',
-         }}>
+      style={{
+        backgroundColor: 'var(--color-surface-container)',
+        borderColor: 'rgba(64, 71, 82, 0.3)',
+      }}>
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm"
-               style={{
-                 backgroundColor: 'var(--color-primary-container)',
-                 color: 'var(--color-on-primary)',
-               }}>
+            style={{
+              backgroundColor: 'var(--color-primary-container)',
+              color: 'var(--color-on-primary)',
+            }}>
             {step}
           </div>
           <MaterialIcon icon={icon} className="text-xl" style={{ color: 'var(--color-on-surface-variant)' }} />
@@ -639,18 +640,18 @@ const RamTierCard: React.FC<RamTierCardProps> = ({
 }) => {
   return (
     <div className={`rounded-xl border p-6 flex flex-col justify-between ${isHighlight ? 'ring-1' : ''}`}
-         style={{
-           backgroundColor: 'var(--color-surface-container)',
-           borderColor: isHighlight ? 'rgba(33, 150, 243, 0.5)' : 'rgba(64, 71, 82, 0.3)',
-         }}>
+      style={{
+        backgroundColor: 'var(--color-surface-container)',
+        borderColor: isHighlight ? 'rgba(33, 150, 243, 0.5)' : 'rgba(64, 71, 82, 0.3)',
+      }}>
       <div>
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                style={{
-                  color: badgeColor,
-                  borderColor: `${badgeColor}40`,
-                  backgroundColor: `${badgeColor}15`,
-                }}>
+            style={{
+              color: badgeColor,
+              borderColor: `${badgeColor}40`,
+              backgroundColor: `${badgeColor}15`,
+            }}>
             {badge}
           </span>
           <MaterialIcon icon={icon} className="text-2xl" style={{ color: badgeColor }} />
