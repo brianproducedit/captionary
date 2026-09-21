@@ -16,7 +16,7 @@ export const publicConfig = {
   githubReleasesUrl: 'https://captionary.co.zw/download',
   r2PublicBaseUrl: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks',
   latestReleaseApiUrl: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev/apks/latest-release.json',
-  defaultVersion: '1.0.0',
+  defaultVersion: '1.0.1',
   minAndroidVersion: 'Android 8.0+ (API 26)',
   recommendedRam: '4 GB+ RAM',
 } as const;

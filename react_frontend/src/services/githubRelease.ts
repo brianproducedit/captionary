@@ -119,16 +119,16 @@ const HARDCODED_FALLBACK: GitHubReleaseInfo = {
   name: `Captionary v${publicConfig.defaultVersion}`,
   publishedAt: new Date().toISOString(),
   publishedFormatted: 'Latest Release',
-  htmlUrl: publicConfig.githubReleasesUrl,
+  htmlUrl: `${publicConfig.r2PublicBaseUrl}/v${publicConfig.defaultVersion}`,
   body: 'Offline-first AI Speech Captioning Studio for Android.\n- Pure on-device Whisper AI\n- Styled ASS & SRT subtitle burn-in\n- Zero cloud telemetry',
   isPrerelease: false,
   source: 'fallback',
   assets: {
     universal: {
       name: 'app-release.apk',
-      downloadUrl: `${publicConfig.githubReleasesUrl}/latest/download/app-release.apk`,
-      size: 83886080,
-      sizeFormatted: '~80 MB',
+      downloadUrl: `${publicConfig.r2PublicBaseUrl}/v${publicConfig.defaultVersion}/app-release.apk`,
+      size: 193232639,
+      sizeFormatted: formatBytes(193232639),
       downloadCount: 0,
       abi: 'universal',
       label: 'Universal APK (Recommended)',
@@ -136,9 +136,9 @@ const HARDCODED_FALLBACK: GitHubReleaseInfo = {
     },
     arm64: {
       name: 'app-arm64-v8a-release.apk',
-      downloadUrl: `${publicConfig.githubReleasesUrl}/latest/download/app-arm64-v8a-release.apk`,
-      size: 47185920,
-      sizeFormatted: '~45 MB',
+      downloadUrl: `${publicConfig.r2PublicBaseUrl}/v${publicConfig.defaultVersion}/app-arm64-v8a-release.apk`,
+      size: 63720410,
+      sizeFormatted: formatBytes(63720410),
       downloadCount: 0,
       abi: 'arm64-v8a',
       label: 'ARM64-v8a (64-bit)',
@@ -146,9 +146,9 @@ const HARDCODED_FALLBACK: GitHubReleaseInfo = {
     },
     arm32: {
       name: 'app-armeabi-v7a-release.apk',
-      downloadUrl: `${publicConfig.githubReleasesUrl}/latest/download/app-armeabi-v7a-release.apk`,
-      size: 41943040,
-      sizeFormatted: '~40 MB',
+      downloadUrl: `${publicConfig.r2PublicBaseUrl}/v${publicConfig.defaultVersion}/app-armeabi-v7a-release.apk`,
+      size: 77483094,
+      sizeFormatted: formatBytes(77483094),
       downloadCount: 0,
       abi: 'armeabi-v7a',
       label: 'ARMv7a (32-bit)',
@@ -156,9 +156,9 @@ const HARDCODED_FALLBACK: GitHubReleaseInfo = {
     },
     x86_64: {
       name: 'app-x86_64-release.apk',
-      downloadUrl: `${publicConfig.githubReleasesUrl}/latest/download/app-x86_64-release.apk`,
-      size: 50331648,
-      sizeFormatted: '~48 MB',
+      downloadUrl: `${publicConfig.r2PublicBaseUrl}/v${publicConfig.defaultVersion}/app-x86_64-release.apk`,
+      size: 71397959,
+      sizeFormatted: formatBytes(71397959),
       downloadCount: 0,
       abi: 'x86_64',
       label: 'x86_64 (Emulators/PC)',
@@ -166,7 +166,7 @@ const HARDCODED_FALLBACK: GitHubReleaseInfo = {
     },
     checksums: {
       name: 'SHA256SUMS.txt',
-      downloadUrl: `${publicConfig.githubReleasesUrl}/latest/download/SHA256SUMS.txt`,
+      downloadUrl: `${publicConfig.r2PublicBaseUrl}/v${publicConfig.defaultVersion}/SHA256SUMS.txt`,
       size: 512,
       sizeFormatted: '< 1 KB',
       downloadCount: 0,
@@ -189,17 +189,25 @@ HARDCODED_FALLBACK.assets.all = [
 export async function fetchLatestRelease(options: { forceRefresh?: boolean } = {}): Promise<GitHubReleaseInfo> {
   const { forceRefresh = false } = options;
 
-  // 1. Check client session storage cache unless forced
+  // 1. Check client session storage cache unless forced or version mismatched
   if (!forceRefresh && typeof window !== 'undefined' && window.sessionStorage) {
     try {
       const cachedRaw = window.sessionStorage.getItem(CACHE_KEY);
       if (cachedRaw) {
         const parsed = JSON.parse(cachedRaw);
-        if (parsed.timestamp && Date.now() - parsed.timestamp < CACHE_TTL_MS && parsed.data) {
+        if (
+          parsed.timestamp &&
+          Date.now() - parsed.timestamp < CACHE_TTL_MS &&
+          parsed.data &&
+          parsed.data.version === publicConfig.defaultVersion
+        ) {
           return {
             ...parsed.data,
             source: 'cache',
           };
+        } else {
+          // Stale version or expired: purge cache
+          window.sessionStorage.removeItem(CACHE_KEY);
         }
       }
     } catch {
@@ -207,11 +215,11 @@ export async function fetchLatestRelease(options: { forceRefresh?: boolean } = {
     }
   }
 
-  // 2. Query Cloudflare R2 / GitHub Releases REST API
+  // 2. Query Cloudflare R2 REST API
   try {
     const res = await fetch(publicConfig.latestReleaseApiUrl, {
       headers: {
-        Accept: 'application/json, application/vnd.github.v3+json',
+        Accept: 'application/json',
       },
     });
 
