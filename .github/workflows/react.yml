@@ -1,4 +1,4 @@
-name: React Portal
+name: Web Portal CI & Cloudflare Deployment
 
 on:
   push:

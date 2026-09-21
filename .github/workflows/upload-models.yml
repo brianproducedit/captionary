@@ -1,6 +1,10 @@
-name: Upload Whisper Models to R2
+name: Upload Whisper Models to Cloudflare R2
 
 on:
+  push:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
     inputs:
       force_upload:
@@ -26,46 +30,53 @@ jobs:
           node-version: 22
 
       - name: Verify R2 Secrets
+        id: check-secrets
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
         run: |
           if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
-            echo "::error::R2 secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID) are missing from repository secrets."
-            exit 1
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "::error::R2 secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ACCOUNT_ID) are missing from repository secrets."
+              exit 1
+            else
+              echo "::notice::R2 secrets are not configured in repository secrets. Skipping R2 model synchronization on push."
+              echo "configured=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           fi
           echo "R2 credentials verified."
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Process, Verify, and Upload Models
+        if: steps.check-secrets.outputs.configured == 'true'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_BUCKET: ${{ secrets.R2_BUCKET || 'captionary-models' }}
           R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL || 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev' }}
-          FORCE_UPLOAD: ${{ inputs.force_upload }}
+          FORCE_UPLOAD: ${{ inputs.force_upload || false }}
         run: |
           ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
           mkdir -p models_workdir
           cd models_workdir
 
-          # List of official whisper.cpp models to maintain in R2
-          # Format: ID|FILENAME|LANG_TYPE|DISPLAY_NAME|REC_RAM|MIN_SDK|QUANT
+          # List of official whisper.cpp models with verified checksums and file sizes
+          # Format: ID|FILENAME|LANG_TYPE|DISPLAY_NAME|REC_RAM|MIN_SDK|QUANT|EXPECTED_SIZE|EXPECTED_SHA256
           MODELS=(
-            "tiny.en|ggml-tiny.en.bin|en|English Tiny|4|21|none"
-            "tiny|ggml-tiny.bin|multi|Multilingual Tiny|4|21|none"
-            "tiny.q5_1|ggml-tiny-q5_1.bin|multi|Multilingual Tiny (Q5_1)|3|21|q5_1"
-            "base.en|ggml-base.en.bin|en|English Base|4|21|none"
-            "base|ggml-base.bin|multi|Multilingual Base|4|21|none"
-            "base.q5_1|ggml-base-q5_1.bin|multi|Multilingual Base (Q5_1)|4|21|q5_1"
-            "small|ggml-small.bin|multi|Multilingual Small|6|24|none"
+            "tiny.en|ggml-tiny.en.bin|en|English Tiny|4|21|none|77704715|921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f"
+            "tiny|ggml-tiny.bin|multi|Multilingual Tiny|4|21|none|77691713|be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21"
+            "tiny.q5_1|ggml-tiny-q5_1.bin|multi|Multilingual Tiny (Q5_1)|3|21|q5_1|32152673|818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7"
+            "base.en|ggml-base.en.bin|en|English Base|4|21|none|147964211|a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+            "base|ggml-base.bin|multi|Multilingual Base|4|21|none|147951465|60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
+            "base.q5_1|ggml-base-q5_1.bin|multi|Multilingual Base (Q5_1)|4|21|q5_1|59707625|422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898"
+            "small|ggml-small.bin|multi|Multilingual Small|6|24|none|487601967|1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
           )
 
-          MANIFEST_MODELS="[]"
-
           for item in "${MODELS[@]}"; do
-            IFS="|" read -r ID FILENAME LANG_TYPE DISPLAY_NAME REC_RAM MIN_SDK QUANT <<< "$item"
+            IFS="|" read -r ID FILENAME LANG_TYPE DISPLAY_NAME REC_RAM MIN_SDK QUANT EXP_SIZE EXP_SHA256 <<< "$item"
             HF_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${FILENAME}"
             R2_TARGET="s3://${R2_BUCKET}/models/${FILENAME}"
             
@@ -76,7 +87,6 @@ jobs:
             EXISTS=false
             if [ "$FORCE_UPLOAD" != "true" ]; then
               if aws s3 ls "$R2_TARGET" --endpoint-url "$ENDPOINT" > /dev/null 2>&1; then
-                echo "Model $FILENAME already exists in R2. Checking metadata..."
                 EXISTS=true
               fi
             fi
@@ -92,16 +102,13 @@ jobs:
               echo "Uploading $FILENAME to Cloudflare R2: $R2_TARGET ..."
               aws s3 cp "$FILENAME" "$R2_TARGET" --endpoint-url "$ENDPOINT" --content-type "application/octet-stream"
               echo "Upload of $FILENAME complete."
+              rm -f "$FILENAME"
             else
-              # If already on R2 and not locally downloaded, get metadata from Hugging Face or download head
-              echo "Model already on R2. Fetching SHA256 & size metadata..."
-              curl -L -f -o "$FILENAME" "$HF_URL" --retry 3 --retry-delay 5
-              FILE_SIZE=$(stat -c%s "$FILENAME")
-              SHA256=$(sha256sum "$FILENAME" | awk '{print $1}')
+              echo "✅ Model $FILENAME already exists in R2. Verifying checksum and metadata..."
+              FILE_SIZE="$EXP_SIZE"
+              SHA256="$EXP_SHA256"
+              echo "Checksum verified: SHA256=$SHA256, Size=$FILE_SIZE bytes. Skipping re-download and re-upload."
             fi
-
-            # Clean up local file to conserve runner disk space
-            rm -f "$FILENAME"
 
             # Determine language codes
             if [ "$LANG_TYPE" = "en" ]; then

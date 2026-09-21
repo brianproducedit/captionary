@@ -22,11 +22,11 @@ import 'package:captionary/data/services/whisper_transcription_service.dart';
 
 void main() {
   group('BackendMode & Provider Switching', () {
-    test('default backendModeProvider is mock', () {
+    test('default backendModeProvider is real', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(backendModeProvider), BackendMode.mock);
+      expect(container.read(backendModeProvider), BackendMode.real);
     });
 
     test('mock mode resolves mock services', () {

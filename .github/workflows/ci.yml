@@ -1,4 +1,4 @@
-name: CI
+name: Flutter CI & Code Analysis
 
 on:
   push:
@@ -65,29 +65,3 @@ jobs:
         working-directory: .
         shell: pwsh
         run: ./scripts/check-secrets.ps1
-
-  react:
-    name: React checks
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: react_frontend
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: react_frontend/package-lock.json
-
-      - name: Install React dependencies
-        run: npm ci
-
-      - name: Build React portal
-        run: npm run build
-
-      - name: Lint React portal
-        run: npm run lint

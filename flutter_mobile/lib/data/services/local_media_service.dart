@@ -110,7 +110,12 @@ class LocalMediaService implements MediaService {
     String? cachedPath;
     try {
       cachedPath = await _importService.copyToCache(originalPath);
-      final metadata = await _metadataService.extractMetadata(cachedPath);
+      Map<String, dynamic>? metadata;
+      try {
+        metadata = await _metadataService.extractMetadata(cachedPath);
+      } catch (e) {
+        debugPrint('[LocalMediaService] Metadata extraction failed: $e');
+      }
 
       final isAudio = MediaItem(
         id: '',
@@ -125,10 +130,14 @@ class LocalMediaService implements MediaService {
 
       String? thumbnailPath;
       if (!isAudio) {
-        if (_customThumbnailGenerator != null) {
-          thumbnailPath = await _customThumbnailGenerator(cachedPath);
-        } else {
-          thumbnailPath = await _thumbnailService.generateThumbnail(cachedPath);
+        try {
+          if (_customThumbnailGenerator != null) {
+            thumbnailPath = await _customThumbnailGenerator(cachedPath);
+          } else {
+            thumbnailPath = await _thumbnailService.generateThumbnail(cachedPath);
+          }
+        } catch (e) {
+          debugPrint('[LocalMediaService] Thumbnail extraction failed: $e');
         }
       }
 

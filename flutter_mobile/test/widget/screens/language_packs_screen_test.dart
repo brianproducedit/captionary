@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:captionary/providers/backend_mode_provider.dart';
 import 'package:captionary/screens/language_packs_screen.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 void main() {
   Widget buildTestWidget() {
-    return const ProviderScope(child: MaterialApp(home: LanguagePacksScreen()));
+    return ProviderScope(
+      overrides: [
+        backendModeProvider.overrideWithValue(BackendMode.mock),
+      ],
+      child: const MaterialApp(home: LanguagePacksScreen()),
+    );
   }
 
   testWidgets('LanguagePacksScreen renders and filters properly', (

@@ -15,13 +15,16 @@ void main() async {
   MediaKit.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
-  await NotificationService.instance.initialize();
-
-  final launchDetails = await NotificationService.instance
-      .getNotificationAppLaunchDetails();
   String? initialRoute;
-  if (launchDetails?.didNotificationLaunchApp ?? false) {
-    initialRoute = launchDetails?.notificationResponse?.payload;
+  try {
+    await NotificationService.instance.initialize();
+    final launchDetails = await NotificationService.instance
+        .getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      initialRoute = launchDetails?.notificationResponse?.payload;
+    }
+  } catch (e, stack) {
+    debugPrint('[Main] NotificationService initialization failed: $e\n$stack');
   }
 
   var packageInfo = AppPackageInfo.fallback;

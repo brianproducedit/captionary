@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../core/media_library_query.dart';
 import '../data/models/media_item.dart';
+import '../data/services/file_import_service.dart';
 import '../providers/media_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
@@ -55,6 +57,21 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
             SnackBar(content: Text('Imported "${item.fileName}" successfully')),
           );
         }
+      }
+    } on MediaPermissionException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            duration: const Duration(seconds: 5),
+            action: e.isPermanentlyDenied
+                ? SnackBarAction(
+                    label: 'Settings',
+                    onPressed: () => openAppSettings(),
+                  )
+                : null,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

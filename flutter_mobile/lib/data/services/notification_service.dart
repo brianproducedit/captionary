@@ -25,10 +25,11 @@ class NotificationService {
   NotificationService({FlutterLocalNotificationsPlugin? plugin})
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
-  static NotificationService _instance = NotificationService();
+  static NotificationService? _instance;
 
   /// Singleton instance.
-  static NotificationService get instance => _instance;
+  static NotificationService get instance =>
+      _instance ??= NotificationService();
 
   @visibleForTesting
   static set instance(NotificationService service) => _instance = service;
@@ -85,60 +86,63 @@ class NotificationService {
     }
   }
 
-  /// Initialize the notification plugin.
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _ensureTimeZonesInitialized();
+    try {
+      _ensureTimeZonesInitialized();
 
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/launcher_icon',
-    );
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
-
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _plugin.initialize(
-      settings: settings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        onNotificationTap?.call(response.payload);
-      },
-    );
-
-    // Create Android notification channels
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    if (androidPlugin != null) {
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _donateChannelId,
-          _donateChannelName,
-          description: _donateChannelDesc,
-          importance: Importance.defaultImportance,
-        ),
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/launcher_icon',
       );
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _exportChannelId,
-          _exportChannelName,
-          description: _exportChannelDesc,
-          importance: Importance.low,
-          showBadge: false,
-        ),
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
       );
+
+      const settings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+
+      await _plugin.initialize(
+        settings: settings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          onNotificationTap?.call(response.payload);
+        },
+      );
+
+      // Create Android notification channels
+      final androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      if (androidPlugin != null) {
+        await androidPlugin.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _donateChannelId,
+            _donateChannelName,
+            description: _donateChannelDesc,
+            importance: Importance.defaultImportance,
+          ),
+        );
+        await androidPlugin.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _exportChannelId,
+            _exportChannelName,
+            description: _exportChannelDesc,
+            importance: Importance.low,
+            showBadge: false,
+          ),
+        );
+      }
+
+      _isInitialized = true;
+      debugPrint('[NotificationService] Initialized successfully.');
+    } catch (e, stack) {
+      debugPrint('[NotificationService] Initialization error: $e\n$stack');
     }
-
-    _isInitialized = true;
-    debugPrint('[NotificationService] Initialized.');
   }
 
   /// Request notification permission (Android 13+ / iOS).
