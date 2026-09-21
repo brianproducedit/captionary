@@ -723,9 +723,40 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             ),
             // Subtitles preview
             Positioned.fill(
-              child: SubtitleOverlay(
-                segment: ref.watch(activeSubtitleProvider),
-                style: style,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SubtitleOverlay(
+                    segment: ref.watch(activeSubtitleProvider),
+                    style: style,
+                    onPositionDelta: (deltaPixels) {
+                      final canvasHeight = constraints.maxHeight;
+                      if (canvasHeight > 0) {
+                        final currentY =
+                            style.position == SubtitlePosition.bottom
+                            ? 0.90
+                            : style.position == SubtitlePosition.top
+                            ? -0.90
+                            : style.position == SubtitlePosition.center
+                            ? 0.0
+                            : style.customY;
+                        final deltaNormalized =
+                            (deltaPixels * 2.0) / canvasHeight;
+                        final newY = (currentY + deltaNormalized).clamp(
+                          -0.90,
+                          0.95,
+                        );
+                        ref
+                            .read(captionStyleProvider.notifier)
+                            .updateStyle(
+                              style.copyWith(
+                                position: SubtitlePosition.custom,
+                                customY: newY,
+                              ),
+                            );
+                      }
+                    },
+                  );
+                },
               ),
             ),
             // Play button overlay

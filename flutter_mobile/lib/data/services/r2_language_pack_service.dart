@@ -138,11 +138,133 @@ class R2LanguagePackService implements LanguagePackService {
     }
   }
 
+  static final CatalogManifest _defaultEmbeddedManifest = CatalogManifest(
+    schemaVersion: 1,
+    catalogVersion: 2,
+    updatedAt: DateTime.parse('2026-09-21T00:00:00Z'),
+    baseUrl: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev',
+    defaultLanguage: 'en',
+    models: [
+      const CatalogModel(
+        id: 'tiny.en',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-tiny.en.bin',
+        languageCodes: ['en'],
+        displayName: 'English Tiny',
+        sizeBytes: 77704715,
+        sha256:
+            '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 4,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
+      ),
+      const CatalogModel(
+        id: 'base',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-base.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'sw',
+          'af',
+          'nd',
+          'st',
+          'nso',
+          'tn',
+          'to',
+          'xh',
+          'yo',
+          'en',
+          'fr',
+          'es',
+          'pt',
+          'de',
+          'it',
+          'ru',
+          'nl',
+          'ar',
+          'hi',
+          'ja',
+          'zh',
+          'ko',
+          'tr',
+        ],
+        displayName: 'Multilingual Base (High Accuracy)',
+        sizeBytes: 147964211,
+        sha256:
+            '60ed5bc3dd14eea856493d334349b405782ddcaf00287874b079a3249e5a4d84',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 4,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+      ),
+      const CatalogModel(
+        id: 'tiny',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-tiny.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'sw',
+          'af',
+          'nd',
+          'st',
+          'nso',
+          'tn',
+          'to',
+          'xh',
+          'yo',
+          'en',
+          'fr',
+          'es',
+          'pt',
+          'de',
+          'it',
+          'ru',
+          'nl',
+          'ar',
+          'hi',
+          'ja',
+          'zh',
+          'ko',
+          'tr',
+        ],
+        displayName: 'Multilingual Tiny',
+        sizeBytes: 77704715,
+        sha256:
+            'bd577a113a864445d4c299885e8aa977798604f7922c7477048034da473fe205',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 3,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+      ),
+    ],
+  );
+
   @override
   Future<List<LanguagePack>> getAvailableLanguages() async {
-    final catalog = await fetchManifest();
+    CatalogManifest catalog;
+    try {
+      catalog = await fetchManifest();
+    } catch (_) {
+      catalog = _defaultEmbeddedManifest;
+      _cachedManifest = catalog;
+      _isCatalogStale = true;
+    }
+
     final dir = await modelsDirectory;
     final List<LanguagePack> packs = [];
+    final Set<String> addedCodes = {};
 
     int priority = 1;
     for (final model in catalog.models) {
@@ -180,14 +302,35 @@ class R2LanguagePackService implements LanguagePackService {
         status = LanguagePackStatus.notDownloaded;
       }
 
-      packs.add(
-        model.toLanguagePack(
-          status: status,
-          downloadProgress: progress,
-          bytesDownloaded: bytesDownloaded,
-          priority: priority++,
-        ),
-      );
+      if (model.languageCodes.length == 1) {
+        final code = model.languageCodes.first;
+        if (!addedCodes.contains(code)) {
+          addedCodes.add(code);
+          packs.add(
+            model.toLanguagePack(
+              status: status,
+              downloadProgress: progress,
+              bytesDownloaded: bytesDownloaded,
+              priority: priority++,
+            ),
+          );
+        }
+      } else {
+        for (final code in model.languageCodes) {
+          if (!addedCodes.contains(code)) {
+            addedCodes.add(code);
+            packs.add(
+              model.toLanguagePackForLanguage(
+                code,
+                status: status,
+                downloadProgress: progress,
+                bytesDownloaded: bytesDownloaded,
+                priority: priority++,
+              ),
+            );
+          }
+        }
+      }
     }
 
     return packs;

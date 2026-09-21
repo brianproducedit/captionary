@@ -146,6 +146,116 @@ class CatalogModel {
     );
   }
 
+  /// Converts this catalog entry into a [LanguagePack] for a specific language code.
+  LanguagePack toLanguagePackForLanguage(
+    String langCode, {
+    required LanguagePackStatus status,
+    double downloadProgress = 0.0,
+    int? bytesDownloaded,
+    double? downloadSpeedMbps,
+    int priority = 1,
+  }) {
+    final englishName = languageCodes.length == 1
+        ? displayName
+        : _resolveEnglishName(langCode, displayName);
+    final nativeName = _resolveNativeName(langCode, displayName);
+    return LanguagePack(
+      code: langCode,
+      name: englishName,
+      nativeName: nativeName,
+      region: _resolveRegion(langCode),
+      modelFile: p.basename(file),
+      sizeBytes: sizeBytes,
+      sha256: sha256,
+      accuracy: _resolveAccuracy(id),
+      engine: engine,
+      isBundled: bundled,
+      priority: priority,
+      status: status,
+      downloadProgress: downloadProgress,
+      downloadSpeedMbps: downloadSpeedMbps,
+      bytesDownloaded: bytesDownloaded,
+      recommendedRamGb: recommendedRamGb,
+    );
+  }
+
+  /// Generates a list of [LanguagePack] entries for all languages supported by this model.
+  List<LanguagePack> toLanguagePacks({
+    required LanguagePackStatus status,
+    double downloadProgress = 0.0,
+    int? bytesDownloaded,
+    double? downloadSpeedMbps,
+    int startPriority = 1,
+  }) {
+    return languageCodes.asMap().entries.map((entry) {
+      return toLanguagePackForLanguage(
+        entry.value,
+        status: status,
+        downloadProgress: downloadProgress,
+        bytesDownloaded: bytesDownloaded,
+        downloadSpeedMbps: downloadSpeedMbps,
+        priority: startPriority + entry.key,
+      );
+    }).toList();
+  }
+
+  static String _resolveEnglishName(String code, String defaultName) {
+    switch (code) {
+      case 'en':
+        return 'English';
+      case 'sn':
+        return 'Shona';
+      case 'zu':
+        return 'Zulu';
+      case 'nso':
+        return 'Sepedi';
+      case 'st':
+        return 'Sesotho';
+      case 'tn':
+        return 'Setswana';
+      case 'to':
+        return 'Tonga';
+      case 'sw':
+        return 'Swahili';
+      case 'yo':
+        return 'Yoruba';
+      case 'af':
+        return 'Afrikaans';
+      case 'nd':
+        return 'Ndebele';
+      case 'xh':
+        return 'Xhosa';
+      case 'fr':
+        return 'French';
+      case 'es':
+        return 'Spanish';
+      case 'pt':
+        return 'Portuguese';
+      case 'de':
+        return 'German';
+      case 'it':
+        return 'Italian';
+      case 'ru':
+        return 'Russian';
+      case 'nl':
+        return 'Dutch';
+      case 'ar':
+        return 'Arabic';
+      case 'hi':
+        return 'Hindi';
+      case 'ja':
+        return 'Japanese';
+      case 'zh':
+        return 'Chinese';
+      case 'ko':
+        return 'Korean';
+      case 'tr':
+        return 'Turkish';
+      default:
+        return defaultName;
+    }
+  }
+
   static String _resolveNativeName(String code, String defaultName) {
     switch (code) {
       case 'en':
@@ -156,8 +266,8 @@ class CatalogModel {
         return 'isiZulu';
       case 'nso':
         return 'Sesotho sa Leboa';
-      case 'fr':
-        return 'Français';
+      case 'st':
+        return 'Sesotho';
       case 'tn':
         return 'Setswana';
       case 'to':
@@ -168,10 +278,36 @@ class CatalogModel {
         return 'Èdè Yorùbá';
       case 'af':
         return 'Afrikaans';
-      case 'pt':
-        return 'Português';
+      case 'nd':
+        return 'isiNdebele';
+      case 'xh':
+        return 'isiXhosa';
+      case 'fr':
+        return 'Français';
       case 'es':
         return 'Español';
+      case 'pt':
+        return 'Português';
+      case 'de':
+        return 'Deutsch';
+      case 'it':
+        return 'Italiano';
+      case 'ru':
+        return 'Русский';
+      case 'nl':
+        return 'Nederlands';
+      case 'ar':
+        return 'العربية';
+      case 'hi':
+        return 'हिन्दी';
+      case 'ja':
+        return '日本語';
+      case 'zh':
+        return '中文';
+      case 'ko':
+        return '한국어';
+      case 'tr':
+        return 'Türkçe';
       default:
         return defaultName;
     }
@@ -182,26 +318,33 @@ class CatalogModel {
       case 'en':
         return 'Global';
       case 'sn':
-        return 'Zimbabwe';
       case 'zu':
-        return 'South Africa';
       case 'nso':
-        return 'South Africa';
-      case 'fr':
-        return 'Global';
       case 'tn':
-        return 'Southern Africa';
       case 'to':
-        return 'Zambia & Zimbabwe';
       case 'sw':
-        return 'East Africa';
       case 'yo':
-        return 'West Africa';
       case 'af':
-        return 'Southern Africa';
-      case 'pt':
+      case 'nd':
+      case 'st':
+      case 'xh':
+        return 'Africa';
+      case 'fr':
+      case 'de':
+      case 'it':
+      case 'ru':
+      case 'nl':
+        return 'Europe';
       case 'es':
-        return 'Global';
+      case 'pt':
+        return 'Americas';
+      case 'ar':
+      case 'hi':
+      case 'ja':
+      case 'zh':
+      case 'ko':
+      case 'tr':
+        return 'Asia';
       default:
         return 'General';
     }

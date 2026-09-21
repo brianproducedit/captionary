@@ -6,6 +6,7 @@ import 'package:captionary/providers/caption_style_provider.dart';
 import 'package:captionary/theme/app_theme.dart';
 import 'package:captionary/widgets/caption_style_card.dart';
 import 'package:captionary/widgets/stylization_sheet.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 void main() {
   Future<void> pumpDarkSheet(WidgetTester tester) async {
@@ -86,6 +87,11 @@ void main() {
     await tester.tap(find.text('Top'));
     await tester.pump();
     expect(readStyle(tester).position, SubtitlePosition.top);
+
+    await tester.tap(find.text('Custom'));
+    await tester.pump();
+    expect(readStyle(tester).position, SubtitlePosition.custom);
+    expect(find.byIcon(Symbols.vertical_distribute), findsOneWidget);
   });
 
   testWidgets('Animation tab sets None and records intensity as preview-only', (

@@ -21,11 +21,15 @@ class SubtitleOverlay extends StatelessWidget {
   /// is highlighted.
   final int? activeWordIndex;
 
+  /// Optional callback invoked when dragging vertically on the subtitle box.
+  final ValueChanged<double>? onPositionDelta;
+
   const SubtitleOverlay({
     super.key,
     required this.segment,
     required this.style,
     this.activeWordIndex,
+    this.onPositionDelta,
   });
 
   @override
@@ -37,11 +41,15 @@ class SubtitleOverlay extends StatelessWidget {
         case SubtitlePosition.center:
           return Alignment.center;
         case SubtitlePosition.bottom:
-          return Alignment.bottomCenter;
+          return const Alignment(0, 0.90);
         case SubtitlePosition.custom:
           return Alignment(0, style.customY);
       }
     }
+
+    final double topPad = style.position == SubtitlePosition.top ? 16.0 : 6.0;
+    final double bottomPad =
+        style.position == SubtitlePosition.bottom ? 10.0 : 6.0;
 
     return AnimatedOpacity(
       opacity: segment != null ? 1.0 : 0.0,
@@ -51,11 +59,20 @@ class SubtitleOverlay extends StatelessWidget {
           ? Align(
               alignment: getAlignment(),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 24.0,
-                  horizontal: 16.0,
+                padding: EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  top: topPad,
+                  bottom: bottomPad,
                 ),
-                child: _buildOverlay(context),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragUpdate: onPositionDelta != null
+                      ? (details) =>
+                          onPositionDelta!(details.primaryDelta ?? 0.0)
+                      : null,
+                  child: _buildOverlay(context),
+                ),
               ),
             )
           : const SizedBox.shrink(),

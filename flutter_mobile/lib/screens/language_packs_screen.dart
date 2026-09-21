@@ -333,8 +333,33 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
     return asyncLangs.when(
       data: (langs) {
         final filteredLangs = langs.where((lang) {
-          return lang.name.toLowerCase().contains(_searchQuery) ||
-              lang.nativeName.toLowerCase().contains(_searchQuery);
+          final matchesSearch = _searchQuery.isEmpty ||
+              lang.name.toLowerCase().contains(_searchQuery) ||
+              lang.nativeName.toLowerCase().contains(_searchQuery) ||
+              lang.code.toLowerCase().contains(_searchQuery);
+
+          final matchesRegion = _activeRegion == 'All' ||
+              lang.region.toLowerCase().contains(_activeRegion.toLowerCase()) ||
+              (_activeRegion == 'Americas' &&
+                  (lang.code == 'es' || lang.code == 'pt' || lang.code == 'en')) ||
+              (_activeRegion == 'Europe' &&
+                  (lang.code == 'en' ||
+                      lang.code == 'fr' ||
+                      lang.code == 'es' ||
+                      lang.code == 'pt' ||
+                      lang.code == 'de' ||
+                      lang.code == 'it' ||
+                      lang.code == 'ru' ||
+                      lang.code == 'nl')) ||
+              (_activeRegion == 'Asia' &&
+                  (lang.code == 'ar' ||
+                      lang.code == 'hi' ||
+                      lang.code == 'ja' ||
+                      lang.code == 'zh' ||
+                      lang.code == 'ko' ||
+                      lang.code == 'tr'));
+
+          return matchesSearch && matchesRegion;
         }).toList();
 
         if (filteredLangs.isEmpty) {
@@ -380,7 +405,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                 onTap: () {
                   ref
                       .read(availableLanguagesProvider.notifier)
-                      .simulateDownload(lang.code);
+                      .startDownload(lang.code);
                 },
               );
             }
@@ -422,7 +447,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                     onPressed: () {
                       ref
                           .read(availableLanguagesProvider.notifier)
-                          .simulateDelete(lang.code);
+                          .deleteLanguagePack(lang.code);
                     },
                   ),
                   const SizedBox(width: 8),
@@ -450,7 +475,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
                           if (isPaused) {
                             ref
                                 .read(availableLanguagesProvider.notifier)
-                                .simulateDownload(lang.code);
+                                .startDownload(lang.code);
                           } else {
                             ref
                                 .read(availableLanguagesProvider.notifier)
@@ -588,7 +613,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen> {
     );
 
     if (result == true && mounted) {
-      ref.read(availableLanguagesProvider.notifier).simulateDelete(lang.code);
+      ref.read(availableLanguagesProvider.notifier).deleteLanguagePack(lang.code);
     }
   }
 

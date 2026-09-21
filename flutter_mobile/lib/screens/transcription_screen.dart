@@ -4,7 +4,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_typography.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_pill_button.dart';
 import '../providers/transcription_provider.dart';
@@ -125,19 +124,6 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen>
           minHeight: 6,
         ),
         const SizedBox(height: 32),
-        if (state.status == TranscriptionStatus.transcribing)
-          TextButton(
-            onPressed: () {
-              ref.read(transcriptionProvider.notifier).simulateError();
-            },
-            child: Text(
-              'Simulate Error',
-              style: AppTypography.captionCode.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ),
-        const SizedBox(height: 16),
         TextButton(
           onPressed: () {
             ref.read(transcriptionProvider.notifier).abortTranscription();

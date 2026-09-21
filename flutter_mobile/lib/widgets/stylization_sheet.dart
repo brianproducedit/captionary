@@ -200,19 +200,19 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
             children: [
               IconButton(
                 tooltip: 'Decrease font size',
-                onPressed: currentStyle.fontSize <= 14
+                onPressed: currentStyle.fontSize <= 7
                     ? null
                     : () => _update(
                         currentStyle.copyWith(
-                          fontSize: (currentStyle.fontSize - 2).clamp(14, 48),
+                          fontSize: (currentStyle.fontSize - 2).clamp(7, 48),
                         ),
                       ),
                 icon: const Icon(Symbols.remove),
               ),
               Expanded(
                 child: Slider(
-                  value: currentStyle.fontSize.clamp(14, 48),
-                  min: 14,
+                  value: currentStyle.fontSize.clamp(7, 48),
+                  min: 7,
                   max: 48,
                   label: '${currentStyle.fontSize.round()} pt',
                   activeColor: AppColors.primary,
@@ -228,7 +228,7 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                     ? null
                     : () => _update(
                         currentStyle.copyWith(
-                          fontSize: (currentStyle.fontSize + 2).clamp(2, 32),
+                          fontSize: (currentStyle.fontSize + 2).clamp(7, 48),
                         ),
                       ),
                 icon: const Icon(Symbols.add),
@@ -339,8 +339,55 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
                 Symbols.vertical_align_bottom,
                 'Bottom',
               ),
+              const SizedBox(width: 8),
+              _buildPositionButton(
+                currentStyle,
+                SubtitlePosition.custom,
+                Symbols.pan_tool_alt,
+                'Custom',
+              ),
             ],
           ),
+          if (currentStyle.position == SubtitlePosition.custom) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(
+                  Symbols.vertical_distribute,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Slider(
+                    value: currentStyle.customY.clamp(-0.9, 0.95),
+                    min: -0.9,
+                    max: 0.95,
+                    divisions: 37,
+                    label: '${((currentStyle.customY + 1.0) * 50).round()}%',
+                    activeColor: AppColors.primary,
+                    inactiveColor: AppColors.surfaceContainerHigh,
+                    onChanged: (val) {
+                      _update(currentStyle.copyWith(customY: val));
+                    },
+                  ),
+                ),
+                Text(
+                  '${((currentStyle.customY + 1.0) * 50).round()}%',
+                  style: AppTypography.captionCode.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              'Tip: You can also drag the caption directly on the video screen.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );

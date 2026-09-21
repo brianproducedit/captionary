@@ -176,15 +176,6 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   void retryTranscription(String videoPath) {
     startTranscription(videoPath);
   }
-
-  void simulateError() {
-    _activePipeline?.cancel();
-    _activePipeline = null;
-    state = state.copyWith(
-      status: TranscriptionStatus.error,
-      errorMessage: "Simulated transcription engine failure.",
-    );
-  }
 }
 
 final transcriptionProvider =

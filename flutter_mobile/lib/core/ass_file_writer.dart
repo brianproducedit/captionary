@@ -155,7 +155,9 @@ class AssFileWriter {
 
     final int marginL = (playResX * 0.05).round().clamp(20, 100);
     final int marginR = marginL;
-    final int marginV = (playResY * 0.05).round().clamp(30, 150);
+    final int marginV = style.position == SubtitlePosition.bottom
+        ? (playResY * 0.035).round().clamp(20, 80)
+        : (playResY * 0.05).round().clamp(30, 150);
 
     // Style line
     buffer.writeln(
@@ -208,7 +210,17 @@ class AssFileWriter {
       final text = escapeText(seg.text.trim());
       if (text.isEmpty) continue;
 
-      buffer.writeln('Dialogue: 0,$startStr,$endStr,Default,,0,0,0,,$text');
+      if (style.position == SubtitlePosition.custom) {
+        final posX = (playResX / 2.0).round();
+        final posY = ((playResY * (style.customY + 1.0)) / 2.0)
+            .round()
+            .clamp(40, playResY - 40);
+        buffer.writeln(
+          'Dialogue: 0,$startStr,$endStr,Default,,0,0,0,,{\\pos($posX,$posY)}$text',
+        );
+      } else {
+        buffer.writeln('Dialogue: 0,$startStr,$endStr,Default,,0,0,0,,$text');
+      }
     }
 
     return buffer.toString();
