@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:captionary/data/models/subtitle_segment.dart';
+import 'package:captionary/providers/subtitle_provider.dart';
 import 'package:captionary/screens/studio_screen.dart';
 
 void main() {
-  Widget buildTestWidget() {
-    return const ProviderScope(child: MaterialApp(home: StudioScreen()));
+  Widget buildTestWidget({List<SubtitleSegment>? initialSubtitles}) {
+    return ProviderScope(
+      overrides: [
+        if (initialSubtitles != null)
+          subtitleProvider.overrideWith(
+            (ref) => SubtitleNotifier(initialSubtitles),
+          ),
+      ],
+      child: const MaterialApp(home: StudioScreen()),
+    );
   }
 
   testWidgets('Style button opens the stylization sheet with equal presets', (
@@ -32,10 +42,20 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(buildTestWidget());
+    final segments = [
+      SubtitleSegment(
+        index: 1,
+        startTime: Duration.zero,
+        endTime: const Duration(seconds: 3),
+        text: 'Studio test caption',
+        isSelected: false,
+      ),
+    ];
+
+    await tester.pumpWidget(buildTestWidget(initialSubtitles: segments));
     await tester.pump();
 
-    expect(find.text('Mhoroi mose, ndinofara kuva pano'), findsWidgets);
+    expect(find.text('Studio test caption'), findsWidgets);
   });
 
   testWidgets('Export captions opens the format sheet', (tester) async {

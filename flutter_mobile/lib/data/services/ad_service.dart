@@ -34,22 +34,33 @@ class AdService {
 
   /// The active Banner Ad Unit ID.
   String get bannerAdUnitId {
-    if (_configuredBannerId.isNotEmpty) {
-      return _configuredBannerId;
+    // In debug mode, Google AdMob strictly requires using sample/test ad units.
+    // Serving live ads on test devices can trigger Error 2 (Network/Inventory) or account suspension.
+    if (kDebugMode || _configuredBannerId.isEmpty) {
+      if (Platform.isIOS) {
+        return defaultIosTestBannerId;
+      }
+      return defaultAndroidTestBannerId;
     }
-    if (Platform.isIOS) {
-      return defaultIosTestBannerId;
-    }
-    return defaultAndroidTestBannerId;
+    return _configuredBannerId;
   }
 
   /// Initialize the Google Mobile Ads SDK safely.
-  Future<void> initialize() async {
+  Future<void> initialize({List<String>? testDeviceIds}) async {
     if (!isSupportedPlatform || _initialized) return;
     try {
       await MobileAds.instance.initialize();
+      final devices = [
+        '1E36DB6BB99F0D49096AB3D3150BBB24',
+        ...?testDeviceIds,
+      ];
+      await MobileAds.instance.updateRequestConfiguration(
+        RequestConfiguration(testDeviceIds: devices),
+      );
       _initialized = true;
-      debugPrint('[AdService] Google Mobile Ads SDK initialized successfully.');
+      debugPrint(
+        '[AdService] Google Mobile Ads SDK initialized successfully with test devices: $devices',
+      );
     } catch (e) {
       debugPrint('[AdService] MobileAds initialize failed: $e');
     }
@@ -60,23 +71,41 @@ class AdService {
   BannerAd? createBannerAd({
     required void Function(BannerAd ad) onAdLoaded,
     required void Function(BannerAd ad, LoadAdError error) onAdFailedToLoad,
+    String? customAdUnitId,
   }) {
     if (!isSupportedPlatform) return null;
 
-    final bannerAd = BannerAd(
-      adUnitId: bannerAdUnitId,
+    final unitId = customAdUnitId ?? bannerAdUnitId;
+    final testFallbackUnitId =
+        Platform.isIOS ? defaultIosTestBannerId : defaultAndroidTestBannerId;
+
+    BannerAd? bannerAd;
+    bannerAd = BannerAd(
+      adUnitId: unitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          debugPrint('[AdService] BannerAd loaded.');
+          debugPrint('[AdService] BannerAd loaded successfully for unit $unitId.');
           onAdLoaded(ad as BannerAd);
         },
         onAdFailedToLoad: (ad, error) {
           debugPrint(
-            '[AdService] BannerAd failed to load: ${error.message} (code ${error.code})',
+            '[AdService] BannerAd ($unitId) failed to load: ${error.message} (code ${error.code})',
           );
           ad.dispose();
+          // If custom live banner failed and we aren't already trying the test banner, fallback to test banner
+          if (unitId != testFallbackUnitId) {
+            debugPrint(
+              '[AdService] Retrying with Google Test Banner unit: $testFallbackUnitId',
+            );
+            createBannerAd(
+              onAdLoaded: onAdLoaded,
+              onAdFailedToLoad: onAdFailedToLoad,
+              customAdUnitId: testFallbackUnitId,
+            );
+            return;
+          }
           onAdFailedToLoad(ad as BannerAd, error);
         },
       ),

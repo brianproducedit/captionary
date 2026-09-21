@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:captionary/data/models/subtitle_segment.dart';
 import 'package:captionary/core/waveform_data.dart';
 import 'package:captionary/providers/player_provider.dart';
 import 'package:captionary/providers/subtitle_provider.dart';
@@ -9,6 +10,37 @@ import 'package:captionary/widgets/caption_timeline.dart';
 import 'package:captionary/widgets/draggable_timeline_chip.dart';
 
 void main() {
+  final testSegments = [
+    SubtitleSegment(
+      index: 1,
+      startTime: Duration.zero,
+      endTime: const Duration(seconds: 2),
+      text: 'Chip 1 text',
+      isSelected: false,
+    ),
+    SubtitleSegment(
+      index: 2,
+      startTime: const Duration(seconds: 2, milliseconds: 100),
+      endTime: const Duration(seconds: 4),
+      text: 'Chip 2 text',
+      isSelected: false,
+    ),
+    SubtitleSegment(
+      index: 3,
+      startTime: const Duration(seconds: 4, milliseconds: 100),
+      endTime: const Duration(seconds: 6),
+      text: 'Chip 3 text',
+      isSelected: false,
+    ),
+    SubtitleSegment(
+      index: 4,
+      startTime: const Duration(seconds: 6, milliseconds: 100),
+      endTime: const Duration(seconds: 8),
+      text: 'Chip 4 text',
+      isSelected: false,
+    ),
+  ];
+
   Future<void> pumpTimeline(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1080, 1800);
     tester.view.devicePixelRatio = 1.0;
@@ -16,6 +48,11 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [
+          subtitleProvider.overrideWith(
+            (ref) => SubtitleNotifier(testSegments),
+          ),
+        ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
           home: const Scaffold(
@@ -23,7 +60,8 @@ void main() {
               child: CaptionTimeline(
                 waveform: WaveformData(
                   state: WaveformLoadState.noAudio,
-                  message: 'No audio waveform yet. Playhead and captions still follow time.',
+                  message:
+                      'No audio waveform yet. Playhead and captions still follow time.',
                 ),
               ),
             ),

@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 
+import '../core/constants/caption_presets.dart';
 import '../data/models/caption_style.dart';
-import '../data/mock/seed_data.dart';
 
 class CaptionStyleNotifier extends StateNotifier<CaptionStyle> {
-  CaptionStyleNotifier() : super(SeedData.captionStyles.first);
+  CaptionStyleNotifier() : super(CaptionPresets.defaultStyles.first);
 
   void setStyle(CaptionStyle style) {
     state = style;

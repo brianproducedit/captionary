@@ -31,12 +31,15 @@ class DraggableTimelineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final minWidth = isSelected ? 40.0 : 28.0;
+    final effectiveWidth = width < minWidth ? minWidth : width;
+
     return GestureDetector(
       onTap: onTap,
       onHorizontalDragStart: (_) => onDragStart?.call(),
       onHorizontalDragUpdate: (details) => onMoveDx(details.delta.dx),
       child: Container(
-        width: width < 28 ? 28 : width,
+        width: effectiveWidth,
         height: 48,
         decoration: BoxDecoration(
           color: isActive
@@ -51,36 +54,39 @@ class DraggableTimelineChip extends StatelessWidget {
           ),
           boxShadow: isActive ? [AppShadows.glowPrimary] : [],
         ),
-        child: Row(
-          children: [
-            if (isSelected && onTrimStartDx != null)
-              _TrimHandle(
-                semanticLabel: 'Trim start',
-                onDragStart: onDragStart,
-                onDragDx: onTrimStartDx!,
-              ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  segment.text,
-                  style: AppTypography.bodySm.copyWith(
-                    color: (isActive || isSelected)
-                        ? AppColors.onPrimary
-                        : AppColors.onSurfaceVariant,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Row(
+            children: [
+              if (isSelected && onTrimStartDx != null)
+                _TrimHandle(
+                  semanticLabel: 'Trim start',
+                  onDragStart: onDragStart,
+                  onDragDx: onTrimStartDx!,
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    segment.text,
+                    style: AppTypography.bodySm.copyWith(
+                      color: (isActive || isSelected)
+                          ? AppColors.onPrimary
+                          : AppColors.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
                   ),
-                  overflow: TextOverflow.fade,
-                  softWrap: false,
                 ),
               ),
-            ),
-            if (isSelected && onTrimEndDx != null)
-              _TrimHandle(
-                semanticLabel: 'Trim end',
-                onDragStart: onDragStart,
-                onDragDx: onTrimEndDx!,
-              ),
-          ],
+              if (isSelected && onTrimEndDx != null)
+                _TrimHandle(
+                  semanticLabel: 'Trim end',
+                  onDragStart: onDragStart,
+                  onDragDx: onTrimEndDx!,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -108,7 +114,7 @@ class _TrimHandle extends StatelessWidget {
         label: semanticLabel,
         button: true,
         child: Container(
-          width: 14,
+          width: 12,
           color: AppColors.baseCanvas.withValues(alpha: 0.25),
           child: const Center(
             child: Icon(Icons.drag_handle, size: 12, color: AppColors.allWhite),

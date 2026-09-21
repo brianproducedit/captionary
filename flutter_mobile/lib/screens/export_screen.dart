@@ -684,8 +684,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
           label: 'Retry Export',
           icon: Symbols.refresh,
           onTap: () {
-            // Mock retry
-            context.pop(); // Go back to studio to retry
+            // Return to studio to retry export
+            context.pop();
           },
         ),
         const SizedBox(height: 16),

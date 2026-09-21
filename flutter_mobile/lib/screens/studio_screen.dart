@@ -810,7 +810,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
           label: 'Burn Captions to Video',
           icon: Symbols.local_fire_department,
           onTap: () {
-            // Trigger export mock job
+            // Trigger export job
             final exportService = ref.read(exportServiceProvider);
             final segments = ref.read(subtitleProvider);
             final style = ref.read(captionStyleProvider);
@@ -827,10 +827,13 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
               videoDuration: duration,
             );
 
+            final sourceFileName = p.basename(widget.videoPath);
+            final outputFileName = p.basename(outputPath);
+
             final job = ExportJob(
-              id: 'mock_export_1',
-              sourceFileName: 'Source_Video.mp4',
-              outputFileName: 'Output_Video.mp4',
+              id: timestamp.toString(),
+              sourceFileName: sourceFileName.isNotEmpty ? sourceFileName : 'Source_Video.mp4',
+              outputFileName: outputFileName.isNotEmpty ? outputFileName : 'Output_Video.mp4',
               state: ExportState.encoding,
               progress: 0.0,
               resolution: '1080x1920',

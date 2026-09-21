@@ -23,6 +23,7 @@ class AdBannerWidget extends ConsumerStatefulWidget {
 class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -33,19 +34,21 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
   Future<void> _initAndLoadAd() async {
     final adService = ref.read(adServiceProvider);
     await adService.initialize();
-    if (!mounted) return;
+    if (!mounted || _isDisposed) return;
 
     final ad = adService.createBannerAd(
       onAdLoaded: (loadedAd) {
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           setState(() {
             _bannerAd = loadedAd;
             _isAdLoaded = true;
           });
+        } else {
+          loadedAd.dispose();
         }
       },
       onAdFailedToLoad: (failedAd, error) {
-        if (mounted) {
+        if (mounted && !_isDisposed) {
           setState(() {
             _bannerAd = null;
             _isAdLoaded = false;
@@ -54,12 +57,18 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
       },
     );
 
-    _bannerAd = ad;
+    if (mounted && !_isDisposed) {
+      _bannerAd = ad;
+    } else {
+      ad?.dispose();
+    }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _bannerAd?.dispose();
+    _bannerAd = null;
     super.dispose();
   }
 

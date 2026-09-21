@@ -692,9 +692,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      // Verify subtitleProvider starts with seed data
+      // Verify subtitleProvider starts clean and empty
       final initialSubtitles = container.read(subtitleProvider);
-      expect(initialSubtitles.first.text, contains('Mhoroi mose'));
+      expect(initialSubtitles, isEmpty);
 
       // Run pipeline notifier
       final notifier = container.read(captionPipelineProvider.notifier);

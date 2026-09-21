@@ -1,3 +1,4 @@
+import 'package:captionary/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -5,9 +6,8 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
+import '../core/constants/caption_presets.dart';
 import '../data/models/caption_style.dart';
-import '../data/mock/seed_data.dart';
 import '../providers/caption_style_provider.dart';
 import 'caption_style_card.dart';
 import 'caption_style_preview.dart';
@@ -144,7 +144,7 @@ class _StylizationSheetState extends ConsumerState<StylizationSheet> {
         spacing: 16,
         runSpacing: 16,
         alignment: WrapAlignment.center,
-        children: SeedData.captionStyles.map((style) {
+        children: CaptionPresets.defaultStyles.map((style) {
           return CaptionStyleCard(
             key: ValueKey('preset-${style.name}'),
             style: style,

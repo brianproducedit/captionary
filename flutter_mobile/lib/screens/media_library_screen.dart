@@ -589,7 +589,39 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
         constraints: const BoxConstraints(),
         onSelected: (action) async {
           if (action == 'studio') {
-            context.push('/studio', extra: item.filePath);
+            if (item.status != MediaStatus.transcribed &&
+                item.status != MediaStatus.readyToEdit) {
+              final shouldTranscribe = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Transcribe Video?'),
+                  content: Text(
+                    'Captions have not been generated for "${item.fileName}" yet. Would you like to run AI transcription first?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Skip to Studio'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Transcribe Video'),
+                    ),
+                  ],
+                ),
+              );
+              if (shouldTranscribe == true) {
+                if (context.mounted) {
+                  context.push('/transcription', extra: item.filePath);
+                }
+                return;
+              } else if (shouldTranscribe == null) {
+                return;
+              }
+            }
+            if (context.mounted) {
+              context.push('/studio', extra: item.filePath);
+            }
           } else if (action == 'preview') {
             context.push('/player', extra: item.filePath);
           } else if (action == 'delete') {

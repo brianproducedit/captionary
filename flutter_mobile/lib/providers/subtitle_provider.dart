@@ -2,14 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/subtitle_timeline.dart';
 import '../data/models/subtitle_segment.dart';
-import '../data/mock/seed_data.dart';
 
 class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
   final List<List<SubtitleSegment>> _undoStack = [];
   final List<List<SubtitleSegment>> _redoStack = [];
 
   SubtitleNotifier([List<SubtitleSegment>? initial])
-    : super(initial ?? SeedData.sampleSubtitles);
+    : super(initial ?? const []);
 
   /// Replaces the current subtitles with [segments], optionally clearing the undo/redo history.
   void setSegments(List<SubtitleSegment> segments, {bool clearHistory = true}) {

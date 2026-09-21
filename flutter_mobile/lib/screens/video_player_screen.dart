@@ -207,19 +207,57 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
                 appBar: AppHeader(
                   subtitle: 'Player',
                   actions: [
-                    if (segments.isNotEmpty)
-                      GhostPillButton(
-                        label: 'Edit Captions',
-                        icon: Symbols.edit,
-                        onTap: () {
-                          // Allow editing by popping and pushing to studio
-                          // if coming from library, or just pushing
+                    GhostPillButton(
+                      label: segments.isNotEmpty
+                          ? 'Edit Captions'
+                          : 'Transcribe Captions',
+                      icon: segments.isNotEmpty
+                          ? Symbols.edit
+                          : Symbols.graphic_eq,
+                      onTap: () async {
+                        if (segments.isEmpty) {
+                          final shouldTranscribe = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Transcribe Captions?'),
+                              content: const Text(
+                                'No captions were found for this video. Would you like to run AI transcription to generate them now?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                  child: const Text('Open Blank Studio'),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.of(ctx).pop(true),
+                                  child: const Text('Transcribe Video'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (shouldTranscribe == true) {
+                            if (context.mounted) {
+                              context.pushReplacement(
+                                '/transcription',
+                                extra: widget.videoPath,
+                              );
+                            }
+                          } else if (shouldTranscribe == false) {
+                            if (context.mounted) {
+                              context.pushReplacement(
+                                '/studio',
+                                extra: widget.videoPath,
+                              );
+                            }
+                          }
+                        } else {
                           context.pushReplacement(
                             '/studio',
                             extra: widget.videoPath,
                           );
-                        },
-                      ),
+                        }
+                      },
+                    ),
                   ],
                 ),
                 body: SafeArea(
