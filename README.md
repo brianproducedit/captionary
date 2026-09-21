@@ -17,17 +17,17 @@ Captionary is 100% open source and distributed directly via APK releases on GitH
 
 | Download Source | Link | Description |
 |---|---|---|
-| 🌐 **Web Download Portal** | [captionary.co.zw/download](https://captionary.co.zw/download) | Live download page with automatic update detection, device tier guide & installation steps |
+| 🌐 **Web Download Portal** | [captionary.co.zw/download](https://captionary.brianproducedit.workers.dev/) | Live download page with automatic update detection, device tier guide & installation steps |
 | 📦 **GitHub Releases** | [github.com/brianproducedit/captionary/releases](https://github.com/brianproducedit/captionary/releases/latest) | Direct APK downloads, checksums, and changelogs |
 
 ### Available APK Packages
 
 | Package | Target Architecture | Size | Recommendation |
 |---|---|---:|---|
-| **`app-release.apk`** | **Universal** (all CPU types) | ~80 MB | **Recommended for all users**. Installs on 100% of Android phones. |
-| **`app-arm64-v8a-release.apk`** | ARM 64-bit (`arm64-v8a`) | ~45 MB | Smaller file size, optimized for modern Android smartphones (2017+). |
-| **`app-armeabi-v7a-release.apk`** | ARM 32-bit (`armeabi-v7a`) | ~40 MB | For older or entry-level 32-bit Android phones. |
-| **`app-x86_64-release.apk`** | Intel/AMD 64-bit (`x86_64`) | ~48 MB | For Android emulators, ChromeOS Chromebooks, and PC tablets. |
+| **`app-release.apk`** | **Universal** (all CPU types) | ~184 MB | **Recommended for all users**. Installs on 100% of Android phones. |
+| **`app-arm64-v8a-release.apk`** | ARM 64-bit (`arm64-v8a`) | ~60 MB | Smaller file size, optimized for modern Android smartphones (2017+). |
+| **`app-armeabi-v7a-release.apk`** | ARM 32-bit (`armeabi-v7a`) | ~73 MB | For older or entry-level 32-bit Android phones. |
+| **`app-x86_64-release.apk`** | Intel/AMD 64-bit (`x86_64`) | ~68 MB | For Android emulators, ChromeOS Chromebooks, and PC tablets. |
 
 ### How to Install (Sideloading Guide)
 
