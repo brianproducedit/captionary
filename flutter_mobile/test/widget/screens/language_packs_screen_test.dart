@@ -8,9 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 void main() {
   Widget buildTestWidget() {
     return ProviderScope(
-      overrides: [
-        backendModeProvider.overrideWithValue(BackendMode.mock),
-      ],
+      overrides: [backendModeProvider.overrideWithValue(BackendMode.mock)],
       child: const MaterialApp(home: LanguagePacksScreen()),
     );
   }

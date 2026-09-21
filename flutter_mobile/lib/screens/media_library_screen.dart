@@ -310,9 +310,8 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                   Flexible(
                     child: Text(
                       'Media Library',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

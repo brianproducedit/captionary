@@ -12,10 +12,7 @@ import 'gradient_pill_button.dart';
 class ProTeaserSheet extends StatelessWidget {
   final String featureTriggered;
 
-  const ProTeaserSheet({
-    super.key,
-    this.featureTriggered = 'Premium Feature',
-  });
+  const ProTeaserSheet({super.key, this.featureTriggered = 'Premium Feature'});
 
   static Future<void> show(
     BuildContext context, {
@@ -50,114 +47,119 @@ class ProTeaserSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(2),
+            // Drag handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // Header badge
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
-              decoration: BoxDecoration(
-                gradient: AppGradients.primaryGradient,
-                borderRadius: BorderRadius.circular(9999),
-                boxShadow: const [AppShadows.tertiaryGlow],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Symbols.workspace_premium, size: 16, color: AppColors.baseCanvas),
-                  const SizedBox(width: 6),
-                  Text(
-                    'PREMIUM UNLOCKS COMING SOON',
-                    style: AppTypography.labelMd.copyWith(
+            // Header badge
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14.0,
+                  vertical: 6.0,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppGradients.primaryGradient,
+                  borderRadius: BorderRadius.circular(9999),
+                  boxShadow: const [AppShadows.tertiaryGlow],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Symbols.workspace_premium,
+                      size: 16,
                       color: AppColors.baseCanvas,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      'PREMIUM UNLOCKS COMING SOON',
+                      style: AppTypography.labelMd.copyWith(
+                        color: AppColors.baseCanvas,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          Text(
-            '$featureTriggered is a Pro Feature',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.allWhite,
+            Text(
+              '$featureTriggered is a Pro Feature',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.allWhite,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-          Text(
-            'Captionary is currently in Free Beta with unlimited on-device Whisper AI. '
-            'Upcoming paid passes will unlock watermark removal and 1080p/4K exports via mobile money (EcoCash, Innbucks).',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.onSurfaceVariant,
-              height: 1.4,
+            Text(
+              'Captionary is currently in Free Beta with unlimited on-device Whisper AI. '
+              'Upcoming paid passes will unlock watermark removal and 1080p/4K exports via mobile money (EcoCash, Innbucks).',
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.onSurfaceVariant, height: 1.4),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Upcoming tiers comparison preview
-          _buildTierFeatureRow(
-            context,
-            icon: Symbols.timer,
-            title: '24-Hour Pass (\$0.99)',
-            subtitle: '24 hours of watermark removal & 1080p exports for single viral video edits.',
-          ),
-          const SizedBox(height: 12),
-          _buildTierFeatureRow(
-            context,
-            icon: Symbols.diamond,
-            title: 'Creator Pro (\$7.99 Lifetime)',
-            subtitle: 'Permanent watermark removal, 1080p/4K exports, batch tools & custom font imports.',
-            highlight: true,
-          ),
-          const SizedBox(height: 12),
-          _buildTierFeatureRow(
-            context,
-            icon: Symbols.smartphone,
-            title: 'Google Play & Sync Code Compliant',
-            subtitle: 'No account signup needed. Activate seamlessly on the web portal with EcoCash & Innbucks.',
-          ),
-          const SizedBox(height: 28),
+            // Upcoming tiers comparison preview
+            _buildTierFeatureRow(
+              context,
+              icon: Symbols.timer,
+              title: '24-Hour Pass (\$0.99)',
+              subtitle: '24 hours of watermark removal & 1080p exports for single viral video edits.',
+            ),
+            const SizedBox(height: 12),
+            _buildTierFeatureRow(
+              context,
+              icon: Symbols.diamond,
+              title: 'Creator Pro (\$7.99 Lifetime)',
+              subtitle: 'Permanent watermark removal, 1080p/4K exports, batch tools & custom font imports.',
+              highlight: true,
+            ),
+            const SizedBox(height: 12),
+            _buildTierFeatureRow(
+              context,
+              icon: Symbols.smartphone,
+              title: 'Google Play & Sync Code Compliant',
+              subtitle: 'No account signup needed. Activate seamlessly on the web portal with EcoCash & Innbucks.',
+            ),
+            const SizedBox(height: 28),
 
-          // Action buttons
-          GradientPillButton(
-            label: 'View All Pricing & Tiers',
-            icon: Symbols.visibility,
-            onTap: () {
-              Navigator.of(context).pop();
-              context.push('/pro');
-            },
-            isFullWidth: true,
-          ),
-          const SizedBox(height: 10),
-          GhostPillButton(
-            label: 'Got it, stay on Free Beta',
-            onTap: () => Navigator.of(context).pop(),
-            isFullWidth: true,
-          ),
-        ],
+            // Action buttons
+            GradientPillButton(
+              label: 'View All Pricing & Tiers',
+              icon: Symbols.visibility,
+              onTap: () {
+                Navigator.of(context).pop();
+                context.push('/pro');
+              },
+              isFullWidth: true,
+            ),
+            const SizedBox(height: 10),
+            GhostPillButton(
+              label: 'Got it, stay on Free Beta',
+              onTap: () => Navigator.of(context).pop(),
+              isFullWidth: true,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildTierFeatureRow(
     BuildContext context, {

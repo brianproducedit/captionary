@@ -50,10 +50,7 @@ class AdService {
     if (!isSupportedPlatform || _initialized) return;
     try {
       await MobileAds.instance.initialize();
-      final devices = [
-        '1E36DB6BB99F0D49096AB3D3150BBB24',
-        ...?testDeviceIds,
-      ];
+      final devices = ['1E36DB6BB99F0D49096AB3D3150BBB24', ...?testDeviceIds];
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(testDeviceIds: devices),
       );
@@ -76,8 +73,9 @@ class AdService {
     if (!isSupportedPlatform) return null;
 
     final unitId = customAdUnitId ?? bannerAdUnitId;
-    final testFallbackUnitId =
-        Platform.isIOS ? defaultIosTestBannerId : defaultAndroidTestBannerId;
+    final testFallbackUnitId = Platform.isIOS
+        ? defaultIosTestBannerId
+        : defaultAndroidTestBannerId;
 
     BannerAd? bannerAd;
     bannerAd = BannerAd(
@@ -86,7 +84,9 @@ class AdService {
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          debugPrint('[AdService] BannerAd loaded successfully for unit $unitId.');
+          debugPrint(
+            '[AdService] BannerAd loaded successfully for unit $unitId.',
+          );
           onAdLoaded(ad as BannerAd);
         },
         onAdFailedToLoad: (ad, error) {

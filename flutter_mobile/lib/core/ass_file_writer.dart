@@ -189,7 +189,8 @@ class AssFileWriter {
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
     if (showWatermark) {
-      final Duration watermarkEnd = videoDuration ??
+      final Duration watermarkEnd =
+          videoDuration ??
           (sorted.isNotEmpty
               ? sorted.last.endTime + const Duration(seconds: 5)
               : const Duration(hours: 1));

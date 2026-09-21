@@ -1,13 +1,11 @@
 import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'engagement_provider.dart';
 
-enum SubscriptionTier {
-  free,
-  pass24h,
-  creatorPro,
-}
+enum SubscriptionTier { free, pass24h, creatorPro }
 
 extension SubscriptionTierX on SubscriptionTier {
   String get displayName {

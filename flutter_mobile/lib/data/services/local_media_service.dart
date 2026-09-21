@@ -134,7 +134,9 @@ class LocalMediaService implements MediaService {
           if (_customThumbnailGenerator != null) {
             thumbnailPath = await _customThumbnailGenerator(cachedPath);
           } else {
-            thumbnailPath = await _thumbnailService.generateThumbnail(cachedPath);
+            thumbnailPath = await _thumbnailService.generateThumbnail(
+              cachedPath,
+            );
           }
         } catch (e) {
           debugPrint('[LocalMediaService] Thumbnail extraction failed: $e');

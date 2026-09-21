@@ -19,16 +19,14 @@ void main() {
 
   Widget buildTestableWidget() {
     return ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-      ],
-      child: const MaterialApp(
-        home: UpgradeProScreen(),
-      ),
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      child: const MaterialApp(home: UpgradeProScreen()),
     );
   }
 
-  testWidgets('UpgradeProScreen displays all three tiers and device id', (tester) async {
+  testWidgets('UpgradeProScreen displays all three tiers and device id', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(() {
@@ -65,7 +63,9 @@ void main() {
     expect(find.text('test-uuid-1234-5678-90ab'), findsOneWidget);
   });
 
-  testWidgets('Tapping Unlock Creator Pro opens ProTeaserSheet', (tester) async {
+  testWidgets('Tapping Unlock Creator Pro opens ProTeaserSheet', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(() {

@@ -89,7 +89,10 @@ class UpgradeProScreen extends ConsumerWidget {
         Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14.0,
+                vertical: 6.0,
+              ),
               decoration: BoxDecoration(
                 color: AppColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(9999),
@@ -133,10 +136,8 @@ class UpgradeProScreen extends ConsumerWidget {
             Text(
               'On-device Whisper AI engine. Zero recurring subscription traps. '
               'Built for creators in Zimbabwe, Africa, and across the globe.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-                height: 1.4,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.onSurfaceVariant, height: 1.4),
               textAlign: TextAlign.center,
             ),
           ],
@@ -166,7 +167,10 @@ class UpgradeProScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 4.0,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFFD54F), Color(0xFFFF8F00)],
@@ -202,9 +206,8 @@ class UpgradeProScreen extends ConsumerWidget {
           ),
           Text(
             'One-time payment • Lifetime permanent access • No SaaS friction',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           const Divider(color: AppColors.surfaceContainerHigh),
@@ -216,7 +219,9 @@ class UpgradeProScreen extends ConsumerWidget {
           _buildCheckFeature('EcoCash, Innbucks, OneMoney & card support'),
           const SizedBox(height: 20),
           GradientPillButton(
-            label: isCurrent ? 'Active Plan' : 'Unlock Creator Pro (Coming Soon)',
+            label: isCurrent
+                ? 'Active Plan'
+                : 'Unlock Creator Pro (Coming Soon)',
             icon: Symbols.diamond,
             onTap: () {
               ProTeaserSheet.show(
@@ -248,7 +253,10 @@ class UpgradeProScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 4.0,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primaryContainer.withAlpha(60),
                   borderRadius: BorderRadius.circular(9999),
@@ -281,9 +289,8 @@ class UpgradeProScreen extends ConsumerWidget {
           ),
           Text(
             '24 hours of full watermark removal & 1080p exports via mobile money',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           const Divider(color: AppColors.surfaceContainerHigh),
@@ -316,7 +323,9 @@ class UpgradeProScreen extends ConsumerWidget {
         color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20.0),
         border: Border.all(
-          color: isCurrent ? AppColors.secondary : AppColors.surfaceContainerHigh,
+          color: isCurrent
+              ? AppColors.secondary
+              : AppColors.surfaceContainerHigh,
         ),
       ),
       padding: const EdgeInsets.all(20.0),
@@ -327,7 +336,10 @@ class UpgradeProScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 4.0,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.secondaryContainer.withAlpha(60),
                   borderRadius: BorderRadius.circular(9999),
@@ -360,23 +372,27 @@ class UpgradeProScreen extends ConsumerWidget {
           ),
           Text(
             'Free on-device transcription with organic viral watermark',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           const Divider(color: AppColors.surfaceContainerHigh),
           const SizedBox(height: 12),
           _buildCheckFeature('Unlimited captions with local Whisper AI'),
           _buildCheckFeature('720p HD video export'),
-          _buildCheckFeature('Mandatory "Captioned by Captionary" watermark + logo'),
+          _buildCheckFeature(
+            'Mandatory "Captioned by Captionary" watermark + logo',
+          ),
           _buildCheckFeature('99+ offline languages supported'),
         ],
       ),
     );
   }
 
-  Widget _buildSyncCodeArchitectureCard(BuildContext context, SubscriptionState sub) {
+  Widget _buildSyncCodeArchitectureCard(
+    BuildContext context,
+    SubscriptionState sub,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
@@ -389,7 +405,11 @@ class UpgradeProScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Symbols.verified_user, color: AppColors.tertiary, size: 20),
+              const Icon(
+                Symbols.verified_user,
+                color: AppColors.tertiary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -405,14 +425,15 @@ class UpgradeProScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             'No email or password signup required. Your entitlements are bound to your secure Device ID and unlocked via our Google Play compliant Web Sync Code system.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.onSurfaceVariant,
-              height: 1.4,
-            ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.onSurfaceVariant, height: 1.4),
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14.0,
+              vertical: 10.0,
+            ),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(12.0),
@@ -420,11 +441,17 @@ class UpgradeProScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const Icon(Symbols.fingerprint, size: 18, color: AppColors.tertiary),
+                const Icon(
+                  Symbols.fingerprint,
+                  size: 18,
+                  color: AppColors.tertiary,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    sub.deviceId.isNotEmpty ? sub.deviceId : 'Generating device id...',
+                    sub.deviceId.isNotEmpty
+                        ? sub.deviceId
+                        : 'Generating device id...',
                     style: AppTypography.captionCode.copyWith(
                       color: AppColors.allWhite,
                       fontSize: 11,
@@ -458,7 +485,11 @@ class UpgradeProScreen extends ConsumerWidget {
   Widget _buildRestorePurchasesButton(BuildContext context) {
     return Center(
       child: TextButton.icon(
-        icon: const Icon(Symbols.restore, size: 16, color: AppColors.onSurfaceVariant),
+        icon: const Icon(
+          Symbols.restore,
+          size: 16,
+          color: AppColors.onSurfaceVariant,
+        ),
         label: Text(
           'Restore Mobile Money Purchase',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -471,14 +502,20 @@ class UpgradeProScreen extends ConsumerWidget {
             context: context,
             builder: (ctx) => AlertDialog(
               backgroundColor: AppColors.surfaceContainerLow,
-              title: const Text('Restore Purchase', style: TextStyle(color: AppColors.allWhite)),
+              title: const Text(
+                'Restore Purchase',
+                style: TextStyle(color: AppColors.allWhite),
+              ),
               content: const Text(
                 'Once the payment gateway is live, you can enter your mobile money phone number (EcoCash, Innbucks) and transaction reference to re-link entitlement to this device.',
                 style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
               actions: [
                 TextButton(
-                  child: const Text('Close', style: TextStyle(color: AppColors.primary)),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
                   onPressed: () => Navigator.of(ctx).pop(),
                 ),
               ],

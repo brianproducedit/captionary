@@ -93,4 +93,3 @@ void main() {
     expect(find.text('No Video Loaded'), findsOneWidget);
   });
 }
-

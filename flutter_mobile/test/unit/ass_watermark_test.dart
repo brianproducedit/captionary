@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:captionary/core/ass_file_writer.dart';
 import 'package:captionary/data/models/caption_style.dart';
@@ -36,23 +37,26 @@ void main() {
       expect(ass.contains('Captioned by Captionary'), isFalse);
     });
 
-    test('Includes watermark style and dialogue when showWatermark is true', () {
-      final ass = AssFileWriter.generate(
-        segments: segments,
-        style: style,
-        showWatermark: true,
-        watermarkText: 'Captioned by Captionary',
-        videoDuration: const Duration(seconds: 10),
-      );
+    test(
+      'Includes watermark style and dialogue when showWatermark is true',
+      () {
+        final ass = AssFileWriter.generate(
+          segments: segments,
+          style: style,
+          showWatermark: true,
+          watermarkText: 'Captioned by Captionary',
+          videoDuration: const Duration(seconds: 10),
+        );
 
-      expect(ass.contains('Style: Watermark'), isTrue);
-      expect(ass.contains('Captioned by Captionary'), isTrue);
-      expect(
-        ass.contains(
-          'Dialogue: 1,0:00:00.00,0:00:10.00,Watermark,,0,0,0,,Captioned by Captionary',
-        ),
-        isTrue,
-      );
-    });
+        expect(ass.contains('Style: Watermark'), isTrue);
+        expect(ass.contains('Captioned by Captionary'), isTrue);
+        expect(
+          ass.contains(
+            'Dialogue: 1,0:00:00.00,0:00:10.00,Watermark,,0,0,0,,Captioned by Captionary',
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }

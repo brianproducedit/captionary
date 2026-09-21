@@ -250,8 +250,7 @@ class DonateScreen extends ConsumerWidget {
           icon: Symbols.cloud_sync,
           iconColor: AppColors.primary,
           title: 'Cloudflare R2 Bandwidth',
-          description:
-              'Pays for global edge-distribution of heavy acoustic models to local devices.',
+          description: 'Pays for global edge-distribution of heavy acoustic models to local devices.',
         ),
         const SizedBox(height: 12),
         _buildImpactCard(
@@ -259,8 +258,7 @@ class DonateScreen extends ConsumerWidget {
           icon: Symbols.tune,
           iconColor: AppColors.secondary,
           title: 'Dialect Fine-Tuning Compute',
-          description:
-              'Renting H100 GPU clusters to train new phonetic variations and low-resource accents.',
+          description: 'Renting H100 GPU clusters to train new phonetic variations and low-resource accents.',
         ),
         const SizedBox(height: 12),
         _buildImpactCard(
@@ -268,8 +266,7 @@ class DonateScreen extends ConsumerWidget {
           icon: Symbols.lock_open_right,
           iconColor: AppColors.tertiary,
           title: '100% Free and AGPL-3.0 Licensed',
-          description:
-              'Guarantees the core app and models will never be locked behind a subscription.',
+          description: 'Guarantees the core app and models will never be locked behind a subscription.',
         ),
       ],
     );

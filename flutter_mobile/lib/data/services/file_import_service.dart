@@ -53,10 +53,7 @@ class FileImportService {
       }
 
       // Request permissions
-      final statuses = await [
-        Permission.videos,
-        Permission.storage,
-      ].request();
+      final statuses = await [Permission.videos, Permission.storage].request();
 
       final videoGranted = statuses[Permission.videos]?.isGranted ?? false;
       final storageGranted = statuses[Permission.storage]?.isGranted ?? false;

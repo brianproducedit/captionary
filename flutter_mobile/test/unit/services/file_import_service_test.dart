@@ -21,7 +21,9 @@ void main() {
       final service = FileImportService(
         filePicker: () async => '/mock/path/sample.mp4',
         permissionRequester: () async {
-          fail('Should not request permissions when filePicker delegate is provided');
+          fail(
+            'Should not request permissions when filePicker delegate is provided',
+          );
         },
       );
 
@@ -30,9 +32,7 @@ void main() {
     });
 
     test('returns null when permission requester returns false', () async {
-      final service = FileImportService(
-        permissionRequester: () async => false,
-      );
+      final service = FileImportService(permissionRequester: () async => false);
 
       final result = await service.pickVideoFile();
       expect(result, isNull);
@@ -45,9 +45,7 @@ void main() {
       final cacheDir = Directory('${tempDir.path}/cache');
       await cacheDir.create(recursive: true);
 
-      final service = FileImportService(
-        getTempDirectory: () async => cacheDir,
-      );
+      final service = FileImportService(getTempDirectory: () async => cacheDir);
 
       final cachedPath = await service.copyToCache(sourceFile.path);
       expect(File(cachedPath).existsSync(), isTrue);
@@ -68,9 +66,7 @@ void main() {
       await file1.writeAsString('bytes1');
       expect(await file1.exists(), isTrue);
 
-      final service = FileImportService(
-        getTempDirectory: () async => cacheDir,
-      );
+      final service = FileImportService(getTempDirectory: () async => cacheDir);
 
       await service.clearMediaCache();
       expect(await mediaDir.exists(), isFalse);

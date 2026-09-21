@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:captionary/data/models/caption_style.dart';
@@ -65,79 +66,85 @@ void main() {
     } catch (_) {}
   });
 
-  test('burnCaptions enforces 720p scaling on portrait 1080x1920 video', () async {
-    String? executedCommand;
-    final outputPath = '${tempDir.path}/output_720p.mp4';
+  test(
+    'burnCaptions enforces 720p scaling on portrait 1080x1920 video',
+    () async {
+      String? executedCommand;
+      final outputPath = '${tempDir.path}/output_720p.mp4';
 
-    final service = FfmpegExportService(
-      tempDirResolver: () async => tempDir,
-      fontDirResolver: () async => null,
-      metadataExtractor: (path) async => {
-        'resolution': '1080x1920',
-        'duration': const Duration(seconds: 5),
-      },
-      ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
-        executedCommand = cmd;
-        final partFile = File('$outputPath.part');
-        partFile.writeAsStringSync('video content');
-        onComplete(_FakeSession(1, ReturnCode(0)));
-      },
-    );
+      final service = FfmpegExportService(
+        tempDirResolver: () async => tempDir,
+        fontDirResolver: () async => null,
+        metadataExtractor: (path) async => {
+          'resolution': '1080x1920',
+          'duration': const Duration(seconds: 5),
+        },
+        ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
+          executedCommand = cmd;
+          final partFile = File('$outputPath.part');
+          partFile.writeAsStringSync('video content');
+          onComplete(_FakeSession(1, ReturnCode(0)));
+        },
+      );
 
-    final stream = service.burnCaptions(
-      videoPath: sampleVideo.path,
-      segments: segments,
-      style: style,
-      outputPath: outputPath,
-      videoDuration: const Duration(seconds: 5),
-      includeWatermark: false,
-      targetMaxResolution: 720,
-    );
+      final stream = service.burnCaptions(
+        videoPath: sampleVideo.path,
+        segments: segments,
+        style: style,
+        outputPath: outputPath,
+        videoDuration: const Duration(seconds: 5),
+        includeWatermark: false,
+        targetMaxResolution: 720,
+      );
 
-    final events = await stream.toList();
+      final events = await stream.toList();
 
-    expect(executedCommand, isNotNull);
-    expect(executedCommand, contains('scale=720:1280'));
-    expect(events.any((e) => e.resolution == '720x1280'), isTrue);
-    expect(events.last.state, ExportState.complete);
-  });
+      expect(executedCommand, isNotNull);
+      expect(executedCommand, contains('scale=720:1280'));
+      expect(events.any((e) => e.resolution == '720x1280'), isTrue);
+      expect(events.last.state, ExportState.complete);
+    },
+  );
 
-  test('burnCaptions overlays logo and includes watermark when enabled', () async {
-    String? executedCommand;
-    final outputPath = '${tempDir.path}/output_wm.mp4';
+  test(
+    'burnCaptions overlays logo and includes watermark when enabled',
+    () async {
+      String? executedCommand;
+      final outputPath = '${tempDir.path}/output_wm.mp4';
 
-    final service = FfmpegExportService(
-      tempDirResolver: () async => tempDir,
-      fontDirResolver: () async => null,
-      logoPathResolver: () async => sampleLogo.path,
-      metadataExtractor: (path) async => {
-        'resolution': '720x1280',
-        'duration': const Duration(seconds: 5),
-      },
-      ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
-        executedCommand = cmd;
-        final partFile = File('$outputPath.part');
-        partFile.writeAsStringSync('video content');
-        onComplete(_FakeSession(1, ReturnCode(0)));
-      },
-    );
+      final service = FfmpegExportService(
+        tempDirResolver: () async => tempDir,
+        fontDirResolver: () async => null,
+        logoPathResolver: () async => sampleLogo.path,
+        metadataExtractor: (path) async => {
+          'resolution': '720x1280',
+          'duration': const Duration(seconds: 5),
+        },
+        ffmpegAsyncRunner: (cmd, onComplete, logCb, statCb) async {
+          executedCommand = cmd;
+          final partFile = File('$outputPath.part');
+          partFile.writeAsStringSync('video content');
+          onComplete(_FakeSession(1, ReturnCode(0)));
+        },
+      );
 
-    final stream = service.burnCaptions(
-      videoPath: sampleVideo.path,
-      segments: segments,
-      style: style,
-      outputPath: outputPath,
-      videoDuration: const Duration(seconds: 5),
-      includeWatermark: true,
-      targetMaxResolution: 720,
-    );
+      final stream = service.burnCaptions(
+        videoPath: sampleVideo.path,
+        segments: segments,
+        style: style,
+        outputPath: outputPath,
+        videoDuration: const Duration(seconds: 5),
+        includeWatermark: true,
+        targetMaxResolution: 720,
+      );
 
-    final events = await stream.toList();
+      final events = await stream.toList();
 
-    expect(executedCommand, isNotNull);
-    expect(executedCommand, contains('-filter_complex'));
-    expect(executedCommand, contains(sampleLogo.path));
-    expect(executedCommand, contains('overlay=W-w-24:24'));
-    expect(events.last.state, ExportState.complete);
-  });
+      expect(executedCommand, isNotNull);
+      expect(executedCommand, contains('-filter_complex'));
+      expect(executedCommand, contains(sampleLogo.path));
+      expect(executedCommand, contains('overlay=W-w-24:24'));
+      expect(events.last.state, ExportState.complete);
+    },
+  );
 }

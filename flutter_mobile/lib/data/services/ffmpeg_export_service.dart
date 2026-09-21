@@ -302,8 +302,8 @@ class FfmpegExportService implements ExportService {
       // Prepare logo file if watermark requested
       final String? logoPath = includeWatermark
           ? (logoPathResolver != null
-              ? await logoPathResolver!()
-              : await _ensureLogoExtracted(tempDir))
+                ? await logoPathResolver!()
+                : await _ensureLogoExtracted(tempDir))
           : null;
       final bool hasLogo = logoPath != null && File(logoPath).existsSync();
       final bool needsScale = outWidth != width || outHeight != height;
@@ -377,8 +377,7 @@ class FfmpegExportService implements ExportService {
         'FfmpegExportService: ASS burn-in failed; falling back to SRT burn-in with user-visible reason.',
       );
       job = job.copyWith(
-        fallbackReason:
-            'Styled ASS filter unavailable; fell back to standard SRT captions.',
+        fallbackReason: 'Styled ASS filter unavailable; fell back to standard SRT captions.',
       );
       controller.add(job);
 

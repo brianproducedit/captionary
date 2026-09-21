@@ -60,8 +60,7 @@ void main() {
               child: CaptionTimeline(
                 waveform: WaveformData(
                   state: WaveformLoadState.noAudio,
-                  message:
-                      'No audio waveform yet. Playhead and captions still follow time.',
+                  message: 'No audio waveform yet. Playhead and captions still follow time.',
                 ),
               ),
             ),

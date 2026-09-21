@@ -264,57 +264,63 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   onTap: () {
                     ExportOptionsSheet.show(
                       context,
-                      onConfirmExport: ({
-                        required bool includeWatermark,
-                        required int targetMaxResolution,
-                      }) {
-                        final exportService = ref.read(exportServiceProvider);
-                        final segments = ref.read(subtitleProvider);
-                        final style = ref.read(captionStyleProvider);
-                        final duration = ref.read(playerProvider).duration;
-
-                        final timestamp = DateTime.now().millisecondsSinceEpoch;
-                        final outputPath =
-                            '${widget.videoPath}_captionary_$timestamp.mp4';
-
-                        final stream = exportService.burnCaptions(
-                          videoPath: widget.videoPath,
-                          segments: segments,
-                          style: style,
-                          outputPath: outputPath,
-                          videoDuration: duration,
-                          includeWatermark: includeWatermark,
-                          targetMaxResolution: targetMaxResolution,
-                        );
-
-                        final job = ExportJob(
-                          id: 'export_$timestamp',
-                          sourceFileName: 'Source_Video.mp4',
-                          outputFileName: outputPath,
-                          state: ExportState.encoding,
-                          progress: 0.0,
-                          resolution: '${targetMaxResolution}p',
-                          codec: 'h264',
-                          bitrateMbps: 8,
-                          estimatedTimeRemaining: const Duration(seconds: 50),
-                          outputSizeBytes: 0,
-                          hardwareAcceleration: true,
-                        );
-
-                        ref
-                            .read(activeExportJobProvider.notifier)
-                            .startJob(
-                              job,
-                              stream,
-                              onComplete: () {
-                                ref
-                                    .read(engagementProvider.notifier)
-                                    .onExportCompleted();
-                              },
-                              onCancel: () => exportService.cancel(),
+                      onConfirmExport:
+                          ({
+                            required bool includeWatermark,
+                            required int targetMaxResolution,
+                          }) {
+                            final exportService = ref.read(
+                              exportServiceProvider,
                             );
-                        context.push('/export');
-                      },
+                            final segments = ref.read(subtitleProvider);
+                            final style = ref.read(captionStyleProvider);
+                            final duration = ref.read(playerProvider).duration;
+
+                            final timestamp =
+                                DateTime.now().millisecondsSinceEpoch;
+                            final outputPath =
+                                '${widget.videoPath}_captionary_$timestamp.mp4';
+
+                            final stream = exportService.burnCaptions(
+                              videoPath: widget.videoPath,
+                              segments: segments,
+                              style: style,
+                              outputPath: outputPath,
+                              videoDuration: duration,
+                              includeWatermark: includeWatermark,
+                              targetMaxResolution: targetMaxResolution,
+                            );
+
+                            final job = ExportJob(
+                              id: 'export_$timestamp',
+                              sourceFileName: 'Source_Video.mp4',
+                              outputFileName: outputPath,
+                              state: ExportState.encoding,
+                              progress: 0.0,
+                              resolution: '${targetMaxResolution}p',
+                              codec: 'h264',
+                              bitrateMbps: 8,
+                              estimatedTimeRemaining: const Duration(
+                                seconds: 50,
+                              ),
+                              outputSizeBytes: 0,
+                              hardwareAcceleration: true,
+                            );
+
+                            ref
+                                .read(activeExportJobProvider.notifier)
+                                .startJob(
+                                  job,
+                                  stream,
+                                  onComplete: () {
+                                    ref
+                                        .read(engagementProvider.notifier)
+                                        .onExportCompleted();
+                                  },
+                                  onCancel: () => exportService.cancel(),
+                                );
+                            context.push('/export');
+                          },
                     );
                   },
                   isFullWidth: true,
@@ -561,7 +567,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 FilledButton.icon(
                   onPressed: () => context.go('/library'),
                   icon: const Icon(Symbols.video_library, size: 15),
-                  label: const Text('Media Library', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'Media Library',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
@@ -575,7 +584,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 OutlinedButton.icon(
                   onPressed: _importAndOpenVideo,
                   icon: const Icon(Symbols.add, size: 15),
-                  label: const Text('Import Video', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'Import Video',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.onSurface,
                     side: const BorderSide(color: AppColors.outlineVariant),
@@ -832,8 +844,12 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
             final job = ExportJob(
               id: timestamp.toString(),
-              sourceFileName: sourceFileName.isNotEmpty ? sourceFileName : 'Source_Video.mp4',
-              outputFileName: outputFileName.isNotEmpty ? outputFileName : 'Output_Video.mp4',
+              sourceFileName: sourceFileName.isNotEmpty
+                  ? sourceFileName
+                  : 'Source_Video.mp4',
+              outputFileName: outputFileName.isNotEmpty
+                  ? outputFileName
+                  : 'Output_Video.mp4',
               state: ExportState.encoding,
               progress: 0.0,
               resolution: '1080x1920',
