@@ -22,3 +22,6 @@ flutter run --dart-define-from-file=.env
 cd flutter_mobile
 flutter build apk --release --dart-define-from-file=.env
 
+git tag v1.0.1 
+git push origin v1.0.1
+
