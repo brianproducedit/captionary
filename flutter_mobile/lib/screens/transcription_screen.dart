@@ -10,8 +10,15 @@ import '../providers/transcription_provider.dart';
 
 class TranscriptionScreen extends ConsumerStatefulWidget {
   final String videoPath;
+  final String? languageCode;
+  final bool translateToEnglish;
 
-  const TranscriptionScreen({super.key, required this.videoPath});
+  const TranscriptionScreen({
+    super.key,
+    required this.videoPath,
+    this.languageCode,
+    this.translateToEnglish = false,
+  });
 
   @override
   ConsumerState<TranscriptionScreen> createState() =>
@@ -39,7 +46,11 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(transcriptionProvider.notifier)
-          .startTranscription(widget.videoPath);
+          .startTranscription(
+            widget.videoPath,
+            languageCode: widget.languageCode,
+            translateToEnglish: widget.translateToEnglish,
+          );
     });
   }
 

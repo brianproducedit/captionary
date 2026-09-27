@@ -199,6 +199,7 @@ class CaptionPipeline {
     required String videoPath,
     required String mediaId,
     String? languageCode,
+    bool translateToEnglish = false,
   }) async {
     if (_activeMediaIds.contains(mediaId)) {
       throw CaptionPipelineConflictException(mediaId);
@@ -349,9 +350,14 @@ class CaptionPipeline {
       bool isModelInstalled = false;
       if (targetPack.status == LanguagePackStatus.installed ||
           targetPack.status == LanguagePackStatus.bundled) {
-        final modelFile = File(targetPack.modelFile);
-        if (await modelFile.exists() && (await modelFile.length()) > 0) {
+        if (targetPack.localPath != null &&
+            await File(targetPack.localPath!).exists()) {
           isModelInstalled = true;
+        } else {
+          final modelFile = File(targetPack.modelFile);
+          if (await modelFile.exists() && (await modelFile.length()) > 0) {
+            isModelInstalled = true;
+          }
         }
       }
 
@@ -457,10 +463,12 @@ class CaptionPipeline {
       final transcriptionCompleter = Completer<List<SubtitleSegment>>();
       _transcriptionCompleter = transcriptionCompleter;
 
+      final modelPathToUse = targetPack.localPath ?? targetPack.modelFile;
       final stream = transcriptionService.transcribeAudioStream(
         audioPath: audioPath,
         languageCode: targetLang,
-        modelPath: targetPack.modelFile,
+        modelPath: modelPathToUse,
+        isTranslate: translateToEnglish,
       );
 
       _transcriptionSub = stream.listen(

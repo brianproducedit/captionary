@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../exceptions/language_pack_exceptions.dart';
@@ -53,6 +54,9 @@ class R2LanguagePackService implements LanguagePackService {
   CatalogManifest? get manifest => _cachedManifest;
 
   /// Resolves the dedicated directory on disk where models are stored.
+  /// On Android, prioritizes public Download directory so downloaded language
+  /// models persist even if the application is uninstalled or updated, while allowing
+  /// users to manage/delete them via their phone's file manager or the app.
   Future<Directory> get modelsDirectory async {
     if (_resolvedDir != null && await _resolvedDir!.exists()) {
       return _resolvedDir!;
@@ -65,6 +69,29 @@ class R2LanguagePackService implements LanguagePackService {
       }
       _resolvedDir = dir;
       return dir;
+    }
+
+    // On Android, use persistent shared directory that survives app uninstallation:
+    // /storage/emulated/0/Download/Captionary/models
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final publicDownloadDir = Directory(
+          '/storage/emulated/0/Download/Captionary/models',
+        );
+        if (!await publicDownloadDir.exists()) {
+          await publicDownloadDir.create(recursive: true);
+        }
+        // Test write probe to verify write permissions
+        final testFile = File('${publicDownloadDir.path}/.probe');
+        await testFile.writeAsString('probe');
+        await testFile.delete();
+        _resolvedDir = publicDownloadDir;
+        return publicDownloadDir;
+      } catch (e) {
+        debugPrint(
+          '[R2LanguagePackService] Public download dir not accessible ($e), falling back to app support dir',
+        );
+      }
     }
 
     final baseDir = await getApplicationSupportDirectory();
@@ -263,41 +290,67 @@ class R2LanguagePackService implements LanguagePackService {
     final List<LanguagePack> packs = [];
     final Set<String> addedCodes = {};
 
+    // Candidate directories to search for existing models:
+    // 1. Primary models directory
+    // 2. Persistent public Android download directory
+    // 3. Application Support directory / models
+    // 4. Application Documents directory / models
+    final candidateDirs = <Directory>[dir];
+    if (!kIsWeb && Platform.isAndroid) {
+      candidateDirs.add(
+        Directory('/storage/emulated/0/Download/Captionary/models'),
+      );
+    }
+    try {
+      final appSupport = await getApplicationSupportDirectory();
+      candidateDirs.add(Directory(p.join(appSupport.path, 'models')));
+      candidateDirs.add(appSupport);
+    } catch (_) {}
+    try {
+      final appDocs = await getApplicationDocumentsDirectory();
+      candidateDirs.add(Directory(p.join(appDocs.path, 'models')));
+      candidateDirs.add(appDocs);
+    } catch (_) {}
+
     int priority = 1;
     for (final model in catalog.models) {
-      final localPath = _resolveSafeLocalPath(dir, model.file);
-      final binFile = File(localPath);
-      final metaFile = File('$localPath.meta.json');
-      final partFile = File('$localPath.part');
-
-      LanguagePackStatus status;
+      LanguagePackStatus status = LanguagePackStatus.notDownloaded;
       double progress = 0.0;
       int? bytesDownloaded;
+      String? foundPath;
 
-      if (await binFile.exists() && await metaFile.exists()) {
-        final currentSize = await binFile.length();
-        if (currentSize == model.sizeBytes) {
-          status = model.bundled
-              ? LanguagePackStatus.bundled
-              : LanguagePackStatus.installed;
-          progress = 1.0;
-          bytesDownloaded = currentSize;
-        } else {
-          // Incomplete or corrupted file without valid size
-          status = LanguagePackStatus.notDownloaded;
+      final filename = p.basename(model.file);
+
+      // Check all candidate directories for existing valid model
+      for (final cDir in candidateDirs) {
+        if (!await cDir.exists()) continue;
+        final binFile = File(p.join(cDir.path, filename));
+        final partFile = File(p.join(cDir.path, '$filename.part'));
+
+        if (await binFile.exists()) {
+          final currentSize = await binFile.length();
+          if (currentSize == model.sizeBytes || currentSize > 0) {
+            status = model.bundled
+                ? LanguagePackStatus.bundled
+                : LanguagePackStatus.installed;
+            progress = 1.0;
+            bytesDownloaded = currentSize;
+            foundPath = binFile.path;
+            break;
+          }
+        } else if (await partFile.exists()) {
+          final partSize = await partFile.length();
+          if (partSize > 0 && partSize < model.sizeBytes) {
+            status = LanguagePackStatus.paused;
+            progress = partSize / model.sizeBytes;
+            bytesDownloaded = partSize;
+            foundPath = partFile.path;
+          }
         }
-      } else if (await partFile.exists()) {
-        final partSize = await partFile.length();
-        if (partSize > 0 && partSize < model.sizeBytes) {
-          status = LanguagePackStatus.paused;
-          progress = partSize / model.sizeBytes;
-          bytesDownloaded = partSize;
-        } else {
-          status = LanguagePackStatus.notDownloaded;
-        }
-      } else {
-        status = LanguagePackStatus.notDownloaded;
       }
+
+      final effectiveLocalPath =
+          foundPath ?? _resolveSafeLocalPath(dir, model.file);
 
       if (model.languageCodes.length == 1) {
         final code = model.languageCodes.first;
@@ -309,6 +362,11 @@ class R2LanguagePackService implements LanguagePackService {
               downloadProgress: progress,
               bytesDownloaded: bytesDownloaded,
               priority: priority++,
+              localPath:
+                  status == LanguagePackStatus.installed ||
+                      status == LanguagePackStatus.bundled
+                  ? effectiveLocalPath
+                  : null,
             ),
           );
         }
@@ -323,6 +381,11 @@ class R2LanguagePackService implements LanguagePackService {
                 downloadProgress: progress,
                 bytesDownloaded: bytesDownloaded,
                 priority: priority++,
+                localPath:
+                    status == LanguagePackStatus.installed ||
+                        status == LanguagePackStatus.bundled
+                    ? effectiveLocalPath
+                    : null,
               ),
             );
           }
@@ -606,19 +669,36 @@ class R2LanguagePackService implements LanguagePackService {
     );
 
     final dir = await modelsDirectory;
-    final localPath = _resolveSafeLocalPath(dir, model.file);
-    final binFile = File(localPath);
-    final metaFile = File('$localPath.meta.json');
-    final partFile = File('$localPath.part');
+    final filename = p.basename(model.file);
+    final candidateDirs = <Directory>[dir];
+    if (!kIsWeb && Platform.isAndroid) {
+      candidateDirs.add(
+        Directory('/storage/emulated/0/Download/Captionary/models'),
+      );
+    }
+    try {
+      final appSupport = await getApplicationSupportDirectory();
+      candidateDirs.add(Directory(p.join(appSupport.path, 'models')));
+      candidateDirs.add(appSupport);
+    } catch (_) {}
 
-    if (await binFile.exists()) {
-      await binFile.delete();
-    }
-    if (await metaFile.exists()) {
-      await metaFile.delete();
-    }
-    if (await partFile.exists()) {
-      await partFile.delete();
+    for (final cDir in candidateDirs) {
+      try {
+        if (!await cDir.exists()) continue;
+        final binFile = File(p.join(cDir.path, filename));
+        final metaFile = File(p.join(cDir.path, '$filename.meta.json'));
+        final partFile = File(p.join(cDir.path, '$filename.part'));
+
+        if (await binFile.exists()) {
+          await binFile.delete();
+        }
+        if (await metaFile.exists()) {
+          await metaFile.delete();
+        }
+        if (await partFile.exists()) {
+          await partFile.delete();
+        }
+      } catch (_) {}
     }
   }
 

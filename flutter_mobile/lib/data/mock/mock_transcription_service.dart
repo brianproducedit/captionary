@@ -8,6 +8,7 @@ class MockTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   }) async {
     await Future.delayed(const Duration(seconds: 3));
     return SeedData.sampleSubtitles;
@@ -18,6 +19,7 @@ class MockTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   }) async* {
     for (var segment in SeedData.sampleSubtitles) {
       await Future.delayed(const Duration(seconds: 1));

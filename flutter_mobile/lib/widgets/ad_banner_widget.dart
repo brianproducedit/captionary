@@ -13,8 +13,13 @@ class AdBannerWidget extends ConsumerStatefulWidget {
   static const String placeholderLabel = 'Ad Space';
 
   final double bannerHeight;
+  final bool showPlaceholder;
 
-  const AdBannerWidget({super.key, this.bannerHeight = defaultHeight});
+  const AdBannerWidget({
+    super.key,
+    this.bannerHeight = defaultHeight,
+    this.showPlaceholder = false,
+  });
 
   @override
   ConsumerState<AdBannerWidget> createState() => _AdBannerWidgetState();
@@ -88,7 +93,13 @@ class _AdBannerWidgetState extends ConsumerState<AdBannerWidget> {
       );
     }
 
-    // Elegant fallback / placeholder when ad is loading, offline, or running in test/desktop
+    // Official Google AdMob Program Policy requires collapsing space when no ad is loaded.
+    // Artificial ad placeholders (e.g. empty 'Ad Space' boxes) violate placement policies.
+    if (!widget.showPlaceholder) {
+      return const SizedBox.shrink();
+    }
+
+    // Optional design-time or hermetic test fallback placeholder
     return Semantics(
       label: AdBannerWidget.placeholderLabel,
       child: Container(

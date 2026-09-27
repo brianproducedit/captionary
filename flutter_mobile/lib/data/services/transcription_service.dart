@@ -5,10 +5,12 @@ abstract class TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   });
   Stream<SubtitleSegment> transcribeAudioStream({
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   });
 }

@@ -13,6 +13,7 @@ import '../widgets/app_header.dart';
 import '../widgets/player_transport_bar.dart';
 import '../widgets/subtitle_overlay.dart';
 import '../widgets/ghost_pill_button.dart';
+import '../widgets/transcription_options_sheet.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -237,10 +238,22 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
                           );
                           if (shouldTranscribe == true) {
                             if (context.mounted) {
-                              context.pushReplacement(
-                                '/transcription',
-                                extra: widget.videoPath,
-                              );
+                              final config =
+                                  await TranscriptionOptionsSheet.show(
+                                    context,
+                                    videoPath: widget.videoPath,
+                                  );
+                              if (config != null && context.mounted) {
+                                context.pushReplacement(
+                                  '/transcription',
+                                  extra: {
+                                    'videoPath': widget.videoPath,
+                                    'languageCode': config.languageCode,
+                                    'translateToEnglish':
+                                        config.translateToEnglish,
+                                  },
+                                );
+                              }
                             }
                           } else if (shouldTranscribe == false) {
                             if (context.mounted) {

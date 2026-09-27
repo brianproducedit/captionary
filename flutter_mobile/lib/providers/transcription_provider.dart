@@ -85,7 +85,17 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
     return const TranscriptionState();
   }
 
-  Future<void> startTranscription(String videoPath, {String? mediaId}) async {
+  String? _lastLanguageCode;
+  bool _lastTranslateToEnglish = false;
+
+  Future<void> startTranscription(
+    String videoPath, {
+    String? mediaId,
+    String? languageCode,
+    bool translateToEnglish = false,
+  }) async {
+    _lastLanguageCode = languageCode;
+    _lastTranslateToEnglish = translateToEnglish;
     final effectiveMediaId = mediaId ?? p.basenameWithoutExtension(videoPath);
     state = state.copyWith(
       status: TranscriptionStatus.extractingAudio,
@@ -148,6 +158,8 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
       final segments = await pipeline.run(
         videoPath: videoPath,
         mediaId: effectiveMediaId,
+        languageCode: languageCode,
+        translateToEnglish: translateToEnglish,
       );
 
       if (segments.isNotEmpty) {
@@ -174,7 +186,11 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   }
 
   void retryTranscription(String videoPath) {
-    startTranscription(videoPath);
+    startTranscription(
+      videoPath,
+      languageCode: _lastLanguageCode,
+      translateToEnglish: _lastTranslateToEnglish,
+    );
   }
 }
 

@@ -21,6 +21,7 @@ import '../widgets/donate_banner.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/transcription_options_sheet.dart';
 
 class MediaLibraryScreen extends ConsumerStatefulWidget {
   const MediaLibraryScreen({super.key});
@@ -528,7 +529,7 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
         statusLabel = 'Missing File';
     }
 
-    void onTap() {
+    void onTap() async {
       if (_isSelecting) {
         _toggleSelection(item.id);
         return;
@@ -562,7 +563,20 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       }
 
       if (item.status == MediaStatus.newItem) {
-        context.push('/transcription', extra: item.filePath);
+        final config = await TranscriptionOptionsSheet.show(
+          context,
+          videoPath: item.filePath,
+        );
+        if (config != null && context.mounted) {
+          context.push(
+            '/transcription',
+            extra: {
+              'videoPath': item.filePath,
+              'languageCode': config.languageCode,
+              'translateToEnglish': config.translateToEnglish,
+            },
+          );
+        }
       } else if (item.status == MediaStatus.transcribed) {
         context.push('/player', extra: item.filePath);
       } else {
@@ -611,7 +625,20 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
               );
               if (shouldTranscribe == true) {
                 if (context.mounted) {
-                  context.push('/transcription', extra: item.filePath);
+                  final config = await TranscriptionOptionsSheet.show(
+                    context,
+                    videoPath: item.filePath,
+                  );
+                  if (config != null && context.mounted) {
+                    context.push(
+                      '/transcription',
+                      extra: {
+                        'videoPath': item.filePath,
+                        'languageCode': config.languageCode,
+                        'translateToEnglish': config.translateToEnglish,
+                      },
+                    );
+                  }
                 }
                 return;
               } else if (shouldTranscribe == null) {

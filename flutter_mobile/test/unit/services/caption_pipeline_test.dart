@@ -177,12 +177,14 @@ class TestTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   }) async {
     final list = <SubtitleSegment>[];
     await for (final s in transcribeAudioStream(
       audioPath: audioPath,
       languageCode: languageCode,
       modelPath: modelPath,
+      isTranslate: isTranslate,
     )) {
       list.add(s);
     }
@@ -194,6 +196,7 @@ class TestTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   }) async* {
     wasCancelled = false;
     if (shouldFail) {

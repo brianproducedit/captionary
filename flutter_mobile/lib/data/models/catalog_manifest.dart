@@ -124,6 +124,7 @@ class CatalogModel {
     int? bytesDownloaded,
     double? downloadSpeedMbps,
     int priority = 1,
+    String? localPath,
   }) {
     final primaryLang = languageCodes.first;
     return LanguagePack(
@@ -132,6 +133,7 @@ class CatalogModel {
       nativeName: _resolveNativeName(primaryLang, displayName),
       region: _resolveRegion(primaryLang),
       modelFile: p.basename(file),
+      localPath: localPath,
       sizeBytes: sizeBytes,
       sha256: sha256,
       accuracy: _resolveAccuracy(id),
@@ -154,6 +156,7 @@ class CatalogModel {
     int? bytesDownloaded,
     double? downloadSpeedMbps,
     int priority = 1,
+    String? localPath,
   }) {
     final englishName = languageCodes.length == 1
         ? displayName
@@ -165,6 +168,7 @@ class CatalogModel {
       nativeName: nativeName,
       region: _resolveRegion(langCode),
       modelFile: p.basename(file),
+      localPath: localPath,
       sizeBytes: sizeBytes,
       sha256: sha256,
       accuracy: _resolveAccuracy(id),

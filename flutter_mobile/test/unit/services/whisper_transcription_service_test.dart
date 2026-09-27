@@ -81,6 +81,7 @@ void main() {
                 required String audioPath,
                 required String modelPath,
                 required String languageCode,
+                bool? isTranslate,
               }) async {
                 return WhisperTranscribeResponse(
                   type: 'text',
@@ -126,6 +127,7 @@ void main() {
               required String audioPath,
               required String modelPath,
               required String languageCode,
+              bool? isTranslate,
             }) async {
               await Future.delayed(const Duration(milliseconds: 80));
               return WhisperTranscribeResponse(
@@ -167,6 +169,7 @@ void main() {
               required String audioPath,
               required String modelPath,
               required String languageCode,
+              bool? isTranslate,
             }) async {
               activeRunners++;
               if (activeRunners > maxConcurrent) {
@@ -216,6 +219,7 @@ void main() {
                 required String audioPath,
                 required String modelPath,
                 required String languageCode,
+                bool? isTranslate,
               }) async {
                 return WhisperTranscribeResponse(
                   type: 'text',

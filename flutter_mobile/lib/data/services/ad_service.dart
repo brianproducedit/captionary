@@ -94,8 +94,8 @@ class AdService {
             '[AdService] BannerAd ($unitId) failed to load: ${error.message} (code ${error.code})',
           );
           ad.dispose();
-          // If custom live banner failed and we aren't already trying the test banner, fallback to test banner
-          if (unitId != testFallbackUnitId) {
+          // Only fallback to test banner in debug mode to avoid serving test ads in production
+          if (kDebugMode && unitId != testFallbackUnitId) {
             debugPrint(
               '[AdService] Retrying with Google Test Banner unit: $testFallbackUnitId',
             );

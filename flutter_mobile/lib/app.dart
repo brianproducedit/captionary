@@ -172,9 +172,25 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
         GoRoute(
           path: '/transcription',
           pageBuilder: (context, state) {
-            final videoPath = state.extra as String? ?? '';
+            String videoPath = '';
+            String? languageCode;
+            bool translateToEnglish = false;
+
+            if (state.extra is Map<String, dynamic>) {
+              final args = state.extra as Map<String, dynamic>;
+              videoPath = args['videoPath'] as String? ?? '';
+              languageCode = args['languageCode'] as String?;
+              translateToEnglish = args['translateToEnglish'] as bool? ?? false;
+            } else if (state.extra is String) {
+              videoPath = state.extra as String;
+            }
+
             return CustomTransitionPage(
-              child: TranscriptionScreen(videoPath: videoPath),
+              child: TranscriptionScreen(
+                videoPath: videoPath,
+                languageCode: languageCode,
+                translateToEnglish: translateToEnglish,
+              ),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {
                     return FadeTransition(opacity: animation, child: child);

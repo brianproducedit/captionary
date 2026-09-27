@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
@@ -21,6 +22,7 @@ typedef WhisperEngineRunner = Future<WhisperTranscribeResponse> Function({
   required String audioPath,
   required String modelPath,
   required String languageCode,
+  bool? isTranslate,
 });
 
 /// Production on-device Whisper transcription service.
@@ -55,12 +57,14 @@ class WhisperTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   }) async {
     final List<SubtitleSegment> segments = [];
     await for (final segment in transcribeAudioStream(
       audioPath: audioPath,
       languageCode: languageCode,
       modelPath: modelPath,
+      isTranslate: isTranslate,
     )) {
       segments.add(segment);
     }
@@ -72,6 +76,7 @@ class WhisperTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String languageCode,
     required String modelPath,
+    bool isTranslate = false,
   }) async* {
     _isCancelled = false;
 
@@ -162,12 +167,14 @@ class WhisperTranscriptionService implements TranscriptionService {
             audioPath: chunk.file.path,
             modelPath: resolvedModelPath,
             languageCode: languageCode,
+            isTranslate: isTranslate,
           );
         } else {
           response = await _defaultRunWhisper(
             audioPath: chunk.file.path,
             modelPath: resolvedModelPath,
             languageCode: languageCode,
+            isTranslate: isTranslate,
           );
         }
 
@@ -223,6 +230,7 @@ class WhisperTranscriptionService implements TranscriptionService {
     required String audioPath,
     required String modelPath,
     required String languageCode,
+    bool isTranslate = false,
   }) async {
     final modelEnum = _resolveModelEnum(modelPath);
     final modelDir = p.dirname(modelPath);
@@ -236,55 +244,90 @@ class WhisperTranscriptionService implements TranscriptionService {
     final request = TranscribeRequest(
       audio: audioPath,
       language: languageCode.isEmpty ? 'auto' : languageCode,
+      isTranslate: isTranslate,
       isNoTimestamps: false,
-      splitOnWord: false,
+      splitOnWord: true,
       threads: 4,
     );
 
     return await whisper.transcribe(transcribeRequest: request);
   }
 
+  Future<String> _ensureExpectedWhisperName(
+    File file,
+    WhisperModel modelEnum,
+  ) async {
+    final expectedFileName = 'ggml-${modelEnum.modelName}.bin';
+    if (p.basename(file.path) == expectedFileName) {
+      return file.path;
+    }
+
+    final targetDir = file.parent;
+    final targetFile = File('${targetDir.path}/$expectedFileName');
+    if (!await targetFile.exists()) {
+      try {
+        await file.copy(targetFile.path);
+        return targetFile.path;
+      } catch (_) {
+        return file.path;
+      }
+    }
+    return targetFile.path;
+  }
+
   /// Resolves the model path and ensures the file exists in the directory format
   /// expected by whisper.cpp (`$dir/ggml-$name.bin`).
   Future<String> _resolveModelFile(String modelPath) async {
+    final modelEnum = _resolveModelEnum(modelPath);
+    final expectedFileName = 'ggml-${modelEnum.modelName}.bin';
+
     final originalFile = File(modelPath);
     if (await originalFile.exists()) {
-      final modelEnum = _resolveModelEnum(modelPath);
-      final expectedFileName = 'ggml-${modelEnum.modelName}.bin';
-
-      if (p.basename(modelPath) == expectedFileName) {
-        return originalFile.path;
-      }
-
-      // Copy/link to expected file name in the same directory or temp directory
-      final targetDir = originalFile.parent;
-      final targetFile = File('${targetDir.path}/$expectedFileName');
-      if (!await targetFile.exists()) {
-        try {
-          await originalFile.copy(targetFile.path);
-          return targetFile.path;
-        } catch (_) {
-          return originalFile.path;
-        }
-      }
-      return targetFile.path;
+      return _ensureExpectedWhisperName(originalFile, modelEnum);
     }
 
-    // If model file is missing, check if it exists in app support directory
-    Directory appSupport;
+    // Candidate directories to search for existing models:
+    // 1. Injected temp directory (tests)
+    // 2. Persistent public Android download directory
+    // 3. Application support directory / models
+    // 4. Application documents directory / models
+    final candidateDirs = <Directory>[];
     if (getTempDirectory != null) {
-      appSupport = await getTempDirectory!();
-    } else {
       try {
-        appSupport = await getApplicationSupportDirectory();
-      } catch (_) {
-        appSupport = Directory.systemTemp;
-      }
+        candidateDirs.add(await getTempDirectory!());
+      } catch (_) {}
     }
+    if (!kIsWeb && Platform.isAndroid) {
+      candidateDirs.add(
+        Directory('/storage/emulated/0/Download/Captionary/models'),
+      );
+    }
+    try {
+      final appSupport = await getApplicationSupportDirectory();
+      candidateDirs.add(Directory(p.join(appSupport.path, 'models')));
+      candidateDirs.add(appSupport);
+    } catch (_) {}
+    try {
+      final appDocs = await getApplicationDocumentsDirectory();
+      candidateDirs.add(Directory(p.join(appDocs.path, 'models')));
+      candidateDirs.add(appDocs);
+    } catch (_) {}
 
-    final candidate = File('${appSupport.path}/${p.basename(modelPath)}');
-    if (await candidate.exists()) {
-      return candidate.path;
+    final filename = p.basename(modelPath);
+    for (final cDir in candidateDirs) {
+      if (!await cDir.exists()) continue;
+
+      // 1. Direct filename match
+      final candidate = File(p.join(cDir.path, filename));
+      if (await candidate.exists()) {
+        return _ensureExpectedWhisperName(candidate, modelEnum);
+      }
+
+      // 2. Expected whisper filename match (e.g. ggml-tiny.bin)
+      final expectedCandidate = File(p.join(cDir.path, expectedFileName));
+      if (await expectedCandidate.exists()) {
+        return expectedCandidate.path;
+      }
     }
 
     throw FileSystemException(

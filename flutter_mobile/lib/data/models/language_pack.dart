@@ -4,6 +4,7 @@ class LanguagePack {
   final String nativeName;
   final String region;
   final String modelFile;
+  final String? localPath;
   final int sizeBytes;
   final String sha256;
   final String accuracy;
@@ -23,6 +24,7 @@ class LanguagePack {
     required this.nativeName,
     required this.region,
     required this.modelFile,
+    this.localPath,
     required this.sizeBytes,
     required this.sha256,
     required this.accuracy,
@@ -42,6 +44,7 @@ class LanguagePack {
     String? nativeName,
     String? region,
     String? modelFile,
+    String? localPath,
     int? sizeBytes,
     String? sha256,
     String? accuracy,
@@ -60,6 +63,7 @@ class LanguagePack {
       nativeName: nativeName ?? this.nativeName,
       region: region ?? this.region,
       modelFile: modelFile ?? this.modelFile,
+      localPath: localPath ?? this.localPath,
       sizeBytes: sizeBytes ?? this.sizeBytes,
       sha256: sha256 ?? this.sha256,
       accuracy: accuracy ?? this.accuracy,
