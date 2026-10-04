@@ -12,12 +12,14 @@ class TranscriptionScreen extends ConsumerStatefulWidget {
   final String videoPath;
   final String? languageCode;
   final bool translateToEnglish;
+  final String? modelQuality;
 
   const TranscriptionScreen({
     super.key,
     required this.videoPath,
     this.languageCode,
     this.translateToEnglish = false,
+    this.modelQuality,
   });
 
   @override
@@ -50,6 +52,7 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen>
             widget.videoPath,
             languageCode: widget.languageCode,
             translateToEnglish: widget.translateToEnglish,
+            modelQuality: widget.modelQuality,
           );
     });
   }

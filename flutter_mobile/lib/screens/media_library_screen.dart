@@ -574,6 +574,7 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
               'videoPath': item.filePath,
               'languageCode': config.languageCode,
               'translateToEnglish': config.translateToEnglish,
+              'modelQuality': config.modelQuality,
             },
           );
         }
@@ -636,6 +637,7 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                         'videoPath': item.filePath,
                         'languageCode': config.languageCode,
                         'translateToEnglish': config.translateToEnglish,
+                        'modelQuality': config.modelQuality,
                       },
                     );
                   }

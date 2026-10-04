@@ -87,15 +87,18 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
 
   String? _lastLanguageCode;
   bool _lastTranslateToEnglish = false;
+  String? _lastModelQuality;
 
   Future<void> startTranscription(
     String videoPath, {
     String? mediaId,
     String? languageCode,
     bool translateToEnglish = false,
+    String? modelQuality,
   }) async {
     _lastLanguageCode = languageCode;
     _lastTranslateToEnglish = translateToEnglish;
+    _lastModelQuality = modelQuality;
     final effectiveMediaId = mediaId ?? p.basenameWithoutExtension(videoPath);
     state = state.copyWith(
       status: TranscriptionStatus.extractingAudio,
@@ -160,6 +163,8 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
         mediaId: effectiveMediaId,
         languageCode: languageCode,
         translateToEnglish: translateToEnglish,
+        preferredModelQuality: modelQuality,
+        consolidateSentences: true,
       );
 
       if (segments.isNotEmpty) {
@@ -190,6 +195,7 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
       videoPath,
       languageCode: _lastLanguageCode,
       translateToEnglish: _lastTranslateToEnglish,
+      modelQuality: _lastModelQuality,
     );
   }
 }

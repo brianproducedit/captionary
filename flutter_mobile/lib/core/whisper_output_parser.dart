@@ -200,4 +200,78 @@ class WhisperOutputParser {
       for (int i = 0; i < merged.length; i++) merged[i].copyWith(index: i),
     ];
   }
+
+  /// Consolidates short or fragmented subtitle segments into natural, readable
+  /// 1-2 sentence subtitle blocks (typically 2-6.5 seconds, <= 100 characters).
+  static List<SubtitleSegment> consolidateSegments(
+    List<SubtitleSegment> segments, {
+    Duration minDuration = const Duration(milliseconds: 1800),
+    Duration maxDuration = const Duration(milliseconds: 6500),
+    int maxChars = 100,
+    Duration maxGap = const Duration(milliseconds: 1200),
+    int maxSentences = 2,
+  }) {
+    if (segments.isEmpty) return [];
+
+    final sentenceEndRegex = RegExp(r'[.!?。！？](\s*$)');
+    final List<SubtitleSegment> consolidated = [];
+
+    SubtitleSegment? currentBlock;
+    int sentencesInBlock = 0;
+
+    for (final seg in segments) {
+      final text = seg.text.trim();
+      if (text.isEmpty) continue;
+
+      if (currentBlock == null) {
+        currentBlock = seg.copyWith(text: text);
+        sentencesInBlock = sentenceEndRegex.hasMatch(text) ? 1 : 0;
+        continue;
+      }
+
+      final gap = seg.startTime - currentBlock.endTime;
+      final currentDuration = currentBlock.endTime - currentBlock.startTime;
+      final combinedDuration = seg.endTime - currentBlock.startTime;
+      final combinedText = '${currentBlock.text} $text';
+
+      final bool isSilenceGap = gap > maxGap || gap < const Duration(milliseconds: -300);
+      final bool exceedsMaxDuration = combinedDuration > maxDuration;
+      final bool exceedsMaxChars = combinedText.length > maxChars;
+      final bool currentBlockCompletedSentence =
+          sentenceEndRegex.hasMatch(currentBlock.text) &&
+          currentDuration >= minDuration;
+      final bool reachedMaxSentences = sentencesInBlock >= maxSentences;
+
+      if (isSilenceGap ||
+          exceedsMaxDuration ||
+          exceedsMaxChars ||
+          currentBlockCompletedSentence ||
+          reachedMaxSentences) {
+        consolidated.add(currentBlock);
+        currentBlock = seg.copyWith(text: text);
+        sentencesInBlock = sentenceEndRegex.hasMatch(text) ? 1 : 0;
+      } else {
+        final newEnd = seg.endTime > currentBlock.endTime
+            ? seg.endTime
+            : currentBlock.endTime;
+        currentBlock = currentBlock.copyWith(
+          endTime: newEnd,
+          text: combinedText,
+        );
+        if (sentenceEndRegex.hasMatch(text)) {
+          sentencesInBlock++;
+        }
+      }
+    }
+
+    if (currentBlock != null) {
+      consolidated.add(currentBlock);
+    }
+
+    return [
+      for (int i = 0; i < consolidated.length; i++)
+        consolidated[i].copyWith(index: i),
+    ];
+  }
 }
+

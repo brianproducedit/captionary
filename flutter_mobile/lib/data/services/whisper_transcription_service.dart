@@ -225,13 +225,31 @@ class WhisperTranscriptionService implements TranscriptionService {
     }
   }
 
-  /// Default production execution using whisper_flutter_new
+  /// Default production execution using whisper_flutter_new.
+  ///
+  /// Thread count is dynamically scaled per model size:
+  /// - tiny/base: 4 threads (small footprint, parallelism helps)
+  /// - small/medium: 6 threads (heavier compute, benefits from more cores)
+  /// - large: 4 threads (very heavy, excessive threading causes thrashing)
   Future<WhisperTranscribeResponse> _defaultRunWhisper({
     required String audioPath,
     required String modelPath,
     required String languageCode,
     bool isTranslate = false,
   }) async {
+    final modelFile = File(modelPath);
+    if (!await modelFile.exists() || (await modelFile.length()) == 0) {
+      if (await modelFile.exists()) {
+        try {
+          await modelFile.delete();
+        } catch (_) {}
+      }
+      throw FileSystemException(
+        'Whisper model file is empty or missing: $modelPath. Redownload required.',
+        modelPath,
+      );
+    }
+
     final modelEnum = _resolveModelEnum(modelPath);
     final modelDir = p.dirname(modelPath);
 
@@ -241,13 +259,28 @@ class WhisperTranscriptionService implements TranscriptionService {
       downloadHost: null, // Prohibits remote Hugging Face calls
     );
 
+    // Scale thread count to model weight to balance throughput vs. memory pressure
+    final int threads;
+    switch (modelEnum) {
+      case WhisperModel.tiny:
+      case WhisperModel.base:
+        threads = 4;
+        break;
+      case WhisperModel.small:
+      case WhisperModel.medium:
+        threads = 6;
+        break;
+      default:
+        threads = 4; // large models – avoid excessive thread overhead
+    }
+
     final request = TranscribeRequest(
       audio: audioPath,
       language: languageCode.isEmpty ? 'auto' : languageCode,
       isTranslate: isTranslate,
       isNoTimestamps: false,
       splitOnWord: true,
-      threads: 4,
+      threads: threads,
     );
 
     return await whisper.transcribe(transcribeRequest: request);
@@ -264,15 +297,22 @@ class WhisperTranscriptionService implements TranscriptionService {
 
     final targetDir = file.parent;
     final targetFile = File('${targetDir.path}/$expectedFileName');
-    if (!await targetFile.exists()) {
-      try {
-        await file.copy(targetFile.path);
+    if (await targetFile.exists()) {
+      final len = await targetFile.length();
+      if (len > 0) {
         return targetFile.path;
-      } catch (_) {
-        return file.path;
       }
+      try {
+        await targetFile.delete();
+      } catch (_) {}
     }
-    return targetFile.path;
+
+    try {
+      await file.copy(targetFile.path);
+      return targetFile.path;
+    } catch (_) {
+      return file.path;
+    }
   }
 
   /// Resolves the model path and ensures the file exists in the directory format
@@ -283,7 +323,13 @@ class WhisperTranscriptionService implements TranscriptionService {
 
     final originalFile = File(modelPath);
     if (await originalFile.exists()) {
-      return _ensureExpectedWhisperName(originalFile, modelEnum);
+      final len = await originalFile.length();
+      if (len > 0) {
+        return _ensureExpectedWhisperName(originalFile, modelEnum);
+      }
+      try {
+        await originalFile.delete();
+      } catch (_) {}
     }
 
     // Candidate directories to search for existing models:
@@ -320,13 +366,25 @@ class WhisperTranscriptionService implements TranscriptionService {
       // 1. Direct filename match
       final candidate = File(p.join(cDir.path, filename));
       if (await candidate.exists()) {
-        return _ensureExpectedWhisperName(candidate, modelEnum);
+        final len = await candidate.length();
+        if (len > 0) {
+          return _ensureExpectedWhisperName(candidate, modelEnum);
+        }
+        try {
+          await candidate.delete();
+        } catch (_) {}
       }
 
       // 2. Expected whisper filename match (e.g. ggml-tiny.bin)
       final expectedCandidate = File(p.join(cDir.path, expectedFileName));
       if (await expectedCandidate.exists()) {
-        return expectedCandidate.path;
+        final len = await expectedCandidate.length();
+        if (len > 0) {
+          return expectedCandidate.path;
+        }
+        try {
+          await expectedCandidate.delete();
+        } catch (_) {}
       }
     }
 

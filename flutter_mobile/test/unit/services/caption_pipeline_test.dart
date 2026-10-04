@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:captionary/core/wav_header_validator.dart';
 import 'package:captionary/data/models/download_progress.dart';
@@ -113,7 +114,12 @@ class TestLanguagePackService implements LanguagePackService {
     );
 
     // Update the pack status to installed and create model file if needed
-    final idx = languages.indexWhere((l) => l.code == code);
+    final idx = languages.indexWhere(
+      (l) =>
+          l.code == code ||
+          l.modelFile.contains(code) ||
+          p.basenameWithoutExtension(l.modelFile).contains(code),
+    );
     if (idx != -1) {
       final old = languages[idx];
       final file = File(old.modelFile);
@@ -123,6 +129,7 @@ class TestLanguagePackService implements LanguagePackService {
       languages[idx] = old.copyWith(
         status: LanguagePackStatus.installed,
         downloadProgress: 1.0,
+        localPath: old.localPath ?? old.modelFile,
       );
     }
   }
@@ -815,5 +822,76 @@ void main() {
       expect(pipeline.state.status, CaptionPipelineStatus.error);
       expect(pipeline.state.errorMessage, contains('Device memory too low'));
     });
+
+    test('consolidateSentences: true consolidates short word fragments into sentences', () async {
+      final fragments = [
+        SubtitleSegment(
+          index: 0,
+          startTime: Duration.zero,
+          endTime: const Duration(milliseconds: 500),
+          text: 'Sentence',
+          isSelected: false,
+        ),
+        SubtitleSegment(
+          index: 1,
+          startTime: const Duration(milliseconds: 550),
+          endTime: const Duration(milliseconds: 1000),
+          text: 'one.',
+          isSelected: false,
+        ),
+        SubtitleSegment(
+          index: 2,
+          startTime: const Duration(milliseconds: 1050),
+          endTime: const Duration(milliseconds: 1600),
+          text: 'Sentence',
+          isSelected: false,
+        ),
+        SubtitleSegment(
+          index: 3,
+          startTime: const Duration(milliseconds: 1650),
+          endTime: const Duration(milliseconds: 2200),
+          text: 'two.',
+          isSelected: false,
+        ),
+      ];
+
+      final audioService = TestAudioExtractionService(tempDir: tempDir);
+      final langService = TestLanguagePackService(
+        languages: [
+          LanguagePack(
+            code: 'en',
+            name: 'English',
+            nativeName: 'English',
+            region: 'Global',
+            modelFile: dummyModelFile.path,
+            sizeBytes: 100,
+            sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+            accuracy: 'High',
+            engine: 'whisper_flutter_new',
+            isBundled: false,
+            priority: 1,
+            status: LanguagePackStatus.installed,
+            downloadProgress: 1.0,
+          ),
+        ],
+      );
+      final transService = TestTranscriptionService(segments: fragments);
+
+      final pipeline = CaptionPipeline(
+        audioExtractionService: audioService,
+        languagePackService: langService,
+        transcriptionService: transService,
+      );
+
+      final segments = await pipeline.run(
+        videoPath: dummyVideoFile.path,
+        mediaId: 'consolidate_test',
+        consolidateSentences: true,
+      );
+
+      expect(segments.length, 1);
+      expect(segments.first.text, 'Sentence one. Sentence two.');
+    });
   });
 }
+

@@ -251,6 +251,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
                                     'languageCode': config.languageCode,
                                     'translateToEnglish':
                                         config.translateToEnglish,
+                                    'modelQuality': config.modelQuality,
                                   },
                                 );
                               }

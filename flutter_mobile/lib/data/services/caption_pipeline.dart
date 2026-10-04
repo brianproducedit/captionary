@@ -200,6 +200,8 @@ class CaptionPipeline {
     required String mediaId,
     String? languageCode,
     bool translateToEnglish = false,
+    String? preferredModelQuality,
+    bool consolidateSentences = false,
   }) async {
     if (_activeMediaIds.contains(mediaId)) {
       throw CaptionPipelineConflictException(mediaId);
@@ -320,7 +322,20 @@ class CaptionPipeline {
       );
 
       final availableLangs = await languagePackService.getAvailableLanguages();
-      LanguagePack? targetPack = availableLangs.firstWhere(
+      LanguagePack? targetPack;
+
+      if (preferredModelQuality != null) {
+        final q = preferredModelQuality.toLowerCase();
+        try {
+          targetPack = availableLangs.firstWhere(
+            (p) =>
+                (p.code == targetLang || p.code == 'en') &&
+                p.modelFile.toLowerCase().contains(q),
+          );
+        } catch (_) {}
+      }
+
+      targetPack ??= availableLangs.firstWhere(
         (p) => p.code == targetLang,
         orElse: () => availableLangs.firstWhere(
           (p) => p.code == 'en',
@@ -350,13 +365,20 @@ class CaptionPipeline {
       bool isModelInstalled = false;
       if (targetPack.status == LanguagePackStatus.installed ||
           targetPack.status == LanguagePackStatus.bundled) {
-        if (targetPack.localPath != null &&
-            await File(targetPack.localPath!).exists()) {
-          isModelInstalled = true;
-        } else {
-          final modelFile = File(targetPack.modelFile);
-          if (await modelFile.exists() && (await modelFile.length()) > 0) {
+        final pathToCheck = targetPack.localPath ?? targetPack.modelFile;
+        final file = File(pathToCheck);
+        if (await file.exists()) {
+          final fileLen = await file.length();
+          final bool sizeMatches = targetPack.sizeBytes > 1000
+              ? fileLen == targetPack.sizeBytes
+              : fileLen > 0;
+          if (sizeMatches) {
             isModelInstalled = true;
+          } else {
+            // Delete corrupt / partial model to avoid native SIGSEGV
+            try {
+              await file.delete();
+            } catch (_) {}
           }
         }
       }
@@ -371,8 +393,13 @@ class CaptionPipeline {
           ),
         );
 
+        final downloadTarget = targetPack.modelFile.isNotEmpty
+            ? p
+                  .basenameWithoutExtension(targetPack.modelFile)
+                  .replaceFirst('ggml-', '')
+            : targetPack.code;
         final downloadStream = languagePackService.downloadLanguagePack(
-          targetPack.code,
+          downloadTarget,
         );
         final downloadCompleter = Completer<void>();
         _downloadCompleter = downloadCompleter;
@@ -436,12 +463,21 @@ class CaptionPipeline {
           return [];
         }
 
-        // Refresh pack reference after download
+        // Refresh pack reference after download – match on BOTH language
+        // code AND model file to avoid accidentally picking a different
+        // quality variant (e.g. tiny instead of base).
         final refreshedLangs = await languagePackService
             .getAvailableLanguages();
+        final savedCode = targetPack.code;
+        final savedModelFile = targetPack.modelFile;
         targetPack = refreshedLangs.firstWhere(
-          (p) => p.code == targetPack!.code,
-          orElse: () => targetPack!,
+          (p) =>
+              p.code == savedCode &&
+              p.modelFile == savedModelFile,
+          orElse: () => refreshedLangs.firstWhere(
+            (p) => p.code == savedCode,
+            orElse: () => targetPack!,
+          ),
         );
       }
 
@@ -464,6 +500,28 @@ class CaptionPipeline {
       _transcriptionCompleter = transcriptionCompleter;
 
       final modelPathToUse = targetPack.localPath ?? targetPack.modelFile;
+
+      // Safety: verify the resolved model path is absolute and the file
+      // actually exists on disk before handing it to the native whisper
+      // library.  A relative basename like 'ggml-base.bin' would make
+      // p.dirname() return '.' and the library would silently fall back
+      // to any model it finds – potentially a corrupt one → SIGSEGV.
+      if (!p.isAbsolute(modelPathToUse)) {
+        throw StateError(
+          'Model path is not absolute after download/install: '
+          '$modelPathToUse (pack: ${targetPack.code}, '
+          'status: ${targetPack.status})',
+        );
+      }
+      final modelFile = File(modelPathToUse);
+      if (!await modelFile.exists()) {
+        throw FileSystemException(
+          'Model file missing on disk after download. '
+          'Please retry or re-download the model.',
+          modelPathToUse,
+        );
+      }
+
       final stream = transcriptionService.transcribeAudioStream(
         audioPath: audioPath,
         languageCode: targetLang,
@@ -517,6 +575,9 @@ class CaptionPipeline {
       );
 
       final mergedSegments = WhisperOutputParser.mergeSegments(rawSegments);
+      final finalSegments = consolidateSentences
+          ? WhisperOutputParser.consolidateSegments(mergedSegments)
+          : mergedSegments;
 
       // 8. Ready
       _emit(
@@ -524,11 +585,11 @@ class CaptionPipeline {
           status: CaptionPipelineStatus.ready,
           progress: 1.0,
           currentAction: 'Transcription complete',
-          segments: mergedSegments,
+          segments: finalSegments,
         ),
       );
 
-      return mergedSegments;
+      return finalSegments;
     } catch (e) {
       if (_isCancelled) {
         _emit(

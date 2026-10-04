@@ -175,12 +175,14 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
             String videoPath = '';
             String? languageCode;
             bool translateToEnglish = false;
+            String? modelQuality;
 
             if (state.extra is Map<String, dynamic>) {
               final args = state.extra as Map<String, dynamic>;
               videoPath = args['videoPath'] as String? ?? '';
               languageCode = args['languageCode'] as String?;
               translateToEnglish = args['translateToEnglish'] as bool? ?? false;
+              modelQuality = args['modelQuality'] as String?;
             } else if (state.extra is String) {
               videoPath = state.extra as String;
             }
@@ -190,6 +192,7 @@ class _CaptionaryAppState extends ConsumerState<CaptionaryApp> {
                 videoPath: videoPath,
                 languageCode: languageCode,
                 translateToEnglish: translateToEnglish,
+                modelQuality: modelQuality,
               ),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {
