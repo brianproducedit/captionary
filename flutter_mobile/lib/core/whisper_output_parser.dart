@@ -234,7 +234,8 @@ class WhisperOutputParser {
       final combinedDuration = seg.endTime - currentBlock.startTime;
       final combinedText = '${currentBlock.text} $text';
 
-      final bool isSilenceGap = gap > maxGap || gap < const Duration(milliseconds: -300);
+      final bool isSilenceGap =
+          gap > maxGap || gap < const Duration(milliseconds: -300);
       final bool exceedsMaxDuration = combinedDuration > maxDuration;
       final bool exceedsMaxChars = combinedText.length > maxChars;
       final bool currentBlockCompletedSentence =
@@ -274,4 +275,3 @@ class WhisperOutputParser {
     ];
   }
 }
-

@@ -471,9 +471,7 @@ class CaptionPipeline {
         final savedCode = targetPack.code;
         final savedModelFile = targetPack.modelFile;
         targetPack = refreshedLangs.firstWhere(
-          (p) =>
-              p.code == savedCode &&
-              p.modelFile == savedModelFile,
+          (p) => p.code == savedCode && p.modelFile == savedModelFile,
           orElse: () => refreshedLangs.firstWhere(
             (p) => p.code == savedCode,
             orElse: () => targetPack!,

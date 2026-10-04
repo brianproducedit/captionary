@@ -165,72 +165,80 @@ void main() {
       expect(merged[1].endTime, const Duration(seconds: 8));
     });
 
-    test('consolidateSegments merges short word-level fragments into sentences', () {
-      final fragments = [
-        SubtitleSegment(
-          index: 0,
-          startTime: Duration.zero,
-          endTime: const Duration(milliseconds: 400),
-          text: 'Welcome',
-          isSelected: false,
-        ),
-        SubtitleSegment(
-          index: 1,
-          startTime: const Duration(milliseconds: 450),
-          endTime: const Duration(milliseconds: 800),
-          text: 'to',
-          isSelected: false,
-        ),
-        SubtitleSegment(
-          index: 2,
-          startTime: const Duration(milliseconds: 850),
-          endTime: const Duration(milliseconds: 1400),
-          text: 'Captionary.',
-          isSelected: false,
-        ),
-        SubtitleSegment(
-          index: 3,
-          startTime: const Duration(milliseconds: 1450),
-          endTime: const Duration(milliseconds: 2200),
-          text: 'Enjoy captions!',
-          isSelected: false,
-        ),
-      ];
+    test(
+      'consolidateSegments merges short word-level fragments into sentences',
+      () {
+        final fragments = [
+          SubtitleSegment(
+            index: 0,
+            startTime: Duration.zero,
+            endTime: const Duration(milliseconds: 400),
+            text: 'Welcome',
+            isSelected: false,
+          ),
+          SubtitleSegment(
+            index: 1,
+            startTime: const Duration(milliseconds: 450),
+            endTime: const Duration(milliseconds: 800),
+            text: 'to',
+            isSelected: false,
+          ),
+          SubtitleSegment(
+            index: 2,
+            startTime: const Duration(milliseconds: 850),
+            endTime: const Duration(milliseconds: 1400),
+            text: 'Captionary.',
+            isSelected: false,
+          ),
+          SubtitleSegment(
+            index: 3,
+            startTime: const Duration(milliseconds: 1450),
+            endTime: const Duration(milliseconds: 2200),
+            text: 'Enjoy captions!',
+            isSelected: false,
+          ),
+        ];
 
-      final consolidated = WhisperOutputParser.consolidateSegments(fragments);
+        final consolidated = WhisperOutputParser.consolidateSegments(fragments);
 
-      // Should consolidate into complete sentence blocks
-      expect(consolidated.isNotEmpty, isTrue);
-      expect(consolidated.first.text, 'Welcome to Captionary. Enjoy captions!');
-      expect(consolidated.first.startTime, Duration.zero);
-      expect(consolidated.first.endTime, const Duration(milliseconds: 2200));
-    });
+        // Should consolidate into complete sentence blocks
+        expect(consolidated.isNotEmpty, isTrue);
+        expect(
+          consolidated.first.text,
+          'Welcome to Captionary. Enjoy captions!',
+        );
+        expect(consolidated.first.startTime, Duration.zero);
+        expect(consolidated.first.endTime, const Duration(milliseconds: 2200));
+      },
+    );
 
-    test('consolidateSegments respects large silence pauses between segments', () {
-      final segments = [
-        SubtitleSegment(
-          index: 0,
-          startTime: Duration.zero,
-          endTime: const Duration(seconds: 2),
-          text: 'First complete sentence.',
-          isSelected: false,
-        ),
-        // 2 second pause
-        SubtitleSegment(
-          index: 1,
-          startTime: const Duration(seconds: 4),
-          endTime: const Duration(seconds: 6),
-          text: 'After a pause sentence.',
-          isSelected: false,
-        ),
-      ];
+    test(
+      'consolidateSegments respects large silence pauses between segments',
+      () {
+        final segments = [
+          SubtitleSegment(
+            index: 0,
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 2),
+            text: 'First complete sentence.',
+            isSelected: false,
+          ),
+          // 2 second pause
+          SubtitleSegment(
+            index: 1,
+            startTime: const Duration(seconds: 4),
+            endTime: const Duration(seconds: 6),
+            text: 'After a pause sentence.',
+            isSelected: false,
+          ),
+        ];
 
-      final consolidated = WhisperOutputParser.consolidateSegments(segments);
+        final consolidated = WhisperOutputParser.consolidateSegments(segments);
 
-      expect(consolidated.length, 2);
-      expect(consolidated[0].text, 'First complete sentence.');
-      expect(consolidated[1].text, 'After a pause sentence.');
-    });
+        expect(consolidated.length, 2);
+        expect(consolidated[0].text, 'First complete sentence.');
+        expect(consolidated[1].text, 'After a pause sentence.');
+      },
+    );
   });
 }
-

@@ -117,11 +117,18 @@ class _TranscriptionOptionsSheetState
     ),
   ];
 
-
   /// Languages where Whisper struggles with small models and benefits from
   /// translate mode or a larger model.
   static const Set<String> _lowResourceLanguages = {
-    'sn', 'zu', 'nd', 'st', 'nso', 'tn', 'to', 'xh', 'yo',
+    'sn',
+    'zu',
+    'nd',
+    'st',
+    'nso',
+    'tn',
+    'to',
+    'xh',
+    'yo',
   };
 
   static const List<Map<String, String>> _supportedLanguages = [
@@ -623,10 +630,7 @@ class _TranscriptionOptionsSheetState
 
     return RadioListTile<String>(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 0,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
       value: tier.id,
       activeColor: AppColors.primary,
       title: Row(
@@ -634,10 +638,7 @@ class _TranscriptionOptionsSheetState
           Expanded(
             child: Text(
               tier.label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
           if (ramTooLow)
@@ -660,10 +661,7 @@ class _TranscriptionOptionsSheetState
       ),
       subtitle: Text(
         '${tier.description} (${tier.sizeLabel})',
-        style: const TextStyle(
-          fontSize: 11,
-          color: AppColors.onSurfaceVariant,
-        ),
+        style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
       ),
     );
   }
