@@ -186,18 +186,31 @@ jobs:
 
           echo "All release artifacts uploaded to Cloudflare R2 successfully!"
 
-      - name: Publish Private GitHub Release Backup
+      - name: Publish or Update GitHub Release
         shell: bash
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$RELEASE_TAG" \
-            flutter_mobile/build/app/outputs/flutter-apk/*.apk \
-            flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt \
-            flutter_mobile/build/app/outputs/flutter-apk/latest-release.json \
-            --generate-notes \
-            --title "Captionary $RELEASE_TAG" || echo "GitHub release creation skipped or already exists."
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "GitHub release $RELEASE_TAG already exists. Uploading updated assets with --clobber..."
+            gh release upload "$RELEASE_TAG" \
+              flutter_mobile/build/app/outputs/flutter-apk/*.apk \
+              flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt \
+              flutter_mobile/build/app/outputs/flutter-apk/latest-release.json \
+              --clobber
+            gh release edit "$RELEASE_TAG" --title "Captionary $RELEASE_TAG"
+            echo "Existing GitHub release $RELEASE_TAG updated with latest assets."
+          else
+            echo "Creating new GitHub release $RELEASE_TAG..."
+            gh release create "$RELEASE_TAG" \
+              flutter_mobile/build/app/outputs/flutter-apk/*.apk \
+              flutter_mobile/build/app/outputs/flutter-apk/SHA256SUMS.txt \
+              flutter_mobile/build/app/outputs/flutter-apk/latest-release.json \
+              --generate-notes \
+              --title "Captionary $RELEASE_TAG"
+            echo "GitHub release $RELEASE_TAG created successfully."
+          fi
 
       - name: Clean up signing files
         if: always()
