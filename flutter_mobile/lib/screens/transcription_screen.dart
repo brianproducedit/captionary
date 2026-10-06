@@ -127,7 +127,39 @@ class _TranscriptionScreenState extends ConsumerState<TranscriptionScreen>
               ?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
+        if (widget.modelQuality != null ||
+            (state.currentAction?.contains('RAM Delegation') ?? false)) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(9999),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Symbols.memory, size: 14, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  widget.modelQuality != null
+                      ? 'Whisper ${(widget.modelQuality ?? "").toUpperCase()} · RAM Optimized'
+                      : 'RAM Delegation Active · Auto-Managed',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ] else ...[
+          const SizedBox(height: 16),
+        ],
         LinearProgressIndicator(
           value: state.status == TranscriptionStatus.extractingAudio
               ? null

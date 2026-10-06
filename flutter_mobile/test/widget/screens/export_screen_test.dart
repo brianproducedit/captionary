@@ -100,6 +100,7 @@ void main() {
 
     expect(find.text('Preview'), findsOneWidget);
     expect(find.text('Share Video'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
   });
 }
 

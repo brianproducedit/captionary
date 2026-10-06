@@ -46,6 +46,7 @@ class StorageService {
   }
 
   /// Calculates real storage used across temp audio, media cache, thumbnails, and models.
+  /// Includes both app-internal and public Download/Captionary/models directories on Android.
   /// Returns size in gigabytes (GB).
   Future<double> getStorageUsedGB() async {
     final temp = await tempDirectory;
@@ -61,7 +62,20 @@ class StorageService {
     final thumbBytes = await _calculateDirectorySize(thumbDir);
     final modelsBytes = await _calculateDirectorySize(modelsDir);
 
-    final totalBytes = audioBytes + mediaBytes + thumbBytes + modelsBytes;
+    // Also account for models stored in the public downloads directory
+    // (survives app uninstallation on Android)
+    int publicModelsBytes = 0;
+    if (!kIsWeb && Platform.isAndroid) {
+      final publicModelsDir = Directory(
+        '/storage/emulated/0/Download/Captionary/models',
+      );
+      if (publicModelsDir.path != modelsDir.path) {
+        publicModelsBytes = await _calculateDirectorySize(publicModelsDir);
+      }
+    }
+
+    final totalBytes =
+        audioBytes + mediaBytes + thumbBytes + modelsBytes + publicModelsBytes;
     return totalBytes / (1024 * 1024 * 1024);
   }
 

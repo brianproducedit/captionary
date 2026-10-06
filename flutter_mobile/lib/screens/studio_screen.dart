@@ -278,8 +278,14 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
 
                             final timestamp =
                                 DateTime.now().millisecondsSinceEpoch;
-                            final outputPath =
-                                '${widget.videoPath}_captionary_$timestamp.mp4';
+                            final sourceDir = p.dirname(widget.videoPath);
+                            final nameWithoutExt = p.basenameWithoutExtension(
+                              widget.videoPath,
+                            );
+                            final outputPath = p.join(
+                              sourceDir,
+                              '${nameWithoutExt}_captioned_$timestamp.mp4',
+                            );
 
                             final stream = exportService.burnCaptions(
                               videoPath: widget.videoPath,
@@ -291,9 +297,12 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                               targetMaxResolution: targetMaxResolution,
                             );
 
+                            final sourceFileName = p.basename(widget.videoPath);
                             final job = ExportJob(
                               id: 'export_$timestamp',
-                              sourceFileName: 'Source_Video.mp4',
+                              sourceFileName: sourceFileName.isNotEmpty
+                                  ? sourceFileName
+                                  : 'Source_Video.mp4',
                               outputFileName: outputPath,
                               state: ExportState.encoding,
                               progress: 0.0,
@@ -860,7 +869,12 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             final duration = ref.read(playerProvider).duration;
 
             final timestamp = DateTime.now().millisecondsSinceEpoch;
-            final outputPath = '${widget.videoPath}_captionary_$timestamp.mp4';
+            final sourceDir = p.dirname(widget.videoPath);
+            final nameWithoutExt = p.basenameWithoutExtension(widget.videoPath);
+            final outputPath = p.join(
+              sourceDir,
+              '${nameWithoutExt}_captioned_$timestamp.mp4',
+            );
 
             final stream = exportService.burnCaptions(
               videoPath: widget.videoPath,
@@ -871,16 +885,13 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             );
 
             final sourceFileName = p.basename(widget.videoPath);
-            final outputFileName = p.basename(outputPath);
 
             final job = ExportJob(
               id: timestamp.toString(),
               sourceFileName: sourceFileName.isNotEmpty
                   ? sourceFileName
                   : 'Source_Video.mp4',
-              outputFileName: outputFileName.isNotEmpty
-                  ? outputFileName
-                  : 'Output_Video.mp4',
+              outputFileName: outputPath,
               state: ExportState.encoding,
               progress: 0.0,
               resolution: '1080x1920',

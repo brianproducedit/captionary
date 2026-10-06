@@ -337,12 +337,12 @@ class FfmpegExportService implements ExportService {
               "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
               "[vsub][logo]overlay=W-w-24:24[vout]";
           command =
-              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
         } else {
           final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
           final filterString = "$baseAssFilter$scaleSuffix";
           command =
-              "-y -i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec -c:a copy \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
         }
 
         final success = await _runFfmpeg(
@@ -404,11 +404,11 @@ class FfmpegExportService implements ExportService {
               "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
               "[vsub][logo]overlay=W-w-24:24[vout]";
           srtCommand =
-              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec -c:a copy \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
         } else {
           final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
           srtCommand =
-              "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'$scaleSuffix\" -map 0:a? -c:v $videoCodec -c:a copy \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'$scaleSuffix\" -map 0:a? -c:v $videoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
         }
 
         final success = await _runFfmpeg(

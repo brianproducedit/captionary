@@ -14,7 +14,8 @@
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:largeHeap="true"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:hasFragileUserData="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

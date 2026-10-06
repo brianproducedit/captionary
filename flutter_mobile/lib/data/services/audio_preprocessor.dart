@@ -29,7 +29,8 @@ class AudioPreprocessor implements AudioExtractionService {
   AudioPreprocessor({this.getTempDirectory, this.ffmpegRunner});
 
   /// Extracts audio from [videoPath] and transcodes it to a mono 16kHz WAV file.
-  /// Returns the path to the newly created audio file, or null on failure.
+  /// Applies speech frequency bandpass (80Hz-7500Hz) and normalization to optimize
+  /// Whisper recognition accuracy on phone recordings, with automatic fallback.
   @override
   Future<String?> extractAudio(String videoPath, {Duration? limit}) async {
     if (videoPath.trim().isEmpty) {
@@ -51,15 +52,47 @@ class AudioPreprocessor implements AudioExtractionService {
 
     final baseName = p.basenameWithoutExtension(videoPath);
     final outputPath = '${audioDir.path}/${baseName}_${_uuid.v4()}_mono.wav';
-    final command = buildCommand(
-      videoPath: videoPath,
-      outputPath: outputPath,
-      limit: limit,
-    );
 
     PerformanceLogger.recordCheckpoint(
       'extract',
       metadata: {'phase': 'start', 'video': baseName},
+    );
+
+    // Try first with speech enhancement filter; if that fails, retry standard
+    var result = await _executeFFmpeg(
+      videoPath: videoPath,
+      outputPath: outputPath,
+      limit: limit,
+      enableSpeechFilter: true,
+      baseName: baseName,
+    );
+
+    if (result == null && !_cancelRequested) {
+      debugPrint('AudioPreprocessor: retrying without speech filter...');
+      result = await _executeFFmpeg(
+        videoPath: videoPath,
+        outputPath: outputPath,
+        limit: limit,
+        enableSpeechFilter: false,
+        baseName: baseName,
+      );
+    }
+
+    return result;
+  }
+
+  Future<String?> _executeFFmpeg({
+    required String videoPath,
+    required String outputPath,
+    required Duration? limit,
+    required bool enableSpeechFilter,
+    required String baseName,
+  }) async {
+    final command = buildCommand(
+      videoPath: videoPath,
+      outputPath: outputPath,
+      limit: limit,
+      enableSpeechFilter: enableSpeechFilter,
     );
 
     final completer = Completer<String?>();
@@ -141,10 +174,14 @@ class AudioPreprocessor implements AudioExtractionService {
     required String videoPath,
     required String outputPath,
     Duration? limit,
+    bool enableSpeechFilter = false,
   }) {
     final limitArgument = limit == null ? '' : ' -t ${limit.inSeconds}';
+    final filterArg = enableSpeechFilter
+        ? ' -af "highpass=f=80,lowpass=f=7500,volume=1.5"'
+        : '';
     return '-y -i "${_escape(videoPath)}" -vn$limitArgument '
-        '-acodec pcm_s16le -ar 16000 -ac 1 "${_escape(outputPath)}"';
+        '-acodec pcm_s16le -ar 16000$filterArg -ac 1 "${_escape(outputPath)}"';
   }
 
   static String _escape(String path) => path.replaceAll('"', '\\"');

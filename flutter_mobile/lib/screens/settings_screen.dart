@@ -5,9 +5,12 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../core/constants/app_constants.dart';
 import '../core/user_preferences.dart';
+import '../data/models/language_pack.dart';
 import '../data/services/notification_service.dart';
 import '../providers/engagement_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/system_memory_provider.dart';
 import '../providers/url_open_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/donate_banner.dart';
@@ -229,7 +232,16 @@ class SettingsScreen extends ConsumerWidget {
                   _tile(
                     context,
                     title: 'RAM Allocation Tier',
-                    subtitle: 'Saved locally. Memory probes are not wired yet.',
+                    subtitle: () {
+                      final memInfo = ref
+                          .watch(systemMemoryInfoProvider)
+                          .asData
+                          ?.value;
+                      if (memInfo != null) {
+                        return 'Detected: ${memInfo.totalRamGb.toStringAsFixed(1)} GB (${memInfo.tier.name.toUpperCase()} tier) · ${prefs.ramTier == "Auto" ? "Smart RAM delegation active" : "Custom override"}';
+                      }
+                      return 'Probing device memory · Tier: ${prefs.ramTier}';
+                    }(),
                     icon: Symbols.memory,
                     trailing: _dropdown<String>(
                       context,
@@ -245,29 +257,64 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const Divider(color: AppColors.surfaceContainerHigh),
-                  _tile(
-                    context,
-                    title: 'Model Cache',
-                    subtitle:
-                        'Clearing downloaded packs is not implemented yet.',
-                    icon: Symbols.storage,
-                    trailing: OutlinedButton(
-                      onPressed: null,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.onSurfaceVariant,
-                        side: const BorderSide(
-                          color: AppColors.surfaceContainerHigh,
+                  () {
+                    final langs = ref
+                        .watch(availableLanguagesProvider)
+                        .asData
+                        ?.value;
+                    final downloadedPacks =
+                        langs
+                            ?.where(
+                              (p) =>
+                                  (p.status == LanguagePackStatus.installed ||
+                                      p.status == LanguagePackStatus.bundled) &&
+                                  !p.isBundled,
+                            )
+                            .toList() ??
+                        [];
+                    final totalDownloadedBytes = downloadedPacks.fold<int>(
+                      0,
+                      (sum, p) => sum + p.sizeBytes,
+                    );
+                    final cacheSubtitle = totalDownloadedBytes > 0
+                        ? '${(totalDownloadedBytes / (1024 * 1024)).toStringAsFixed(0)} MB in cache (${downloadedPacks.length} model packs)'
+                        : 'No downloaded models (0 MB)';
+
+                    return _tile(
+                      context,
+                      title: 'Model Cache',
+                      subtitle: cacheSubtitle,
+                      icon: Symbols.storage,
+                      trailing: OutlinedButton(
+                        key: const ValueKey('settings-clear-cache'),
+                        onPressed: totalDownloadedBytes > 0
+                            ? () => _showClearCacheDialog(
+                                context,
+                                ref,
+                                totalDownloadedBytes,
+                                downloadedPacks,
+                              )
+                            : null,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: totalDownloadedBytes > 0
+                              ? AppColors.error
+                              : AppColors.onSurfaceVariant,
+                          side: BorderSide(
+                            color: totalDownloadedBytes > 0
+                                ? AppColors.error.withValues(alpha: 0.5)
+                                : AppColors.surfaceContainerHigh,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        child: const Text('Clear'),
                       ),
-                      child: const Text('Clear'),
-                    ),
-                  ),
+                    );
+                  }(),
                 ],
               ),
             ),
@@ -524,6 +571,58 @@ class SettingsScreen extends ConsumerWidget {
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(),
               child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showClearCacheDialog(
+    BuildContext context,
+    WidgetRef ref,
+    int cacheBytes,
+    List<LanguagePack> packs,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceContainer,
+          title: const Text(
+            'Clear Model Cache?',
+            style: TextStyle(
+              color: AppColors.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'This will delete ${packs.length} downloaded model pack(s) and free up ${(cacheBytes / (1024 * 1024)).toStringAsFixed(0)} MB of storage. You can re-download them from Cloudflare R2 at any time.',
+            style: const TextStyle(color: AppColors.onSurfaceVariant),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                for (final pack in packs) {
+                  await ref
+                      .read(availableLanguagesProvider.notifier)
+                      .deleteLanguagePack(pack.code);
+                }
+                if (context.mounted) {
+                  AppToast.show(
+                    context,
+                    message: 'Model cache cleared',
+                    variant: AppToastVariant.info,
+                  );
+                }
+              },
+              child: const Text('Clear Cache'),
             ),
           ],
         );

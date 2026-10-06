@@ -104,17 +104,22 @@ class WhisperTranscriptionService implements TranscriptionService {
       // 2. Prepare model file on disk
       final resolvedModelPath = await _resolveModelFile(modelPath);
 
-      // Memory threshold safety guard before model load
+      // Memory threshold safety guard with RAM delegation before model load
       final memService = systemMemoryService ?? const SystemMemoryService();
       final memInfo = await memService.getMemoryInfo();
-      if (!memService.canSafelyRunModel(
+      final plan = memService.getDelegationPlan(
+        modelNameOrPath: resolvedModelPath,
+        memoryInfo: memInfo,
+      );
+
+      if (!memService.canRunModelWithDelegation(
         modelNameOrPath: resolvedModelPath,
         memoryInfo: memInfo,
       )) {
         throw LowMemoryException(
-          'Available memory (${memInfo.availableRamGb.toStringAsFixed(1)} GB) is below safe threshold for model.',
+          'Available memory (${memInfo.availableRamGb.toStringAsFixed(1)} GB) is below minimum safe threshold for model.',
           availableBytes: memInfo.availableRamBytes,
-          requiredBytes: 300 * 1024 * 1024,
+          requiredBytes: 150 * 1024 * 1024,
         );
       }
 
@@ -123,13 +128,17 @@ class WhisperTranscriptionService implements TranscriptionService {
         metadata: {
           'model': p.basename(resolvedModelPath),
           'availRamMb': (memInfo.availableRamBytes / (1024 * 1024)).round(),
+          'delegated': plan.isDelegated,
+          'chunkSec': plan.chunkDuration.inSeconds,
+          'threads': plan.threadCount,
         },
       );
 
-      // 3. Slice audio into 30s overlapping chunks if necessary
+      // 3. Slice audio into overlapping chunks (respecting RAM delegation chunk size)
       try {
         chunks = await WhisperChunker.chunkAudio(
           audioFile,
+          chunkDuration: plan.chunkDuration,
           getTempDirectory: getTempDirectory,
         );
       } catch (e) {
@@ -175,6 +184,14 @@ class WhisperTranscriptionService implements TranscriptionService {
             modelPath: resolvedModelPath,
             languageCode: languageCode,
             isTranslate: isTranslate,
+            threadsOverride: plan.threadCount,
+          );
+        }
+
+        if (plan.aggressiveMemoryCleanup) {
+          PerformanceLogger.recordCheckpoint(
+            'ram-cleanup',
+            metadata: {'chunk': i + 1, 'delegation': true},
           );
         }
 
@@ -227,15 +244,17 @@ class WhisperTranscriptionService implements TranscriptionService {
 
   /// Default production execution using whisper_flutter_new.
   ///
-  /// Thread count is dynamically scaled per model size:
+  /// Thread count is dynamically scaled per model size and delegation plan:
   /// - tiny/base: 4 threads (small footprint, parallelism helps)
   /// - small/medium: 6 threads (heavier compute, benefits from more cores)
   /// - large: 4 threads (very heavy, excessive threading causes thrashing)
+  /// - under RAM delegation: capped at 2 threads to prevent peak memory thrashing
   Future<WhisperTranscribeResponse> _defaultRunWhisper({
     required String audioPath,
     required String modelPath,
     required String languageCode,
     bool isTranslate = false,
+    int? threadsOverride,
   }) async {
     final modelFile = File(modelPath);
     if (!await modelFile.exists() || (await modelFile.length()) == 0) {
@@ -259,19 +278,23 @@ class WhisperTranscriptionService implements TranscriptionService {
       downloadHost: null, // Prohibits remote Hugging Face calls
     );
 
-    // Scale thread count to model weight to balance throughput vs. memory pressure
+    // Scale thread count to model weight and RAM delegation
     final int threads;
-    switch (modelEnum) {
-      case WhisperModel.tiny:
-      case WhisperModel.base:
-        threads = 4;
-        break;
-      case WhisperModel.small:
-      case WhisperModel.medium:
-        threads = 6;
-        break;
-      default:
-        threads = 4; // large models – avoid excessive thread overhead
+    if (threadsOverride != null) {
+      threads = threadsOverride;
+    } else {
+      switch (modelEnum) {
+        case WhisperModel.tiny:
+        case WhisperModel.base:
+          threads = 4;
+          break;
+        case WhisperModel.small:
+        case WhisperModel.medium:
+          threads = 6;
+          break;
+        default:
+          threads = 4; // large models – avoid excessive thread overhead
+      }
     }
 
     final request = TranscribeRequest(
@@ -344,6 +367,12 @@ class WhisperTranscriptionService implements TranscriptionService {
       } catch (_) {}
     }
     if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final dl = await getDownloadsDirectory();
+        if (dl != null) {
+          candidateDirs.add(Directory(p.join(dl.path, 'Captionary', 'models')));
+        }
+      } catch (_) {}
       candidateDirs.add(
         Directory('/storage/emulated/0/Download/Captionary/models'),
       );

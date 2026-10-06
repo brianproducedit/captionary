@@ -229,6 +229,13 @@ class _TranscriptionOptionsSheetState
   bool get _isLowResourceSelected =>
       _lowResourceLanguages.contains(_selectedLanguage);
 
+  String _langNameForCode(String code) {
+    for (final l in _supportedLanguages) {
+      if (l['code'] == code) return l['name'] ?? code;
+    }
+    return code;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -384,25 +391,66 @@ class _TranscriptionOptionsSheetState
                     GlassCard(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 8,
+                        vertical: 10,
                       ),
-                      child: Row(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Symbols.lightbulb,
-                            color: Colors.amber.shade300,
-                            size: 20,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Symbols.lightbulb,
+                                color: Colors.amber.shade300,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'For local languages like Shona, Whisper requires the Small or Medium model and "Translate into English" mode to produce accurate English captions without outputting "[speaking foreign language]".',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.amber.shade200,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'For best results with this language, use "Translate into English" mode with the Small or Medium model. '
-                              'Smaller models may output "[speaking foreign language]" for low-resource languages.',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.amber.shade200,
-                                height: 1.4,
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                backgroundColor: Colors.amber.shade400
+                                    .withValues(alpha: 0.15),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _translateToEnglish = true;
+                                  _modelQuality = (_deviceRamGb >= 6)
+                                      ? 'medium'
+                                      : 'small';
+                                });
+                                _checkModelStatus();
+                              },
+                              icon: Icon(
+                                Symbols.auto_fix_high,
+                                size: 16,
+                                color: Colors.amber.shade300,
+                              ),
+                              label: Text(
+                                'Apply Best Settings for ${_langNameForCode(_selectedLanguage)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade200,
+                                ),
                               ),
                             ),
                           ),

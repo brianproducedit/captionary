@@ -16,6 +16,49 @@ class WhisperOutputParser {
     r'(?:\[)?(?:(\d{1,2}):)?(\d{2}):(\d{2})[\.,](\d{3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[\.,](\d{3})(?:\])?\s*(.*)',
   );
 
+  /// Regular expression to match common Whisper non-speech tags in brackets, parentheses, or asterisks:
+  /// Examples:
+  ///   [speaking foreign language], [foreign speech], [foreign language]
+  ///   (speaking foreign language), (music), *music*, [applause], [laughter]
+  ///   [inaudible], [silence], [blank_audio], [cheering], [screaming]
+  static final RegExp _nonSpeechBracketPattern = RegExp(
+    r'(\[|\(|\*)\s*(speaking\s+foreign\s+language|foreign\s+speech|foreign\s+language|music|applause|cheering|laughter|gasp|groan|sigh|cough|snicker|screaming|background\s+noise|inaudible|silence|blank_audio|whispering)\s*(\]|\)|\*)',
+    caseSensitive: false,
+  );
+
+  /// Standalone phrases that represent non-speech placeholders emitted by Whisper
+  static final RegExp _standaloneNonSpeechPattern = RegExp(
+    r'^(speaking\s+foreign\s+language|foreign\s+speech|foreign\s+language|music|inaudible|blank_audio|silence)[\.\?!]*$',
+    caseSensitive: false,
+  );
+
+  /// Cleans raw text from Whisper:
+  /// - Strips bracketed non-speech markers (e.g. `[music] Hello` -> `Hello`).
+  /// - Discards text that is solely a non-speech placeholder (e.g. `speaking foreign language`).
+  /// - Collapses multiple spaces.
+  /// Returns cleaned string, or empty string if text has no spoken content.
+  static String cleanSegmentText(String rawText) {
+    var text = rawText.trim();
+    if (text.isEmpty) return '';
+
+    // Check if the whole string is a standalone non-speech tag
+    if (_standaloneNonSpeechPattern.hasMatch(text)) {
+      return '';
+    }
+
+    // Strip bracketed non-speech markers
+    text = text.replaceAll(_nonSpeechBracketPattern, ' ').trim();
+
+    // Check again after stripping brackets
+    if (text.isEmpty || _standaloneNonSpeechPattern.hasMatch(text)) {
+      return '';
+    }
+
+    // Collapse whitespace
+    text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text;
+  }
+
   /// Convert a list of native [WhisperTranscribeSegment]s to [SubtitleSegment]s,
   /// applying a [timeOffset] (for chunked audio) and ensuring valid durations.
   static List<SubtitleSegment> parseSegments(
@@ -27,7 +70,7 @@ class WhisperOutputParser {
 
     for (int i = 0; i < rawSegments.length; i++) {
       final seg = rawSegments[i];
-      final text = seg.text.trim();
+      final text = cleanSegmentText(seg.text);
       if (text.isEmpty) continue;
 
       var start = seg.fromTs + timeOffset;
@@ -83,7 +126,8 @@ class WhisperOutputParser {
         final endS = int.tryParse(match.group(7) ?? '0') ?? 0;
         final endMs = int.tryParse(match.group(8) ?? '0') ?? 0;
 
-        final text = (match.group(9) ?? '').trim();
+        final rawSegText = (match.group(9) ?? '').trim();
+        final text = cleanSegmentText(rawSegText);
         if (text.isEmpty) continue;
 
         var start =
@@ -126,7 +170,8 @@ class WhisperOutputParser {
     }
 
     // Fallback if no timestamps were present: treat as single block
-    final cleanText = trimmed.replaceAll(RegExp(r'\s+'), ' ');
+    final cleanText = cleanSegmentText(trimmed);
+    if (cleanText.isEmpty) return [];
     return [
       SubtitleSegment(
         index: startIndex,
@@ -140,7 +185,7 @@ class WhisperOutputParser {
 
   /// Merges segments from sequential / overlapping chunks into a single, clean list:
   /// - Sorts by startTime.
-  /// - Removes exact duplicates occurring at chunk overlap boundaries.
+  /// - Removes exact duplicates occurring at chunk overlap boundaries and hallucination loops.
   /// - Clamps overlapping durations monotonically (`prev.endTime <= current.startTime`).
   /// - Re-indexes sequentially from 0.
   static List<SubtitleSegment> mergeSegments(List<SubtitleSegment> segments) {
@@ -159,12 +204,12 @@ class WhisperOutputParser {
 
       final prev = merged.last;
 
-      // 1. Deduplication: exact or near-identical text within overlap window (<= 3s apart)
+      // 1. Deduplication: exact or near-identical text within overlap or repetition window (<= 6s apart)
       final sameText =
           prev.text.toLowerCase().trim() == current.text.toLowerCase().trim();
       final closeInTime =
           (current.startTime - prev.startTime).abs() <
-          const Duration(seconds: 3);
+          const Duration(seconds: 6);
 
       if (sameText && closeInTime) {
         if (current.endTime > prev.endTime) {

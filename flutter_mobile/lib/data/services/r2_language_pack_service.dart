@@ -75,18 +75,26 @@ class R2LanguagePackService implements LanguagePackService {
     // /storage/emulated/0/Download/Captionary/models
     if (!kIsWeb && Platform.isAndroid) {
       try {
-        final publicDownloadDir = Directory(
+        Directory? publicDir;
+        try {
+          final dl = await getDownloadsDirectory();
+          if (dl != null) {
+            publicDir = Directory(p.join(dl.path, 'Captionary', 'models'));
+          }
+        } catch (_) {}
+        publicDir ??= Directory(
           '/storage/emulated/0/Download/Captionary/models',
         );
-        if (!await publicDownloadDir.exists()) {
-          await publicDownloadDir.create(recursive: true);
+
+        if (!await publicDir.exists()) {
+          await publicDir.create(recursive: true);
         }
         // Test write probe to verify write permissions
-        final testFile = File('${publicDownloadDir.path}/.probe');
+        final testFile = File('${publicDir.path}/.probe');
         await testFile.writeAsString('probe');
         await testFile.delete();
-        _resolvedDir = publicDownloadDir;
-        return publicDownloadDir;
+        _resolvedDir = publicDir;
+        return publicDir;
       } catch (e) {
         debugPrint(
           '[R2LanguagePackService] Public download dir not accessible ($e), falling back to app support dir',
@@ -381,6 +389,12 @@ class R2LanguagePackService implements LanguagePackService {
     // 4. Application Documents directory / models
     final candidateDirs = <Directory>[dir];
     if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final dl = await getDownloadsDirectory();
+        if (dl != null) {
+          candidateDirs.add(Directory(p.join(dl.path, 'Captionary', 'models')));
+        }
+      } catch (_) {}
       candidateDirs.add(
         Directory('/storage/emulated/0/Download/Captionary/models'),
       );
@@ -527,14 +541,33 @@ class R2LanguagePackService implements LanguagePackService {
     final partFile = File('$finalPath.part');
     final metaFile = File('$finalPath.meta.json');
 
-    // If already installed and valid, yield complete immediately
-    if (await finalFile.exists() && await metaFile.exists()) {
+    // If already installed and valid, yield complete immediately (restores metadata if missing after reinstallation)
+    if (await finalFile.exists()) {
       final currentSize = await finalFile.length();
-      if (currentSize == model.sizeBytes) {
+      final bool isComplete = model.sizeBytes > 0
+          ? currentSize == model.sizeBytes
+          : currentSize > 0;
+      if (isComplete) {
+        if (!await metaFile.exists()) {
+          final metadata = {
+            'id': model.id,
+            'engine': model.engine,
+            'file': p.basename(model.file),
+            'language_codes': model.languageCodes,
+            'display_name': model.displayName,
+            'size_bytes': model.sizeBytes,
+            'sha256': model.sha256,
+            'installed_at': DateTime.now().toIso8601String(),
+            'catalog_version': catalog.catalogVersion,
+          };
+          try {
+            await metaFile.writeAsString(jsonEncode(metadata));
+          } catch (_) {}
+        }
         yield DownloadProgress(
           languageCode: code,
-          downloadedBytes: model.sizeBytes,
-          totalBytes: model.sizeBytes,
+          downloadedBytes: currentSize,
+          totalBytes: model.sizeBytes > 0 ? model.sizeBytes : currentSize,
           speedBytesPerSec: 0,
           estimatedTimeRemaining: Duration.zero,
           state: DownloadState.complete,
@@ -769,6 +802,12 @@ class R2LanguagePackService implements LanguagePackService {
     final filename = p.basename(model.file);
     final candidateDirs = <Directory>[dir];
     if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final dl = await getDownloadsDirectory();
+        if (dl != null) {
+          candidateDirs.add(Directory(p.join(dl.path, 'Captionary', 'models')));
+        }
+      } catch (_) {}
       candidateDirs.add(
         Directory('/storage/emulated/0/Download/Captionary/models'),
       );

@@ -187,6 +187,51 @@ void main() {
         8,
       );
     });
+
+    test(
+      'canRunModelWithDelegation allows running higher models when constrained',
+      () {
+        const service = SystemMemoryService();
+
+        // Device with 800 MB free (standard device)
+        const info800Mb = SystemMemoryInfo(
+          totalRamBytes: 4 * 1024 * 1024 * 1024,
+          availableRamBytes: 800 * 1024 * 1024,
+          thresholdBytes: 400 * 1024 * 1024,
+          isLowMemory: false,
+          currentRssBytes: 100 * 1024 * 1024,
+          maxRssBytes: 150 * 1024 * 1024,
+        );
+
+        // Unconstrained check fails for medium (needs 1.5GB)
+        expect(
+          service.canSafelyRunModel(
+            modelNameOrPath: 'ggml-medium.bin',
+            memoryInfo: info800Mb,
+          ),
+          isFalse,
+        );
+
+        // Delegated check succeeds (delegated medium needs 600MB)
+        expect(
+          service.canRunModelWithDelegation(
+            modelNameOrPath: 'ggml-medium.bin',
+            memoryInfo: info800Mb,
+          ),
+          isTrue,
+        );
+
+        // Delegation plan adapts chunk duration and threads
+        final plan = service.getDelegationPlan(
+          modelNameOrPath: 'ggml-medium.bin',
+          memoryInfo: info800Mb,
+        );
+        expect(plan.isDelegated, isTrue);
+        expect(plan.chunkDuration, const Duration(seconds: 15));
+        expect(plan.threadCount, 2);
+        expect(plan.aggressiveMemoryCleanup, isTrue);
+      },
+    );
   });
 
   group('SystemMemoryService Platform Channel', () {

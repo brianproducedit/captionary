@@ -240,5 +240,65 @@ void main() {
         expect(consolidated[1].text, 'After a pause sentence.');
       },
     );
+
+    test(
+      'cleanSegmentText strips non-speech tags and discards placeholders',
+      () {
+        expect(
+          WhisperOutputParser.cleanSegmentText('[speaking foreign language]'),
+          '',
+        );
+        expect(
+          WhisperOutputParser.cleanSegmentText('(speaking foreign language)'),
+          '',
+        );
+        expect(
+          WhisperOutputParser.cleanSegmentText('speaking foreign language'),
+          '',
+        );
+        expect(WhisperOutputParser.cleanSegmentText('[foreign speech]'), '');
+        expect(WhisperOutputParser.cleanSegmentText('[music]'), '');
+        expect(WhisperOutputParser.cleanSegmentText('[applause]'), '');
+        expect(WhisperOutputParser.cleanSegmentText('[inaudible]'), '');
+        expect(
+          WhisperOutputParser.cleanSegmentText(
+            '[music] Welcome to the podcast!',
+          ),
+          'Welcome to the podcast!',
+        );
+        expect(
+          WhisperOutputParser.cleanSegmentText(
+            'Hello everyone [laughter] and goodbye',
+          ),
+          'Hello everyone and goodbye',
+        );
+      },
+    );
+
+    test('parseSegments discards solitary hallucination tags', () {
+      final raw = [
+        WhisperTranscribeSegment(
+          fromTs: const Duration(seconds: 0),
+          toTs: const Duration(seconds: 3),
+          text: '[speaking foreign language]',
+        ),
+        WhisperTranscribeSegment(
+          fromTs: const Duration(seconds: 4),
+          toTs: const Duration(seconds: 7),
+          text: 'Hello from Harare!',
+        ),
+        WhisperTranscribeSegment(
+          fromTs: const Duration(seconds: 8),
+          toTs: const Duration(seconds: 11),
+          text: '[music]',
+        ),
+      ];
+
+      final result = WhisperOutputParser.parseSegments(raw);
+
+      expect(result.length, 1);
+      expect(result[0].text, 'Hello from Harare!');
+      expect(result[0].startTime, const Duration(seconds: 4));
+    });
   });
 }

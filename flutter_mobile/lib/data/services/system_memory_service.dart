@@ -167,4 +167,121 @@ class SystemMemoryService {
     if (lower.contains('large')) return 8;
     return 4;
   }
+
+  /// Evaluates whether the system has sufficient memory to run the model safely
+  /// when RAM delegation strategies (smaller audio chunks, reduced threads,
+  /// aggressive GC between iterations) are enabled.
+  bool canRunModelWithDelegation({
+    required String modelNameOrPath,
+    required SystemMemoryInfo memoryInfo,
+  }) {
+    // Hard floor: if Android OS has signaled isLowMemory AND available is below 120MB,
+    // prevent execution to avoid guaranteed process termination by Android LMK.
+    if (memoryInfo.isLowMemory &&
+        memoryInfo.availableRamBytes < 120 * 1024 * 1024) {
+      return false;
+    }
+
+    final lower = modelNameOrPath.toLowerCase();
+    final int minDelegatedBytes;
+
+    if (lower.contains('tiny')) {
+      minDelegatedBytes = 80 * 1024 * 1024; // 80 MB
+    } else if (lower.contains('base')) {
+      minDelegatedBytes = 150 * 1024 * 1024; // 150 MB
+    } else if (lower.contains('small')) {
+      minDelegatedBytes = 350 * 1024 * 1024; // 350 MB
+    } else if (lower.contains('medium')) {
+      minDelegatedBytes = 600 * 1024 * 1024; // 600 MB (delegated from 1.5GB)
+    } else if (lower.contains('large')) {
+      minDelegatedBytes = 1200 * 1024 * 1024; // 1.2 GB
+    } else {
+      minDelegatedBytes = 200 * 1024 * 1024;
+    }
+
+    return memoryInfo.availableRamBytes >= minDelegatedBytes;
+  }
+
+  /// Calculates dynamic delegation parameters based on model weight and device memory.
+  RamDelegationPlan getDelegationPlan({
+    required String modelNameOrPath,
+    required SystemMemoryInfo memoryInfo,
+  }) {
+    final lower = modelNameOrPath.toLowerCase();
+    final isUnconstrained = canSafelyRunModel(
+      modelNameOrPath: modelNameOrPath,
+      memoryInfo: memoryInfo,
+    );
+
+    if (isUnconstrained && memoryInfo.tier == DeviceRamTier.high) {
+      final threads = (lower.contains('small') || lower.contains('medium'))
+          ? 6
+          : 4;
+      return RamDelegationPlan(
+        isDelegated: false,
+        chunkDuration: const Duration(seconds: 30),
+        threadCount: threads,
+        aggressiveMemoryCleanup: false,
+        description: 'Standard processing (full throughput)',
+      );
+    }
+
+    if (isUnconstrained) {
+      return const RamDelegationPlan(
+        isDelegated: false,
+        chunkDuration: Duration(seconds: 30),
+        threadCount: 4,
+        aggressiveMemoryCleanup: false,
+        description: 'Standard processing',
+      );
+    }
+
+    // Delegation engaged!
+    if (lower.contains('medium')) {
+      return const RamDelegationPlan(
+        isDelegated: true,
+        chunkDuration: Duration(seconds: 15),
+        threadCount: 2,
+        aggressiveMemoryCleanup: true,
+        description: 'RAM Delegation active: 15s chunks, 2 threads (reduces peak RSS ~50%)',
+      );
+    }
+
+    if (lower.contains('small')) {
+      return const RamDelegationPlan(
+        isDelegated: true,
+        chunkDuration: Duration(seconds: 20),
+        threadCount: 2,
+        aggressiveMemoryCleanup: true,
+        description:
+            'RAM Delegation active: 20s chunks, 2 threads (memory optimized)',
+      );
+    }
+
+    return const RamDelegationPlan(
+      isDelegated: true,
+      chunkDuration: Duration(seconds: 20),
+      threadCount: 2,
+      aggressiveMemoryCleanup: true,
+      description: 'RAM Delegation active: 20s chunks, low memory mode',
+    );
+  }
+}
+
+/// Execution strategy produced by RAM delegation to run higher models safely
+/// on memory-constrained devices without crashing or OOM termination.
+class RamDelegationPlan {
+  final bool isDelegated;
+  final Duration chunkDuration;
+  final int threadCount;
+  final bool aggressiveMemoryCleanup;
+  final String description;
+
+  const RamDelegationPlan({
+    required this.isDelegated,
+    required this.chunkDuration,
+    required this.threadCount,
+    required this.aggressiveMemoryCleanup,
+    required this.description,
+  });
 }

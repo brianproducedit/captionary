@@ -547,6 +547,20 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
             );
           },
         ),
+        const SizedBox(height: 16),
+        GradientPillButton(
+          label: 'Done',
+          icon: Symbols.check,
+          isFullWidth: true,
+          onTap: () {
+            ref.read(activeExportJobProvider.notifier).clearJob();
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/library');
+            }
+          },
+        ),
         const SizedBox(height: 32),
         // Pro upgrade teaser banner
         GestureDetector(

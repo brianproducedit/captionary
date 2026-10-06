@@ -276,27 +276,26 @@ class CaptionPipeline {
         ),
       );
 
-      String targetLang =
-          (languageCode != null &&
-              languageCode.isNotEmpty &&
-              languageCode != 'auto')
-          ? languageCode
-          : '';
+      final isAutoDetect =
+          languageCode == null ||
+          languageCode.isEmpty ||
+          languageCode == 'auto';
+      final whisperLangCode = isAutoDetect ? 'auto' : languageCode;
 
-      if (targetLang.isEmpty) {
+      String displayLang = whisperLangCode;
+      if (!isAutoDetect) {
+        displayLang = whisperLangCode;
+      } else {
         try {
           final detected = await languagePackService.detectLanguage(audioPath);
-          if (detected.isNotEmpty) {
-            targetLang = detected;
+          if (detected.isNotEmpty && detected != 'en') {
+            displayLang = detected;
+          } else {
+            displayLang = 'auto';
           }
         } catch (e) {
-          debugPrint('Language detection error, falling back: $e');
+          debugPrint('Language hint note: $e');
         }
-      }
-
-      if (targetLang.isEmpty) {
-        final active = await languagePackService.getActiveLanguage();
-        targetLang = active.code;
       }
 
       if (_isCancelled) {
@@ -306,9 +305,11 @@ class CaptionPipeline {
 
       _emit(
         _state.copyWith(
-          detectedLanguage: targetLang,
+          detectedLanguage: displayLang,
           progress: 0.40,
-          currentAction: 'Language resolved: $targetLang',
+          currentAction: isAutoDetect
+              ? 'Language: Auto-detect (Multilingual Whisper)'
+              : 'Language: $whisperLangCode',
         ),
       );
 
@@ -327,39 +328,68 @@ class CaptionPipeline {
       if (preferredModelQuality != null) {
         final q = preferredModelQuality.toLowerCase();
         try {
-          targetPack = availableLangs.firstWhere(
-            (p) =>
-                (p.code == targetLang || p.code == 'en') &&
-                p.modelFile.toLowerCase().contains(q),
-          );
+          if (isAutoDetect) {
+            targetPack = availableLangs.firstWhere(
+              (p) =>
+                  !p.modelFile.contains('.en') &&
+                  p.modelFile.toLowerCase().contains(q),
+            );
+          } else {
+            targetPack = availableLangs.firstWhere(
+              (p) =>
+                  (p.code == whisperLangCode || p.code == 'en') &&
+                  p.modelFile.toLowerCase().contains(q),
+            );
+          }
         } catch (_) {}
       }
 
-      targetPack ??= availableLangs.firstWhere(
-        (p) => p.code == targetLang,
-        orElse: () => availableLangs.firstWhere(
-          (p) => p.code == 'en',
-          orElse: () => availableLangs.first,
-        ),
-      );
+      if (targetPack == null) {
+        if (isAutoDetect) {
+          targetPack = availableLangs.firstWhere(
+            (p) => !p.modelFile.contains('.en'),
+            orElse: () => availableLangs.first,
+          );
+        } else {
+          targetPack = availableLangs.firstWhere(
+            (p) => p.code == whisperLangCode,
+            orElse: () => availableLangs.firstWhere(
+              (p) => p.code == 'en',
+              orElse: () => availableLangs.first,
+            ),
+          );
+        }
+      }
 
-      // Memory threshold safety guard before model download / load
+      // Memory threshold safety guard with RAM delegation before model download / load
       final memService = systemMemoryService ?? const SystemMemoryService();
       final memInfo = await memService.getMemoryInfo();
       if (!memService.canSafelyRunModel(
         modelNameOrPath: targetPack.modelFile,
         memoryInfo: memInfo,
       )) {
-        final availMb = (memInfo.availableRamBytes / (1024 * 1024)).round();
-        _emit(
-          _state.copyWith(
-            status: CaptionPipelineStatus.error,
-            errorMessage:
-                'Device memory too low (< ${availMb}MB available). Please close background apps before transcribing.',
-            currentAction: 'Memory check failed',
-          ),
-        );
-        return [];
+        if (!memService.canRunModelWithDelegation(
+          modelNameOrPath: targetPack.modelFile,
+          memoryInfo: memInfo,
+        )) {
+          final availMb = (memInfo.availableRamBytes / (1024 * 1024)).round();
+          _emit(
+            _state.copyWith(
+              status: CaptionPipelineStatus.error,
+              errorMessage:
+                  'Device memory too low (< ${availMb}MB available). Please close background apps before transcribing.',
+              currentAction: 'Memory check failed',
+            ),
+          );
+          return [];
+        } else {
+          _emit(
+            _state.copyWith(
+              currentAction:
+                  'RAM Delegation active: optimizing memory for ${targetPack.name}...',
+            ),
+          );
+        }
       }
 
       bool isModelInstalled = false;
@@ -522,7 +552,7 @@ class CaptionPipeline {
 
       final stream = transcriptionService.transcribeAudioStream(
         audioPath: audioPath,
-        languageCode: targetLang,
+        languageCode: whisperLangCode,
         modelPath: modelPathToUse,
         isTranslate: translateToEnglish,
       );
