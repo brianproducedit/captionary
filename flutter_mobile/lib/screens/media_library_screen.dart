@@ -10,6 +10,8 @@ import '../core/media_library_query.dart';
 import '../data/models/media_item.dart';
 import '../data/services/file_import_service.dart';
 import '../providers/media_provider.dart';
+import '../providers/subtitle_provider.dart';
+import '../providers/transcription_cache_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_spacing.dart';
@@ -563,6 +565,74 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
       }
 
       if (item.status == MediaStatus.newItem) {
+        // Check for cached transcription first
+        final cacheService = ref.read(transcriptionCacheServiceProvider);
+        final cached = await cacheService.getCachedTranscription(
+          videoPath: item.filePath,
+          mediaId: item.id,
+        );
+
+        if (cached != null && cached.segments.isNotEmpty && context.mounted) {
+          // Offer the user a choice: load cache or re-transcribe
+          final choice = await showDialog<String>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: AppColors.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Icon(Symbols.cached, color: AppColors.tertiary, size: 24),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Saved Captions Found',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${cached.segments.length} captions from a previous session are available for this video.',
+                    style: Theme.of(ctx).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Saved ${_formatTimeAgo(cached.updatedAt)}',
+                    style: Theme.of(ctx).textTheme.bodySmall
+                        ?.copyWith(color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop('retranscribe'),
+                  child: const Text('Re-transcribe'),
+                ),
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop('load'),
+                  icon: const Icon(Symbols.download_done, size: 18),
+                  label: const Text('Use Saved Captions'),
+                ),
+              ],
+            ),
+          );
+
+          if (choice == 'load' && context.mounted) {
+            ref.read(subtitleProvider.notifier).setSegments(cached.segments);
+            context.push('/studio', extra: item.filePath);
+            return;
+          } else if (choice != 'retranscribe') {
+            return; // dialog dismissed
+          }
+        }
+
+        if (!context.mounted) return;
         final config = await TranscriptionOptionsSheet.show(
           context,
           videoPath: item.filePath,
@@ -852,6 +922,15 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
               ),
       ),
     );
+  }
+
+  String _formatTimeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
   }
 }
 

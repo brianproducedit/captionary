@@ -32,4 +32,26 @@ class SubtitleSegment {
       isSelected: isSelected ?? this.isSelected,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'index': index,
+      'startMs': startTime.inMilliseconds,
+      'endMs': endTime.inMilliseconds,
+      'text': text,
+      'activeWord': activeWord,
+      'isSelected': isSelected,
+    };
+  }
+
+  factory SubtitleSegment.fromJson(Map<String, dynamic> json) {
+    return SubtitleSegment(
+      index: json['index'] as int? ?? 0,
+      startTime: Duration(milliseconds: json['startMs'] as int? ?? 0),
+      endTime: Duration(milliseconds: json['endMs'] as int? ?? 0),
+      text: json['text'] as String? ?? '',
+      activeWord: json['activeWord'] as String?,
+      isSelected: json['isSelected'] as bool? ?? false,
+    );
+  }
 }

@@ -1098,6 +1098,10 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
       );
     }
 
+    final target = representative.modelFile.isNotEmpty
+        ? representative.modelFile
+        : representative.code;
+
     if (isDownloading || isPaused) {
       // Downloading/Paused: show pause/resume + cancel
       return Row(
@@ -1111,11 +1115,11 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
                 if (isPaused) {
                   ref
                       .read(availableLanguagesProvider.notifier)
-                      .startDownload(representative.code);
+                      .startDownload(target);
                 } else {
                   ref
                       .read(availableLanguagesProvider.notifier)
-                      .pauseDownload(representative.code);
+                      .pauseDownload(target);
                 }
               },
             ),
@@ -1132,7 +1136,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
               onPressed: () {
                 ref
                     .read(availableLanguagesProvider.notifier)
-                    .deleteLanguagePack(representative.code);
+                    .deleteLanguagePack(target);
               },
               tooltip: 'Cancel download',
             ),
@@ -1149,7 +1153,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
         onTap: () {
           ref
               .read(availableLanguagesProvider.notifier)
-              .startDownload(representative.code);
+              .startDownload(target);
         },
       );
     }
@@ -1172,7 +1176,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
                   onConfirm: () {
                     ref
                         .read(availableLanguagesProvider.notifier)
-                        .startDownload(representative.code);
+                        .startDownload(target);
                   },
                 );
               },
@@ -1190,7 +1194,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
       onTap: () {
         ref
             .read(availableLanguagesProvider.notifier)
-            .startDownload(representative.code);
+            .startDownload(target);
       },
     );
   }
@@ -1507,9 +1511,11 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
     );
 
     if (result == true && mounted) {
+      final deleteTarget =
+          pack.modelFile.isNotEmpty ? pack.modelFile : pack.code;
       ref
           .read(availableLanguagesProvider.notifier)
-          .deleteLanguagePack(pack.code);
+          .deleteLanguagePack(deleteTarget);
     }
   }
 

@@ -155,6 +155,9 @@ class TestTranscriptionService implements TranscriptionService {
   final Duration delay;
   final List<SubtitleSegment> segmentsToReturn;
   bool wasCancelled = false;
+  String? lastLanguageCode;
+  String? lastModelPath;
+  bool? lastIsTranslate;
 
   TestTranscriptionService({
     this.shouldFail = false,
@@ -206,6 +209,9 @@ class TestTranscriptionService implements TranscriptionService {
     bool isTranslate = false,
   }) async* {
     wasCancelled = false;
+    lastLanguageCode = languageCode;
+    lastModelPath = modelPath;
+    lastIsTranslate = isTranslate;
     if (shouldFail) {
       throw StateError('Transcription engine internal error.');
     }
@@ -892,5 +898,161 @@ void main() {
       expect(segments.length, 1);
       expect(segments.first.text, 'Sentence one. Sentence two.');
     });
+
+    test(
+      'transcribes Shona audio in original language using multilingual model (isTranslate: false)',
+      () async {
+        final audioService = TestAudioExtractionService(tempDir: tempDir);
+        final multiModelFile = File('${tempDir.path}/ggml-base.bin');
+        await multiModelFile.writeAsString('mock base binary');
+        final enOnlyModelFile = File('${tempDir.path}/ggml-base.en.bin');
+        await enOnlyModelFile.writeAsString('mock en binary');
+
+        final langService = TestLanguagePackService(
+          languages: [
+            LanguagePack(
+              code: 'en',
+              name: 'English Base',
+              nativeName: 'English',
+              region: 'Global',
+              modelFile: enOnlyModelFile.path,
+              sizeBytes: 100,
+              sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+              accuracy: 'High',
+              engine: 'whisper_flutter_new',
+              isBundled: false,
+              priority: 1,
+              status: LanguagePackStatus.installed,
+              downloadProgress: 1.0,
+            ),
+            LanguagePack(
+              code: 'sn',
+              name: 'Shona',
+              nativeName: 'ChiShona',
+              region: 'Africa',
+              modelFile: multiModelFile.path,
+              sizeBytes: 200,
+              sha256: '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+              accuracy: 'High',
+              engine: 'whisper_flutter_new',
+              isBundled: false,
+              priority: 2,
+              status: LanguagePackStatus.installed,
+              downloadProgress: 1.0,
+            ),
+          ],
+        );
+
+        final transService = TestTranscriptionService(
+          segments: [
+            SubtitleSegment(
+              index: 0,
+              startTime: Duration.zero,
+              endTime: const Duration(seconds: 2),
+              text: 'Mhoro vateereri',
+              isSelected: false,
+            ),
+          ],
+        );
+
+        final pipeline = CaptionPipeline(
+          audioExtractionService: audioService,
+          languagePackService: langService,
+          transcriptionService: transService,
+        );
+
+        final segments = await pipeline.run(
+          videoPath: dummyVideoFile.path,
+          mediaId: 'shona_transcribe_test',
+          languageCode: 'sn',
+          translateToEnglish: false,
+        );
+
+        expect(segments.length, 1);
+        expect(segments.first.text, 'Mhoro vateereri');
+        expect(transService.lastLanguageCode, 'sn');
+        expect(transService.lastIsTranslate, false);
+        expect(transService.lastModelPath, contains('ggml-base.bin'));
+        expect(transService.lastModelPath, isNot(contains('.en')));
+      },
+    );
+
+    test(
+      'translates Shona audio into English captions (isTranslate: true) and selects multilingual model',
+      () async {
+        final audioService = TestAudioExtractionService(tempDir: tempDir);
+        final multiModelFile = File('${tempDir.path}/ggml-base.bin');
+        await multiModelFile.writeAsString('mock base binary');
+        final enOnlyModelFile = File('${tempDir.path}/ggml-base.en.bin');
+        await enOnlyModelFile.writeAsString('mock en binary');
+
+        final langService = TestLanguagePackService(
+          languages: [
+            LanguagePack(
+              code: 'en',
+              name: 'English Base',
+              nativeName: 'English',
+              region: 'Global',
+              modelFile: enOnlyModelFile.path,
+              sizeBytes: 100,
+              sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+              accuracy: 'High',
+              engine: 'whisper_flutter_new',
+              isBundled: false,
+              priority: 1,
+              status: LanguagePackStatus.installed,
+              downloadProgress: 1.0,
+            ),
+            LanguagePack(
+              code: 'sn',
+              name: 'Shona',
+              nativeName: 'ChiShona',
+              region: 'Africa',
+              modelFile: multiModelFile.path,
+              sizeBytes: 200,
+              sha256: '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+              accuracy: 'High',
+              engine: 'whisper_flutter_new',
+              isBundled: false,
+              priority: 2,
+              status: LanguagePackStatus.installed,
+              downloadProgress: 1.0,
+            ),
+          ],
+        );
+
+        final transService = TestTranscriptionService(
+          segments: [
+            SubtitleSegment(
+              index: 0,
+              startTime: Duration.zero,
+              endTime: const Duration(seconds: 2),
+              text: 'Hello listeners',
+              isSelected: false,
+            ),
+          ],
+        );
+
+        final pipeline = CaptionPipeline(
+          audioExtractionService: audioService,
+          languagePackService: langService,
+          transcriptionService: transService,
+        );
+
+        final segments = await pipeline.run(
+          videoPath: dummyVideoFile.path,
+          mediaId: 'shona_translate_test',
+          languageCode: 'sn',
+          translateToEnglish: true,
+        );
+
+        expect(segments.length, 1);
+        expect(segments.first.text, 'Hello listeners');
+        expect(transService.lastLanguageCode, 'sn');
+        expect(transService.lastIsTranslate, true);
+        expect(transService.lastModelPath, contains('ggml-base.bin'));
+        expect(transService.lastModelPath, isNot(contains('.en')));
+      },
+    );
   });
 }

@@ -44,4 +44,16 @@ void main() {
     );
     expect(duration, const Duration(seconds: 5));
   });
+
+  test('media duration accommodates current playback position', () {
+    final duration = TimelineMapping.mediaDuration(
+      playerDuration: Duration.zero,
+      segments: const [],
+      position: const Duration(minutes: 4, seconds: 12),
+    );
+    expect(
+      duration,
+      greaterThanOrEqualTo(const Duration(minutes: 4, seconds: 12)),
+    );
+  });
 }

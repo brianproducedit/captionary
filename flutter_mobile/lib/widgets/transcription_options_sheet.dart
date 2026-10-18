@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../data/models/language_pack.dart';
 import '../data/services/system_memory_service.dart';
+import '../providers/transcription_cache_provider.dart';
 import '../theme/app_colors.dart';
 import 'ghost_pill_button.dart';
 import 'glass_card.dart';
@@ -81,6 +82,8 @@ class _TranscriptionOptionsSheetState
   bool _isModelInstalled = false;
   int _modelSizeBytes = 147964211;
   int _deviceRamGb = 4;
+  int _cachedSegmentCount = 0;
+  DateTime? _cachedUpdatedAt;
 
   static const List<_ModelTier> _modelTiers = [
     _ModelTier(
@@ -160,6 +163,22 @@ class _TranscriptionOptionsSheetState
   void initState() {
     super.initState();
     _checkModelStatus();
+    _checkCachedTranscription();
+  }
+
+  Future<void> _checkCachedTranscription() async {
+    try {
+      final cacheService = ref.read(transcriptionCacheServiceProvider);
+      final cached = await cacheService.getCachedTranscription(
+        videoPath: widget.videoPath,
+      );
+      if (cached != null && cached.segments.isNotEmpty && mounted) {
+        setState(() {
+          _cachedSegmentCount = cached.segments.length;
+          _cachedUpdatedAt = cached.updatedAt;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _checkModelStatus() async {
@@ -168,22 +187,39 @@ class _TranscriptionOptionsSheetState
       final langService = ref.read(languageServiceProvider);
       final langs = await langService.getAvailableLanguages();
 
+      final bool requiresMultilingual =
+          _selectedLanguage == 'auto' || _selectedLanguage != 'en';
       final targetCode = _selectedLanguage == 'auto' ? 'en' : _selectedLanguage;
+      final q = _modelQuality.toLowerCase();
+
       LanguagePack pack;
       try {
-        pack = langs.firstWhere(
-          (p) =>
-              p.code == targetCode &&
-              p.modelFile.toLowerCase().contains(_modelQuality.toLowerCase()),
-        );
+        if (requiresMultilingual) {
+          pack = langs.firstWhere(
+            (p) =>
+                !p.modelFile.contains('.en') &&
+                p.code == targetCode &&
+                p.modelFile.toLowerCase().contains(q),
+            orElse: () => langs.firstWhere(
+              (p) =>
+                  !p.modelFile.contains('.en') &&
+                  p.modelFile.toLowerCase().contains(q),
+            ),
+          );
+        } else {
+          pack = langs.firstWhere(
+            (p) =>
+                p.code == 'en' &&
+                p.modelFile.toLowerCase().contains(q),
+            orElse: () => langs.firstWhere(
+              (p) => p.modelFile.toLowerCase().contains(q),
+            ),
+          );
+        }
       } catch (_) {
         pack = langs.firstWhere(
-          (p) =>
-              p.modelFile.toLowerCase().contains(_modelQuality.toLowerCase()),
-          orElse: () => langs.firstWhere(
-            (p) => p.code == targetCode,
-            orElse: () => langs.first,
-          ),
+          (p) => p.code == targetCode,
+          orElse: () => langs.first,
         );
       }
 
@@ -310,6 +346,77 @@ class _TranscriptionOptionsSheetState
             ],
           ),
           const SizedBox(height: 12),
+
+          // Cached captions banner (if available)
+          if (_cachedSegmentCount > 0) ...[
+            GlassCard(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.tertiary.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Symbols.cached,
+                      color: AppColors.tertiary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$_cachedSegmentCount saved captions available',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (_cachedUpdatedAt != null)
+                          Text(
+                            'Last updated ${_formatCacheTime(_cachedUpdatedAt!)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.tertiary.withValues(alpha: 0.12),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () {
+                      // Return a special signal to load cached captions
+                      Navigator.of(context).pop(
+                        const TranscriptionConfig(
+                          languageCode: '_cached_',
+                          translateToEnglish: false,
+                          modelQuality: '_cached_',
+                        ),
+                      );
+                    },
+                    icon: const Icon(Symbols.download_done, size: 16),
+                    label: const Text(
+                      'Load',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
 
           // Scrollable options content
           Flexible(
@@ -712,5 +819,14 @@ class _TranscriptionOptionsSheetState
         style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
       ),
     );
+  }
+
+  String _formatCacheTime(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
   }
 }

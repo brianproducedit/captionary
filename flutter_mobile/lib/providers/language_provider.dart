@@ -46,11 +46,27 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     return List.of(list);
   }
 
+  bool _matchesTarget(LanguagePack p, String target) {
+    final t = target.toLowerCase().trim();
+    final pCode = p.code.toLowerCase().trim();
+    final pModelBase = p.modelFile.toLowerCase().trim();
+    final pModelStripped =
+        pModelBase.replaceAll('ggml-', '').replaceAll('.bin', '');
+    return pCode == t ||
+        pModelBase == t ||
+        pModelBase == 'ggml-$t.bin' ||
+        pModelStripped == t;
+  }
+
   void updateLanguageState(LanguagePack updatedPack) {
     state = state.whenData((packs) {
-      return packs
-          .map((p) => p.code == updatedPack.code ? updatedPack : p)
-          .toList();
+      return packs.map((p) {
+        if (p.code == updatedPack.code &&
+            p.modelFile == updatedPack.modelFile) {
+          return updatedPack;
+        }
+        return p;
+      }).toList();
     });
   }
 
@@ -60,9 +76,13 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
       if (sub.isPaused) {
         sub.resume();
         state.whenData((packs) {
-          final pack = packs.firstWhere((p) => p.code == code);
-          updateLanguageState(
-            pack.copyWith(status: LanguagePackStatus.downloading),
+          state = AsyncData(
+            packs.map((p) {
+              if (_matchesTarget(p, code)) {
+                return p.copyWith(status: LanguagePackStatus.downloading);
+              }
+              return p;
+            }).toList(),
           );
         });
         return;
@@ -71,14 +91,23 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
 
     final service = ref.read(languageServiceProvider);
 
-    // Mark as downloading
+    // Mark as downloading for all packs sharing this model/code
     state.whenData((packs) {
-      final pack = packs.firstWhere((p) => p.code == code);
-      updateLanguageState(
-        pack.copyWith(
-          status: LanguagePackStatus.downloading,
-          downloadProgress: pack.downloadProgress,
-        ),
+      final matching = packs.where((p) => _matchesTarget(p, code));
+      final targetModelFile =
+          matching.isNotEmpty ? matching.first.modelFile : null;
+
+      state = AsyncData(
+        packs.map((p) {
+          if (_matchesTarget(p, code) ||
+              (targetModelFile != null && p.modelFile == targetModelFile)) {
+            return p.copyWith(
+              status: LanguagePackStatus.downloading,
+              downloadProgress: p.downloadProgress,
+            );
+          }
+          return p;
+        }).toList(),
       );
     });
 
@@ -87,34 +116,52 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     final subscription = stream.listen(
       (progress) {
         state.whenData((packs) {
-          final pack = packs.firstWhere((p) => p.code == code);
-          updateLanguageState(
-            pack.copyWith(
-              status: progress.state == DownloadState.complete
-                  ? LanguagePackStatus.installed
-                  : progress.state == DownloadState.error
-                  ? LanguagePackStatus.error
-                  : pack.status == LanguagePackStatus.paused
-                  ? LanguagePackStatus.paused
-                  : LanguagePackStatus.downloading,
-              downloadProgress: progress.totalBytes > 0
-                  ? progress.downloadedBytes / progress.totalBytes
-                  : 0.0,
-              downloadSpeedMbps: progress.speedBytesPerSec / (1024 * 1024),
-              bytesDownloaded: progress.downloadedBytes,
-            ),
+          final matching = packs.where((p) => _matchesTarget(p, code));
+          final targetModelFile =
+              matching.isNotEmpty ? matching.first.modelFile : null;
+
+          final status = progress.state == DownloadState.complete
+              ? LanguagePackStatus.installed
+              : progress.state == DownloadState.error
+              ? LanguagePackStatus.error
+              : LanguagePackStatus.downloading;
+
+          state = AsyncData(
+            packs.map((p) {
+              if (_matchesTarget(p, code) ||
+                  (targetModelFile != null && p.modelFile == targetModelFile)) {
+                return p.copyWith(
+                  status: status,
+                  downloadProgress: progress.totalBytes > 0
+                      ? progress.downloadedBytes / progress.totalBytes
+                      : 0.0,
+                  downloadSpeedMbps: progress.speedBytesPerSec / (1024 * 1024),
+                  bytesDownloaded: progress.downloadedBytes,
+                );
+              }
+              return p;
+            }).toList(),
           );
         });
       },
       onError: (err) {
         _activeDownloads.remove(code);
         state.whenData((packs) {
-          final pack = packs.firstWhere((p) => p.code == code);
-          updateLanguageState(
-            pack.copyWith(
-              status: LanguagePackStatus.error,
-              downloadSpeedMbps: 0.0,
-            ),
+          final matching = packs.where((p) => _matchesTarget(p, code));
+          final targetModelFile =
+              matching.isNotEmpty ? matching.first.modelFile : null;
+
+          state = AsyncData(
+            packs.map((p) {
+              if (_matchesTarget(p, code) ||
+                  (targetModelFile != null && p.modelFile == targetModelFile)) {
+                return p.copyWith(
+                  status: LanguagePackStatus.error,
+                  downloadSpeedMbps: 0.0,
+                );
+              }
+              return p;
+            }).toList(),
           );
         });
       },
@@ -141,12 +188,21 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     }
 
     state.whenData((packs) {
-      final pack = packs.firstWhere((p) => p.code == code);
-      updateLanguageState(
-        pack.copyWith(
-          status: LanguagePackStatus.paused,
-          downloadSpeedMbps: 0.0,
-        ),
+      final matching = packs.where((p) => _matchesTarget(p, code));
+      final targetModelFile =
+          matching.isNotEmpty ? matching.first.modelFile : null;
+
+      state = AsyncData(
+        packs.map((p) {
+          if (_matchesTarget(p, code) ||
+              (targetModelFile != null && p.modelFile == targetModelFile)) {
+            return p.copyWith(
+              status: LanguagePackStatus.paused,
+              downloadSpeedMbps: 0.0,
+            );
+          }
+          return p;
+        }).toList(),
       );
     });
   }
@@ -161,14 +217,23 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     await service.deleteLanguagePack(code);
 
     state.whenData((packs) {
-      final pack = packs.firstWhere((p) => p.code == code);
-      updateLanguageState(
-        pack.copyWith(
-          status: LanguagePackStatus.notDownloaded,
-          downloadProgress: 0.0,
-          downloadSpeedMbps: 0.0,
-          bytesDownloaded: 0,
-        ),
+      final matching = packs.where((p) => _matchesTarget(p, code));
+      final targetModelFile =
+          matching.isNotEmpty ? matching.first.modelFile : null;
+
+      state = AsyncData(
+        packs.map((p) {
+          if (_matchesTarget(p, code) ||
+              (targetModelFile != null && p.modelFile == targetModelFile)) {
+            return p.copyWith(
+              status: LanguagePackStatus.notDownloaded,
+              downloadProgress: 0.0,
+              downloadSpeedMbps: 0.0,
+              bytesDownloaded: 0,
+            );
+          }
+          return p;
+        }).toList(),
       );
     });
   }

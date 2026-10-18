@@ -137,6 +137,14 @@ class SystemMemoryService {
       return false;
     }
 
+    // Devices with low physical RAM tier (< 3.8GB, e.g. 2GB-3GB devices or 4GB devices with
+    // kernel/GPU carve-outs like Samsung Galaxy SM-A165F) cannot safely run models larger
+    // than tiny without RAM delegation.
+    if (memoryInfo.tier == DeviceRamTier.low &&
+        !modelNameOrPath.toLowerCase().contains('tiny')) {
+      return false;
+    }
+
     final lower = modelNameOrPath.toLowerCase();
     final int requiredBytes;
 
@@ -215,7 +223,7 @@ class SystemMemoryService {
 
     if (isUnconstrained && memoryInfo.tier == DeviceRamTier.high) {
       final threads = (lower.contains('small') || lower.contains('medium'))
-          ? 6
+          ? 4
           : 4;
       return RamDelegationPlan(
         isDelegated: false,
@@ -227,12 +235,14 @@ class SystemMemoryService {
     }
 
     if (isUnconstrained) {
+      // Standard or low-tier devices: cap threads to 2 to prevent thread contention,
+      // extreme thermal throttling, and excessive GGML compute allocations.
       return const RamDelegationPlan(
         isDelegated: false,
         chunkDuration: Duration(seconds: 30),
-        threadCount: 4,
-        aggressiveMemoryCleanup: false,
-        description: 'Standard processing',
+        threadCount: 2,
+        aggressiveMemoryCleanup: true,
+        description: 'Standard processing (2 threads)',
       );
     }
 
@@ -243,7 +253,8 @@ class SystemMemoryService {
         chunkDuration: Duration(seconds: 15),
         threadCount: 2,
         aggressiveMemoryCleanup: true,
-        description: 'RAM Delegation active: 15s chunks, 2 threads (reduces peak RSS ~50%)',
+        description:
+            'RAM Delegation active: 15s chunks, 2 threads (reduces peak RSS ~50%)',
       );
     }
 
@@ -255,6 +266,17 @@ class SystemMemoryService {
         aggressiveMemoryCleanup: true,
         description:
             'RAM Delegation active: 20s chunks, 2 threads (memory optimized)',
+      );
+    }
+
+    if (lower.contains('base')) {
+      return const RamDelegationPlan(
+        isDelegated: true,
+        chunkDuration: Duration(seconds: 20),
+        threadCount: 2,
+        aggressiveMemoryCleanup: true,
+        description:
+            'RAM Delegation active: 20s chunks, 2 threads (prevents thermal runaway & OOM)',
       );
     }
 

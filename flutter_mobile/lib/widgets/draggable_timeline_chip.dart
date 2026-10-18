@@ -12,6 +12,7 @@ class DraggableTimelineChip extends StatelessWidget {
   final double width;
   final VoidCallback onTap;
   final VoidCallback? onDragStart;
+  final VoidCallback? onDragEnd;
   final ValueChanged<double> onMoveDx;
   final ValueChanged<double>? onTrimStartDx;
   final ValueChanged<double>? onTrimEndDx;
@@ -25,6 +26,7 @@ class DraggableTimelineChip extends StatelessWidget {
     required this.onTap,
     required this.onMoveDx,
     this.onDragStart,
+    this.onDragEnd,
     this.onTrimStartDx,
     this.onTrimEndDx,
   });
@@ -38,6 +40,8 @@ class DraggableTimelineChip extends StatelessWidget {
       onTap: onTap,
       onHorizontalDragStart: (_) => onDragStart?.call(),
       onHorizontalDragUpdate: (details) => onMoveDx(details.delta.dx),
+      onHorizontalDragEnd: (_) => onDragEnd?.call(),
+      onHorizontalDragCancel: () => onDragEnd?.call(),
       child: Container(
         width: effectiveWidth,
         height: 48,
@@ -62,6 +66,7 @@ class DraggableTimelineChip extends StatelessWidget {
                 _TrimHandle(
                   semanticLabel: 'Trim start',
                   onDragStart: onDragStart,
+                  onDragEnd: onDragEnd,
                   onDragDx: onTrimStartDx!,
                 ),
               Expanded(
@@ -83,6 +88,7 @@ class DraggableTimelineChip extends StatelessWidget {
                 _TrimHandle(
                   semanticLabel: 'Trim end',
                   onDragStart: onDragStart,
+                  onDragEnd: onDragEnd,
                   onDragDx: onTrimEndDx!,
                 ),
             ],
@@ -96,12 +102,14 @@ class DraggableTimelineChip extends StatelessWidget {
 class _TrimHandle extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback? onDragStart;
+  final VoidCallback? onDragEnd;
   final ValueChanged<double> onDragDx;
 
   const _TrimHandle({
     required this.semanticLabel,
     required this.onDragDx,
     this.onDragStart,
+    this.onDragEnd,
   });
 
   @override
@@ -110,6 +118,8 @@ class _TrimHandle extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onHorizontalDragStart: (_) => onDragStart?.call(),
       onHorizontalDragUpdate: (details) => onDragDx(details.delta.dx),
+      onHorizontalDragEnd: (_) => onDragEnd?.call(),
+      onHorizontalDragCancel: () => onDragEnd?.call(),
       child: Semantics(
         label: semanticLabel,
         button: true,

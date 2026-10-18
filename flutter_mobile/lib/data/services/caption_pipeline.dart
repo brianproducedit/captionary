@@ -5,12 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../../core/performance_logger.dart';
+import '../../core/wav_header_validator.dart';
 import '../../core/whisper_output_parser.dart';
 import '../models/download_progress.dart';
 import '../models/language_pack.dart';
 import '../models/subtitle_segment.dart';
 import 'audio_extraction_service.dart';
 import 'language_pack_service.dart';
+import 'r2_language_pack_service.dart';
 import 'system_memory_service.dart';
 import 'transcription_service.dart';
 import 'whisper_transcription_service.dart';
@@ -267,14 +269,22 @@ class CaptionPipeline {
         );
       }
 
-      // 3. Detecting Language
+      // 3. Detecting and Verifying Audio
       _emit(
         _state.copyWith(
           status: CaptionPipelineStatus.detecting,
           progress: 0.30,
-          currentAction: 'Detecting language...',
+          currentAction: 'Analyzing audio...',
         ),
       );
+
+      final audioValidation =
+          await WavHeaderValidator.validateFile(File(audioPath));
+      if (!audioValidation.isValid) {
+        debugPrint(
+          '[CaptionPipeline] Audio validation note: ${audioValidation.errorMessage}',
+        );
+      }
 
       final isAutoDetect =
           languageCode == null ||
@@ -303,13 +313,19 @@ class CaptionPipeline {
         return [];
       }
 
+      final actionDescription = translateToEnglish
+          ? (isAutoDetect
+              ? 'Language: Auto-detect -> Translate to English'
+              : 'Language: $whisperLangCode -> Translate to English')
+          : (isAutoDetect
+              ? 'Language: Auto-detect (Multilingual Whisper)'
+              : 'Language: $whisperLangCode');
+
       _emit(
         _state.copyWith(
           detectedLanguage: displayLang,
           progress: 0.40,
-          currentAction: isAutoDetect
-              ? 'Language: Auto-detect (Multilingual Whisper)'
-              : 'Language: $whisperLangCode',
+          currentAction: actionDescription,
         ),
       );
 
@@ -325,19 +341,22 @@ class CaptionPipeline {
       final availableLangs = await languagePackService.getAvailableLanguages();
       LanguagePack? targetPack;
 
+      final bool requiresMultilingual = isAutoDetect || whisperLangCode != 'en';
+
       if (preferredModelQuality != null) {
         final q = preferredModelQuality.toLowerCase();
         try {
-          if (isAutoDetect) {
+          if (requiresMultilingual) {
             targetPack = availableLangs.firstWhere(
               (p) =>
                   !p.modelFile.contains('.en') &&
+                  (p.code == whisperLangCode || isAutoDetect || p.code == 'en') &&
                   p.modelFile.toLowerCase().contains(q),
             );
           } else {
             targetPack = availableLangs.firstWhere(
               (p) =>
-                  (p.code == whisperLangCode || p.code == 'en') &&
+                  p.code == 'en' &&
                   p.modelFile.toLowerCase().contains(q),
             );
           }
@@ -345,10 +364,13 @@ class CaptionPipeline {
       }
 
       if (targetPack == null) {
-        if (isAutoDetect) {
+        if (requiresMultilingual) {
           targetPack = availableLangs.firstWhere(
-            (p) => !p.modelFile.contains('.en'),
-            orElse: () => availableLangs.first,
+            (p) => !p.modelFile.contains('.en') && p.code == whisperLangCode,
+            orElse: () => availableLangs.firstWhere(
+              (p) => !p.modelFile.contains('.en'),
+              orElse: () => availableLangs.first,
+            ),
           );
         } else {
           targetPack = availableLangs.firstWhere(
@@ -519,7 +541,9 @@ class CaptionPipeline {
         _state.copyWith(
           status: CaptionPipelineStatus.transcribing,
           progress: 0.70,
-          currentAction: 'Transcribing audio with Whisper...',
+          currentAction: translateToEnglish
+              ? 'Transcribing & translating into English with Whisper...'
+              : 'Transcribing audio with Whisper...',
         ),
       );
 
@@ -527,7 +551,29 @@ class CaptionPipeline {
       final transcriptionCompleter = Completer<List<SubtitleSegment>>();
       _transcriptionCompleter = transcriptionCompleter;
 
-      final modelPathToUse = targetPack.localPath ?? targetPack.modelFile;
+      String modelPathToUse = targetPack.localPath ?? '';
+
+      // Fallback 1: if localPath is empty/relative, try modelFile directly
+      // (it may already be absolute, e.g. in tests or bundled scenarios).
+      if (modelPathToUse.isEmpty || !p.isAbsolute(modelPathToUse)) {
+        if (p.isAbsolute(targetPack.modelFile)) {
+          modelPathToUse = targetPack.modelFile;
+        }
+      }
+
+      // Fallback 2: if still not absolute, resolve from R2 models directory
+      if (modelPathToUse.isEmpty || !p.isAbsolute(modelPathToUse)) {
+        if (languagePackService is R2LanguagePackService) {
+          final dir = await (languagePackService as R2LanguagePackService)
+              .modelsDirectory;
+          final resolvedFile = File(
+            p.join(dir.path, targetPack.modelFile),
+          );
+          if (await resolvedFile.exists()) {
+            modelPathToUse = resolvedFile.path;
+          }
+        }
+      }
 
       // Safety: verify the resolved model path is absolute and the file
       // actually exists on disk before handing it to the native whisper

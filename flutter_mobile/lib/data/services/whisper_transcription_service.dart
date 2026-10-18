@@ -154,11 +154,50 @@ class WhisperTranscriptionService implements TranscriptionService {
       }
 
       final List<SubtitleSegment> allAccumulated = [];
+      int activeThreadCount = plan.threadCount;
 
       for (int i = 0; i < chunks.length; i++) {
         if (_isCancelled) break;
 
         final chunk = chunks[i];
+
+        // --- Dynamic per-chunk memory guard ---
+        // Re-check available RAM before each chunk. On low-RAM devices,
+        // native memory freed by whisper_free() stays in bionic's allocator
+        // pool across isolates. If available RAM drops critically low,
+        // reduce threads to 1 to halve peak GGML working-set and insert
+        // an extended pause for the kernel to reclaim pages.
+        Duration cooldownDelay = plan.aggressiveMemoryCleanup
+            ? const Duration(milliseconds: 80)
+            : const Duration(milliseconds: 30);
+
+        if (i > 0) {
+          try {
+            final chunkMemInfo = await memService.getMemoryInfo();
+            final availMb =
+                chunkMemInfo.availableRamBytes / (1024 * 1024);
+            if (chunkMemInfo.isLowMemory || availMb < 250) {
+              activeThreadCount = 1;
+              cooldownDelay = const Duration(milliseconds: 150);
+              PerformanceLogger.recordCheckpoint(
+                'mem-throttle',
+                metadata: {
+                  'chunk': i + 1,
+                  'availMb': availMb.round(),
+                  'threads': 1,
+                  'isLowMemory': chunkMemInfo.isLowMemory,
+                },
+              );
+            }
+          } catch (_) {
+            // Graceful fallback — proceed with current thread count
+          }
+
+          // Yield to the Flutter UI thread and Android main looper between
+          // chunks. This prevents BLASTBufferQueue frame stalls and gives
+          // SurfaceFlinger time to clear buffer queues.
+          await Future<void>.delayed(cooldownDelay);
+        }
 
         PerformanceLogger.recordCheckpoint(
           'transcribe',
@@ -166,6 +205,7 @@ class WhisperTranscriptionService implements TranscriptionService {
             'chunk': i + 1,
             'totalChunks': chunks.length,
             'chunkDurationMs': chunk.duration.inMilliseconds,
+            'threads': activeThreadCount,
           },
         );
 
@@ -184,8 +224,21 @@ class WhisperTranscriptionService implements TranscriptionService {
             modelPath: resolvedModelPath,
             languageCode: languageCode,
             isTranslate: isTranslate,
-            threadsOverride: plan.threadCount,
+            threadsOverride: activeThreadCount,
           );
+        }
+
+        // --- Immediate chunk file deletion ---
+        // Delete temporary WAV chunk files as soon as transcription completes
+        // rather than accumulating all on disk until the finally block.
+        // On a 9.5-minute video with 19 chunks, this prevents ~100+ MB of
+        // transient disk/cache pressure.
+        if (chunk.isTemporary) {
+          try {
+            if (await chunk.file.exists()) await chunk.file.delete();
+          } catch (_) {
+            // Best-effort cleanup — finally block will retry
+          }
         }
 
         if (plan.aggressiveMemoryCleanup) {
@@ -278,23 +331,16 @@ class WhisperTranscriptionService implements TranscriptionService {
       downloadHost: null, // Prohibits remote Hugging Face calls
     );
 
-    // Scale thread count to model weight and RAM delegation
+    // Scale thread count to model weight and RAM delegation.
+    // Default to 2 threads when no delegation plan override is provided —
+    // 2 threads is the safe ceiling for 2-big-core MediaTek SoCs (Helio G99 /
+    // Dimensity 6300) and avoids CPU thrashing that causes thermal throttling
+    // (ThermalStatus: 3, 49°C) and LMKD kills on memory-constrained devices.
     final int threads;
     if (threadsOverride != null) {
       threads = threadsOverride;
     } else {
-      switch (modelEnum) {
-        case WhisperModel.tiny:
-        case WhisperModel.base:
-          threads = 4;
-          break;
-        case WhisperModel.small:
-        case WhisperModel.medium:
-          threads = 6;
-          break;
-        default:
-          threads = 4; // large models – avoid excessive thread overhead
-      }
+      threads = 2;
     }
 
     final request = TranscribeRequest(

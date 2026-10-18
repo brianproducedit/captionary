@@ -436,6 +436,58 @@ class CatalogManifest {
     'models': models.map((m) => m.toJson()).toList(),
   };
 
+  /// Finds a [CatalogModel] by identifier using strict priority matching.
+  ///
+  /// Priority order:
+  /// 1. Exact match by `model.id` (e.g. 'base', 'tiny', 'small', 'medium')
+  /// 2. Exact match by filename basename (e.g. 'ggml-base.bin')
+  /// 3. Stripped filename match (e.g. 'base' matches `ggml-base.bin` but NOT `ggml-base.en.bin`)
+  /// 4. Language code match, preferring multilingual models over English-only
+  /// 5. Substring contains as last resort
+  ///
+  /// This prevents collisions where 'base' would incorrectly match 'base.en'
+  /// because `ggml-base.en.bin.contains('base')` is true.
+  CatalogModel findModel(String identifier) {
+    final idLower = identifier.toLowerCase().trim();
+
+    // Priority 1: Exact match by model ID
+    for (final m in models) {
+      if (m.id.toLowerCase() == idLower) return m;
+    }
+
+    // Priority 2: Exact match by filename basename
+    for (final m in models) {
+      if (p.basename(m.file).toLowerCase() == idLower) return m;
+    }
+
+    // Priority 3: Stripped filename match (ggml-{id}.bin == identifier)
+    // This ensures 'base' matches 'ggml-base.bin' but NOT 'ggml-base.en.bin'
+    for (final m in models) {
+      final stripped = p
+          .basenameWithoutExtension(m.file)
+          .toLowerCase()
+          .replaceFirst('ggml-', '');
+      if (stripped == idLower) return m;
+    }
+
+    // Priority 4: Language code match, preferring multilingual (non-.en) models
+    CatalogModel? enOnlyMatch;
+    for (final m in models) {
+      if (m.languageCodes.contains(idLower)) {
+        if (!m.file.contains('.en')) return m;
+        enOnlyMatch ??= m;
+      }
+    }
+    if (enOnlyMatch != null) return enOnlyMatch;
+
+    // Priority 5: Substring contains as last resort
+    for (final m in models) {
+      if (p.basename(m.file).toLowerCase().contains(idLower)) return m;
+    }
+
+    throw ArgumentError('Model not found in catalog: $identifier');
+  }
+
   /// Resolves the absolute download URL for a model against this catalog's [baseUrl]
   /// or a fallback base URL.
   Uri resolveModelUrl(CatalogModel model, {String? fallbackBaseUrl}) {

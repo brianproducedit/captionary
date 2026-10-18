@@ -18,7 +18,7 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
     } else {
       _saveState();
     }
-    state = List.from(segments);
+    state = SubtitleTimeline.reindex(segments);
   }
 
   void _saveState() {
@@ -144,8 +144,8 @@ class SubtitleNotifier extends StateNotifier<List<SubtitleSegment>> {
     );
   }
 
-  void updateSegmentText(int index, String text) {
-    _saveState();
+  void updateSegmentText(int index, String text, {bool recordHistory = true}) {
+    if (recordHistory) _saveState();
     state = SubtitleTimeline.updateText(state, index, text);
   }
 

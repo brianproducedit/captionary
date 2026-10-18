@@ -104,4 +104,38 @@ void main() {
 
     expect(find.byType(DraggableTimelineChip), findsNWidgets(5));
   });
+
+  testWidgets('playhead handles 4-minute position and jumps to view', (tester) async {
+    await pumpTimeline(tester);
+    final element = tester.element(find.byType(CaptionTimeline));
+    final container = ProviderScope.containerOf(element);
+
+    // Seek to 4 minutes (240 seconds)
+    await container
+        .read(playerProvider.notifier)
+        .seekTo(const Duration(minutes: 4));
+    await tester.pumpAndSettle();
+
+    // Verify clock display shows 4 minutes
+    expect(find.textContaining('04:00'), findsOneWidget);
+  });
+
+  testWidgets('typing in text field updates caption text in real time', (tester) async {
+    await pumpTimeline(tester);
+    final element = tester.element(find.byType(CaptionTimeline));
+    final container = ProviderScope.containerOf(element);
+
+    // Select the first chip
+    await tester.tap(find.byKey(const ValueKey('chip-1')));
+    await tester.pump();
+
+    // Type into the caption text field
+    final textFieldFinder = find.byKey(const Key('caption-text-field'));
+    await tester.enterText(textFieldFinder, 'So Lil Durk');
+    await tester.pump();
+
+    // Verify subtitleProvider updated in real time
+    final updatedText = container.read(subtitleProvider).first.text;
+    expect(updatedText, equals('So Lil Durk'));
+  });
 }

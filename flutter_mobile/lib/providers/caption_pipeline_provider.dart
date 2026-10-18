@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/subtitle_segment.dart';
+import '../data/models/cached_transcription.dart';
 import '../data/services/caption_pipeline.dart';
 import 'language_provider.dart';
 import 'subtitle_provider.dart';
 import 'system_memory_provider.dart';
 import 'transcription_provider.dart';
+import 'transcription_cache_provider.dart';
 
 /// Provider for creating or accessing the CaptionPipeline service.
 final captionPipelineServiceProvider = Provider<CaptionPipeline>((ref) {
@@ -43,6 +45,9 @@ class CaptionPipelineNotifier extends Notifier<CaptionPipelineState> {
     required String videoPath,
     required String mediaId,
     String? languageCode,
+    bool translateToEnglish = false,
+    String? preferredModelQuality,
+    bool consolidateSentences = false,
     bool updateSubtitlesOnSuccess = true,
   }) async {
     final pipeline = CaptionPipeline(
@@ -61,12 +66,32 @@ class CaptionPipelineNotifier extends Notifier<CaptionPipelineState> {
         videoPath: videoPath,
         mediaId: mediaId,
         languageCode: languageCode,
+        translateToEnglish: translateToEnglish,
+        preferredModelQuality: preferredModelQuality,
+        consolidateSentences: consolidateSentences,
       );
 
       if (updateSubtitlesOnSuccess &&
           state.status == CaptionPipelineStatus.ready &&
           segments.isNotEmpty) {
         ref.read(subtitleProvider.notifier).setSegments(segments);
+
+        // Save to transcription cache for future sessions
+        try {
+          final cacheService = ref.read(transcriptionCacheServiceProvider);
+          await cacheService.saveTranscription(
+            CachedTranscription(
+              videoPath: videoPath,
+              mediaId: mediaId,
+              segments: segments,
+              languageCode: languageCode,
+              modelQuality: preferredModelQuality,
+              translateToEnglish: translateToEnglish,
+            ),
+          );
+        } catch (_) {
+          // Cache save failure is non-fatal
+        }
       }
 
       return segments;

@@ -13,6 +13,8 @@ import '../data/services/transcription_service.dart';
 import 'backend_mode_provider.dart';
 import 'language_provider.dart';
 import 'subtitle_provider.dart';
+import 'transcription_cache_provider.dart';
+import '../data/models/cached_transcription.dart';
 
 import '../data/services/whisper_transcription_service.dart';
 
@@ -89,17 +91,56 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
   bool _lastTranslateToEnglish = false;
   String? _lastModelQuality;
 
+  /// Loads cached transcription segments directly into [subtitleProvider].
+  /// Returns true if cached segments were found and loaded.
+  Future<bool> loadFromCache(String videoPath, {String? mediaId}) async {
+    final cacheService = ref.read(transcriptionCacheServiceProvider);
+    final cached = await cacheService.getCachedTranscription(
+      videoPath: videoPath,
+      mediaId: mediaId,
+    );
+    if (cached != null && cached.segments.isNotEmpty) {
+      ref.read(subtitleProvider.notifier).setSegments(cached.segments);
+      state = state.copyWith(
+        status: TranscriptionStatus.success,
+        progress: 1.0,
+        currentAction: 'Loaded from cache (${cached.segments.length} captions)',
+      );
+      return true;
+    }
+    return false;
+  }
+
   Future<void> startTranscription(
     String videoPath, {
     String? mediaId,
     String? languageCode,
     bool translateToEnglish = false,
     String? modelQuality,
+    bool forceRetranscribe = false,
   }) async {
     _lastLanguageCode = languageCode;
     _lastTranslateToEnglish = translateToEnglish;
     _lastModelQuality = modelQuality;
     final effectiveMediaId = mediaId ?? p.basenameWithoutExtension(videoPath);
+
+    // Check cache first (skip if user explicitly wants a fresh transcription)
+    if (!forceRetranscribe) {
+      final cacheService = ref.read(transcriptionCacheServiceProvider);
+      final cached = await cacheService.getCachedTranscription(
+        videoPath: videoPath,
+        mediaId: effectiveMediaId,
+      );
+      if (cached != null && cached.segments.isNotEmpty) {
+        ref.read(subtitleProvider.notifier).setSegments(cached.segments);
+        state = state.copyWith(
+          status: TranscriptionStatus.success,
+          progress: 1.0,
+          currentAction: 'Loaded ${cached.segments.length} cached captions',
+        );
+        return;
+      }
+    }
     state = state.copyWith(
       status: TranscriptionStatus.extractingAudio,
       progress: 0.0,
@@ -169,6 +210,23 @@ class TranscriptionNotifier extends Notifier<TranscriptionState> {
 
       if (segments.isNotEmpty) {
         ref.read(subtitleProvider.notifier).setSegments(segments);
+
+        // Save to cache for future sessions
+        try {
+          final cacheService = ref.read(transcriptionCacheServiceProvider);
+          await cacheService.saveTranscription(
+            CachedTranscription(
+              videoPath: videoPath,
+              mediaId: effectiveMediaId,
+              segments: segments,
+              languageCode: languageCode,
+              modelQuality: modelQuality,
+              translateToEnglish: translateToEnglish,
+            ),
+          );
+        } catch (_) {
+          // Cache save failure is non-fatal
+        }
       }
     } catch (e) {
       if (state.status != TranscriptionStatus.error) {

@@ -35,10 +35,14 @@ import '../core/duration_format.dart';
 import '../providers/waveform_provider.dart';
 import '../providers/caption_pipeline_provider.dart';
 
+import 'dart:async';
+
 import 'package:path/path.dart' as p;
 
 import '../core/performance_logger.dart';
 import '../data/services/caption_pipeline.dart';
+import '../data/models/cached_transcription.dart';
+import '../providers/transcription_cache_provider.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -50,6 +54,8 @@ class StudioScreen extends ConsumerStatefulWidget {
 
 class _StudioScreenState extends ConsumerState<StudioScreen> {
   bool _isEditMode = true;
+  Timer? _autoSaveTimer;
+  List<SubtitleSegment>? _lastSavedSegments;
 
   @override
   void initState() {
@@ -63,12 +69,74 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.videoPath.isNotEmpty) {
         ref.read(playerProvider.notifier).initPlayer(widget.videoPath);
+        _tryAutoRecoverFromCache();
       }
+      // Start listening for subtitle edits to auto-save
+      _startAutoSaveListener();
     });
+  }
+
+  /// If subtitleProvider is empty when studio opens, try loading from cache.
+  Future<void> _tryAutoRecoverFromCache() async {
+    final currentSegments = ref.read(subtitleProvider);
+    if (currentSegments.isNotEmpty) return; // Already have segments
+
+    try {
+      final cacheService = ref.read(transcriptionCacheServiceProvider);
+      final cached = await cacheService.getCachedTranscription(
+        videoPath: widget.videoPath,
+      );
+      if (cached != null && cached.segments.isNotEmpty && mounted) {
+        ref.read(subtitleProvider.notifier).setSegments(cached.segments);
+      }
+    } catch (_) {
+      // Cache recovery is best-effort
+    }
+  }
+
+  /// Debounced auto-save: whenever subtitles change, save to cache after 3s.
+  void _startAutoSaveListener() {
+    ref.listenManual<List<SubtitleSegment>>(subtitleProvider, (previous, next) {
+      if (next.isEmpty || widget.videoPath.trim().isEmpty) return;
+      // Don't save if segments haven't actually changed
+      if (_lastSavedSegments != null &&
+          _lastSavedSegments!.length == next.length &&
+          _lastSavedSegments == next) {
+        return;
+      }
+      _autoSaveTimer?.cancel();
+      _autoSaveTimer = Timer(const Duration(seconds: 3), () {
+        _saveSegmentsToCache(next);
+      });
+    });
+  }
+
+  Future<void> _saveSegmentsToCache(List<SubtitleSegment> segments) async {
+    if (segments.isEmpty || widget.videoPath.trim().isEmpty) return;
+    try {
+      final cacheService = ref.read(transcriptionCacheServiceProvider);
+      final mediaId = p.basenameWithoutExtension(widget.videoPath);
+      await cacheService.saveTranscription(
+        CachedTranscription(
+          videoPath: widget.videoPath,
+          mediaId: mediaId,
+          segments: segments,
+        ),
+      );
+      _lastSavedSegments = segments;
+    } catch (_) {
+      // Auto-save failure is non-fatal
+    }
   }
 
   @override
   void deactivate() {
+    _autoSaveTimer?.cancel();
+    // Flush any pending auto-save immediately
+    final currentSegments = ref.read(subtitleProvider);
+    if (currentSegments.isNotEmpty && widget.videoPath.trim().isNotEmpty) {
+      _saveSegmentsToCache(currentSegments);
+    }
     ref.read(playerProvider.notifier).releasePlayer();
     super.deactivate();
   }

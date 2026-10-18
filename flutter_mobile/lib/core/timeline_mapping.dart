@@ -55,13 +55,19 @@ class TimelineMapping {
   static Duration mediaDuration({
     required Duration playerDuration,
     required List<SubtitleSegment> segments,
+    Duration position = Duration.zero,
   }) {
-    if (playerDuration > Duration.zero) return playerDuration;
-    if (segments.isEmpty) return const Duration(seconds: 15);
-    var end = Duration.zero;
-    for (final segment in segments) {
-      if (segment.endTime > end) end = segment.endTime;
+    if (playerDuration > Duration.zero && playerDuration >= position) {
+      return playerDuration;
     }
-    return end + const Duration(seconds: 1);
+    var maxTime = playerDuration > position ? playerDuration : position;
+    for (final segment in segments) {
+      if (segment.endTime > maxTime) maxTime = segment.endTime;
+    }
+    if (maxTime > Duration.zero) {
+      return maxTime + const Duration(seconds: 1);
+    }
+    if (segments.isEmpty) return const Duration(seconds: 15);
+    return const Duration(seconds: 15);
   }
 }

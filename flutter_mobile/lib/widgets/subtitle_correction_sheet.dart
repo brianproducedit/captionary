@@ -112,6 +112,8 @@ class _SubtitleCorrectionSheetState
                       controller.text = segment.text;
                     }
 
+                    final isSelected = segment.isSelected;
+
                     return GestureDetector(
                       onTap: () {
                         ref
@@ -123,6 +125,15 @@ class _SubtitleCorrectionSheetState
                       },
                       child: GlassCard(
                         padding: const EdgeInsets.all(12.0),
+                        border: isSelected
+                            ? Border.all(
+                                color: AppColors.primary,
+                                width: 1.5,
+                              )
+                            : null,
+                        backgroundColor: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.cardGlass,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -135,15 +146,19 @@ class _SubtitleCorrectionSheetState
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(
-                                      alpha: 0.15,
-                                    ),
+                                    color: (isSelected
+                                            ? AppColors.primary
+                                            : AppColors.primary.withValues(
+                                                alpha: 0.15,
+                                              )),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    '#${segment.index + 1}',
+                                    '#${segment.index}',
                                     style: AppTypography.captionCode.copyWith(
-                                      color: AppColors.primary,
+                                      color: isSelected
+                                          ? AppColors.onPrimary
+                                          : AppColors.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -167,10 +182,29 @@ class _SubtitleCorrectionSheetState
                             // Editable text field
                             TextField(
                               controller: controller,
+                              onTap: () {
+                                if (!segment.isSelected) {
+                                  ref
+                                      .read(subtitleProvider.notifier)
+                                      .selectSegment(segment.index);
+                                }
+                                ref
+                                    .read(playerProvider.notifier)
+                                    .seekTo(segment.startTime);
+                              },
                               onChanged: (text) {
+                                if (!segment.isSelected) {
+                                  ref
+                                      .read(subtitleProvider.notifier)
+                                      .selectSegment(segment.index);
+                                }
                                 ref
                                     .read(subtitleProvider.notifier)
-                                    .updateSegmentText(segment.index, text);
+                                    .updateSegmentText(
+                                      segment.index,
+                                      text,
+                                      recordHistory: false,
+                                    );
                               },
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(color: AppColors.onSurface),

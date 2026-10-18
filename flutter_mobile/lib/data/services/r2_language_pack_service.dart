@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
+import '../../core/wav_header_validator.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
@@ -38,9 +40,9 @@ class R2LanguagePackService implements LanguagePackService {
            dio ??
            Dio(
              BaseOptions(
-               connectTimeout: const Duration(seconds: 5),
-               receiveTimeout: const Duration(seconds: 15),
-               sendTimeout: const Duration(seconds: 5),
+               connectTimeout: const Duration(seconds: 30),
+               receiveTimeout: const Duration(seconds: 60),
+               sendTimeout: const Duration(seconds: 30),
              ),
            ),
        _manifestUrl = manifestUrl ?? AppConstants.manifestUrl,
@@ -175,137 +177,11 @@ class R2LanguagePackService implements LanguagePackService {
 
   static final CatalogManifest _defaultEmbeddedManifest = CatalogManifest(
     schemaVersion: 1,
-    catalogVersion: 2,
-    updatedAt: DateTime.parse('2026-09-21T00:00:00Z'),
+    catalogVersion: 1791797971155,
+    updatedAt: DateTime.parse('2026-10-12T09:39:31.155Z'),
     baseUrl: 'https://pub-6315c0ddbd0d44b4856162c00e47e86e.r2.dev',
     defaultLanguage: 'en',
     models: [
-      const CatalogModel(
-        id: 'base',
-        engine: 'whisper_flutter_new',
-        file: 'models/ggml-base.bin',
-        languageCodes: [
-          'sn',
-          'zu',
-          'sw',
-          'af',
-          'nd',
-          'st',
-          'nso',
-          'tn',
-          'to',
-          'xh',
-          'yo',
-          'en',
-          'fr',
-          'es',
-          'pt',
-          'de',
-          'it',
-          'ru',
-          'nl',
-          'ar',
-          'hi',
-          'ja',
-          'zh',
-          'ko',
-          'tr',
-        ],
-        displayName: 'Multilingual Base (Recommended)',
-        sizeBytes: 147964211,
-        sha256:
-            '60ed5bc3dd14eea856493d334349b405782ddcaf00287874b079a3249e5a4d84',
-        quantization: 'none',
-        bundled: false,
-        minAndroidSdk: 21,
-        recommendedRamGb: 4,
-        license: 'MIT',
-        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
-      ),
-      const CatalogModel(
-        id: 'small',
-        engine: 'whisper_flutter_new',
-        file: 'models/ggml-small.bin',
-        languageCodes: [
-          'sn',
-          'zu',
-          'sw',
-          'af',
-          'nd',
-          'st',
-          'nso',
-          'tn',
-          'to',
-          'xh',
-          'yo',
-          'en',
-          'fr',
-          'es',
-          'pt',
-          'de',
-          'it',
-          'ru',
-          'nl',
-          'ar',
-          'hi',
-          'ja',
-          'zh',
-          'ko',
-          'tr',
-        ],
-        displayName: 'Multilingual Small (High Accuracy)',
-        sizeBytes: 487601967,
-        sha256:
-            '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
-        quantization: 'none',
-        bundled: false,
-        minAndroidSdk: 21,
-        recommendedRamGb: 4,
-        license: 'MIT',
-        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin',
-      ),
-      const CatalogModel(
-        id: 'medium',
-        engine: 'whisper_flutter_new',
-        file: 'models/ggml-medium.bin',
-        languageCodes: [
-          'sn',
-          'zu',
-          'sw',
-          'af',
-          'nd',
-          'st',
-          'nso',
-          'tn',
-          'to',
-          'xh',
-          'yo',
-          'en',
-          'fr',
-          'es',
-          'pt',
-          'de',
-          'it',
-          'ru',
-          'nl',
-          'ar',
-          'hi',
-          'ja',
-          'zh',
-          'ko',
-          'tr',
-        ],
-        displayName: 'Multilingual Medium (Maximum Accuracy)',
-        sizeBytes: 1533774781,
-        sha256:
-            'fd9727b6e1217c2f614f9b698455c4ffd82463b4c8aaec2c4f21a1b0c5860571',
-        quantization: 'none',
-        bundled: false,
-        minAndroidSdk: 21,
-        recommendedRamGb: 6,
-        license: 'MIT',
-        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin',
-      ),
       const CatalogModel(
         id: 'tiny.en',
         engine: 'whisper_flutter_new',
@@ -320,7 +196,8 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 2,
         license: 'MIT',
-        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
       ),
       const CatalogModel(
         id: 'tiny',
@@ -329,40 +206,279 @@ class R2LanguagePackService implements LanguagePackService {
         languageCodes: [
           'sn',
           'zu',
-          'sw',
-          'af',
-          'nd',
-          'st',
           'nso',
-          'tn',
-          'to',
-          'xh',
+          'sw',
           'yo',
+          'af',
+          'xh',
+          'st',
+          'tn',
+          'ts',
+          'ss',
+          've',
+          'nr',
           'en',
           'fr',
-          'es',
           'pt',
+          'es',
+          'ar',
           'de',
           'it',
-          'ru',
           'nl',
-          'ar',
+          'ru',
           'hi',
-          'ja',
           'zh',
+          'ja',
           'ko',
-          'tr',
         ],
         displayName: 'Multilingual Tiny (Fast)',
-        sizeBytes: 77704715,
+        sizeBytes: 77691713,
         sha256:
-            'bd577a113a864445d4c299885e8aa977798604f7922c7477048034da473fe205',
+            'be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21',
         quantization: 'none',
         bundled: false,
         minAndroidSdk: 21,
         recommendedRamGb: 2,
         license: 'MIT',
-        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+      ),
+      const CatalogModel(
+        id: 'tiny.q5_1',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-tiny-q5_1.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'nso',
+          'sw',
+          'yo',
+          'af',
+          'xh',
+          'st',
+          'tn',
+          'ts',
+          'ss',
+          've',
+          'nr',
+          'en',
+          'fr',
+          'pt',
+          'es',
+          'ar',
+          'de',
+          'it',
+          'nl',
+          'ru',
+          'hi',
+          'zh',
+          'ja',
+          'ko',
+        ],
+        displayName: 'Multilingual Tiny (Q5_1 Quantized)',
+        sizeBytes: 32152673,
+        sha256:
+            '818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7',
+        quantization: 'q5_1',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 2,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin',
+      ),
+      const CatalogModel(
+        id: 'base.en',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-base.en.bin',
+        languageCodes: ['en'],
+        displayName: 'English Base',
+        sizeBytes: 147964211,
+        sha256:
+            'a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 4,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin',
+      ),
+      const CatalogModel(
+        id: 'base',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-base.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'nso',
+          'sw',
+          'yo',
+          'af',
+          'xh',
+          'st',
+          'tn',
+          'ts',
+          'ss',
+          've',
+          'nr',
+          'en',
+          'fr',
+          'pt',
+          'es',
+          'ar',
+          'de',
+          'it',
+          'nl',
+          'ru',
+          'hi',
+          'zh',
+          'ja',
+          'ko',
+        ],
+        displayName: 'Multilingual Base (Recommended)',
+        sizeBytes: 147951465,
+        sha256:
+            '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 4,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+      ),
+      const CatalogModel(
+        id: 'base.q5_1',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-base-q5_1.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'nso',
+          'sw',
+          'yo',
+          'af',
+          'xh',
+          'st',
+          'tn',
+          'ts',
+          'ss',
+          've',
+          'nr',
+          'en',
+          'fr',
+          'pt',
+          'es',
+          'ar',
+          'de',
+          'it',
+          'nl',
+          'ru',
+          'hi',
+          'zh',
+          'ja',
+          'ko',
+        ],
+        displayName: 'Multilingual Base (Q5_1 Quantized)',
+        sizeBytes: 59707625,
+        sha256:
+            '422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898',
+        quantization: 'q5_1',
+        bundled: false,
+        minAndroidSdk: 21,
+        recommendedRamGb: 4,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin',
+      ),
+      const CatalogModel(
+        id: 'small',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-small.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'nso',
+          'sw',
+          'yo',
+          'af',
+          'xh',
+          'st',
+          'tn',
+          'ts',
+          'ss',
+          've',
+          'nr',
+          'en',
+          'fr',
+          'pt',
+          'es',
+          'ar',
+          'de',
+          'it',
+          'nl',
+          'ru',
+          'hi',
+          'zh',
+          'ja',
+          'ko',
+        ],
+        displayName: 'Multilingual Small (High Accuracy)',
+        sizeBytes: 487601967,
+        sha256:
+            '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 24,
+        recommendedRamGb: 4,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin',
+      ),
+      const CatalogModel(
+        id: 'medium',
+        engine: 'whisper_flutter_new',
+        file: 'models/ggml-medium.bin',
+        languageCodes: [
+          'sn',
+          'zu',
+          'nso',
+          'sw',
+          'yo',
+          'af',
+          'xh',
+          'st',
+          'tn',
+          'ts',
+          'ss',
+          've',
+          'nr',
+          'en',
+          'fr',
+          'pt',
+          'es',
+          'ar',
+          'de',
+          'it',
+          'nl',
+          'ru',
+          'hi',
+          'zh',
+          'ja',
+          'ko',
+        ],
+        displayName: 'Multilingual Medium (Maximum Accuracy)',
+        sizeBytes: 1533774781,
+        sha256:
+            'fd9727b6e1217c2f614f9b698455c4ffd82463b4c8aaec2c4f21a1b0c5860571',
+        quantization: 'none',
+        bundled: false,
+        minAndroidSdk: 24,
+        recommendedRamGb: 6,
+        license: 'MIT',
+        sourceUrl:
+            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin',
       ),
     ],
   );
@@ -527,13 +643,7 @@ class R2LanguagePackService implements LanguagePackService {
   @override
   Stream<DownloadProgress> downloadLanguagePack(String code) async* {
     final catalog = await fetchManifest();
-    final model = catalog.models.firstWhere(
-      (m) =>
-          m.id == code ||
-          p.basename(m.file).toLowerCase().contains(code.toLowerCase()) ||
-          m.languageCodes.contains(code),
-      orElse: () => throw ArgumentError('Language code not found: $code'),
-    );
+    final model = catalog.findModel(code);
 
     final dir = await modelsDirectory;
     final finalPath = _resolveSafeLocalPath(dir, model.file);
@@ -588,179 +698,238 @@ class R2LanguagePackService implements LanguagePackService {
     if (await partFile.exists()) {
       existingBytes = await partFile.length();
       // If .part file is already larger than expected, discard and restart
-      if (existingBytes >= model.sizeBytes) {
+      if (existingBytes > model.sizeBytes) {
         await partFile.delete();
         existingBytes = 0;
       }
     }
 
-    IOSink? sink;
-    try {
-      final Map<String, dynamic> headers = {};
-      bool isResume = existingBytes > 0;
-      if (isResume) {
-        headers['Range'] = 'bytes=$existingBytes-';
+    const int maxRetries = 4;
+    int retryCount = 0;
+    bool isComplete = false;
+
+    while (!isComplete) {
+      if (cancelToken.isCancelled) {
+        _activeTokens.remove(code);
+        return;
       }
 
-      final response = await _dio.get<ResponseBody>(
-        downloadUrl.toString(),
-        options: Options(headers: headers, responseType: ResponseType.stream),
-        cancelToken: cancelToken,
-      );
-
-      final statusCode = response.statusCode ?? 200;
-
-      // Roadmap requirement:
-      // Download to *.part; Range resume; require 206 for resume;
-      // if server returns 200, restart.
-      if (isResume && statusCode != 206) {
-        // Server returned 200 instead of 206 or ignored Range. Restart from byte 0.
+      IOSink? sink;
+      try {
         if (await partFile.exists()) {
-          await partFile.delete();
+          existingBytes = await partFile.length();
+          if (existingBytes > model.sizeBytes) {
+            await partFile.delete();
+            existingBytes = 0;
+          }
+        } else {
+          existingBytes = 0;
         }
-        existingBytes = 0;
-        isResume = false;
-      }
 
-      final fileMode = isResume ? FileMode.append : FileMode.write;
-      sink = partFile.openWrite(mode: fileMode);
+        // If part file already has full bytes, skip to verification
+        if (existingBytes >= model.sizeBytes && model.sizeBytes > 0) {
+          isComplete = true;
+          break;
+        }
 
-      int totalBytes = model.sizeBytes;
-      int downloadedBytes = existingBytes;
-      final stopwatch = Stopwatch()..start();
-      int bytesSinceLastTick = 0;
-      DateTime lastYieldTime = DateTime.now();
+        final Map<String, dynamic> headers = {};
+        bool isResume = existingBytes > 0;
+        if (isResume) {
+          headers['Range'] = 'bytes=$existingBytes-';
+        }
 
-      yield DownloadProgress(
-        languageCode: code,
-        downloadedBytes: downloadedBytes,
-        totalBytes: totalBytes,
-        speedBytesPerSec: 0,
-        estimatedTimeRemaining: const Duration(seconds: 30),
-        state: DownloadState.downloading,
-      );
+        final response = await _dio.get<ResponseBody>(
+          downloadUrl.toString(),
+          options: Options(
+            headers: headers,
+            responseType: ResponseType.stream,
+            receiveTimeout: const Duration(seconds: 60),
+            sendTimeout: const Duration(seconds: 30),
+          ),
+          cancelToken: cancelToken,
+        );
 
-      await for (final chunk in response.data!.stream) {
-        if (cancelToken.isCancelled) break;
+        final statusCode = response.statusCode ?? 200;
 
-        sink.add(chunk);
-        downloadedBytes += chunk.length;
-        bytesSinceLastTick += chunk.length;
+        // Roadmap requirement:
+        // Download to *.part; Range resume; require 206 for resume;
+        // if server returns 200, restart.
+        if (isResume && statusCode != 206) {
+          // Server returned 200 instead of 206 or ignored Range. Restart from byte 0.
+          if (await partFile.exists()) {
+            await partFile.delete();
+          }
+          existingBytes = 0;
+          isResume = false;
+        }
 
-        final now = DateTime.now();
-        if (now.difference(lastYieldTime).inMilliseconds >= 250 ||
-            downloadedBytes == totalBytes) {
-          final elapsedSec = stopwatch.elapsedMilliseconds / 1000.0;
-          final speed = elapsedSec > 0 ? bytesSinceLastTick / elapsedSec : 0.0;
-          final remainingBytes = totalBytes - downloadedBytes;
-          final eta = speed > 0
-              ? Duration(seconds: (remainingBytes / speed).ceil())
-              : Duration.zero;
+        final fileMode = isResume ? FileMode.append : FileMode.write;
+        sink = partFile.openWrite(mode: fileMode);
 
+        int totalBytes = model.sizeBytes;
+        int downloadedBytes = existingBytes;
+        final stopwatch = Stopwatch()..start();
+        int bytesSinceLastTick = 0;
+        DateTime lastYieldTime = DateTime.now();
+
+        yield DownloadProgress(
+          languageCode: code,
+          downloadedBytes: downloadedBytes,
+          totalBytes: totalBytes,
+          speedBytesPerSec: 0,
+          estimatedTimeRemaining: const Duration(seconds: 30),
+          state: DownloadState.downloading,
+        );
+
+        await for (final chunk in response.data!.stream) {
+          if (cancelToken.isCancelled) break;
+
+          sink.add(chunk);
+          downloadedBytes += chunk.length;
+          bytesSinceLastTick += chunk.length;
+
+          final now = DateTime.now();
+          if (now.difference(lastYieldTime).inMilliseconds >= 250 ||
+              downloadedBytes == totalBytes) {
+            final elapsedSec = stopwatch.elapsedMilliseconds / 1000.0;
+            final speed = elapsedSec > 0 ? bytesSinceLastTick / elapsedSec : 0.0;
+            final remainingBytes = totalBytes - downloadedBytes;
+            final eta = speed > 0
+                ? Duration(seconds: (remainingBytes / speed).ceil())
+                : Duration.zero;
+
+            yield DownloadProgress(
+              languageCode: code,
+              downloadedBytes: downloadedBytes,
+              totalBytes: totalBytes,
+              speedBytesPerSec: speed,
+              estimatedTimeRemaining: eta,
+              state: DownloadState.downloading,
+            );
+
+            stopwatch.reset();
+            bytesSinceLastTick = 0;
+            lastYieldTime = now;
+          }
+        }
+
+        await sink.flush();
+        await sink.close();
+        sink = null;
+
+        if (cancelToken.isCancelled) {
+          _activeTokens.remove(code);
+          return;
+        }
+
+        if (await partFile.exists() && (await partFile.length()) >= totalBytes) {
+          isComplete = true;
+          break;
+        }
+      } catch (e) {
+        if (sink != null) {
+          try {
+            await sink.flush();
+            await sink.close();
+          } catch (_) {}
+          sink = null;
+        }
+
+        if (cancelToken.isCancelled) {
+          _activeTokens.remove(code);
+          return;
+        }
+
+        if (retryCount < maxRetries) {
+          retryCount++;
+          debugPrint(
+            '[R2LanguagePackService] Connection interrupted ($e), retrying attempt $retryCount/$maxRetries...',
+          );
+          if (await partFile.exists()) {
+            existingBytes = await partFile.length();
+          }
           yield DownloadProgress(
             languageCode: code,
-            downloadedBytes: downloadedBytes,
-            totalBytes: totalBytes,
-            speedBytesPerSec: speed,
-            estimatedTimeRemaining: eta,
+            downloadedBytes: existingBytes,
+            totalBytes: model.sizeBytes,
+            speedBytesPerSec: 0,
+            estimatedTimeRemaining:
+                Duration(seconds: 15 * (maxRetries - retryCount + 1)),
             state: DownloadState.downloading,
           );
-
-          stopwatch.reset();
-          bytesSinceLastTick = 0;
-          lastYieldTime = now;
+          await Future.delayed(Duration(seconds: math.min(1 << retryCount, 6)));
+          continue;
         }
-      }
 
-      await sink.flush();
-      await sink.close();
-      sink = null;
+        _activeTokens.remove(code);
 
-      if (cancelToken.isCancelled) {
-        // Paused/cancelled: keep .part file intact (deleteOnError: false)
-        return;
-      }
-
-      // Check SHA256 integrity
-      yield DownloadProgress(
-        languageCode: code,
-        downloadedBytes: downloadedBytes,
-        totalBytes: totalBytes,
-        speedBytesPerSec: 0,
-        estimatedTimeRemaining: Duration.zero,
-        state: DownloadState.verifying,
-      );
-
-      final calculatedSha256 = await _computeSha256(partFile);
-      if (calculatedSha256 != model.sha256.toLowerCase()) {
-        // Checksum mismatch: delete .part file and throw
-        if (await partFile.exists()) {
-          await partFile.delete();
-        }
-        throw ChecksumMismatchException(
-          modelId: model.id,
-          expectedSha256: model.sha256,
-          actualSha256: calculatedSha256,
+        yield DownloadProgress(
+          languageCode: code,
+          downloadedBytes: existingBytes,
+          totalBytes: model.sizeBytes,
+          speedBytesPerSec: 0,
+          estimatedTimeRemaining: Duration.zero,
+          state: DownloadState.error,
         );
+
+        rethrow;
       }
-
-      // Atomic rename: .part -> .bin
-      if (await finalFile.exists()) {
-        await finalFile.delete();
-      }
-      await partFile.rename(finalFile.path);
-
-      // Write install metadata JSON
-      final metadata = {
-        'id': model.id,
-        'engine': model.engine,
-        'file': p.basename(model.file),
-        'language_codes': model.languageCodes,
-        'display_name': model.displayName,
-        'size_bytes': model.sizeBytes,
-        'sha256': model.sha256,
-        'installed_at': DateTime.now().toIso8601String(),
-        'catalog_version': catalog.catalogVersion,
-      };
-      await metaFile.writeAsString(jsonEncode(metadata));
-
-      _activeTokens.remove(code);
-
-      yield DownloadProgress(
-        languageCode: code,
-        downloadedBytes: totalBytes,
-        totalBytes: totalBytes,
-        speedBytesPerSec: 0,
-        estimatedTimeRemaining: Duration.zero,
-        state: DownloadState.complete,
-      );
-    } catch (e) {
-      if (sink != null) {
-        try {
-          await sink.flush();
-          await sink.close();
-        } catch (_) {}
-      }
-
-      _activeTokens.remove(code);
-
-      // If cancelled, keep the .part file
-      if (cancelToken.isCancelled) {
-        return;
-      }
-
-      // If it's a checksum mismatch, the part file was already deleted
-      yield DownloadProgress(
-        languageCode: code,
-        downloadedBytes: existingBytes,
-        totalBytes: model.sizeBytes,
-        speedBytesPerSec: 0,
-        estimatedTimeRemaining: Duration.zero,
-        state: DownloadState.error,
-      );
-
-      rethrow;
     }
+
+    // Check SHA256 integrity
+    yield DownloadProgress(
+      languageCode: code,
+      downloadedBytes: model.sizeBytes,
+      totalBytes: model.sizeBytes,
+      speedBytesPerSec: 0,
+      estimatedTimeRemaining: Duration.zero,
+      state: DownloadState.verifying,
+    );
+
+    final calculatedSha256 = await _computeSha256(partFile);
+    if (calculatedSha256 != model.sha256.toLowerCase()) {
+      // Checksum mismatch: delete .part file and throw
+      if (await partFile.exists()) {
+        await partFile.delete();
+      }
+      _activeTokens.remove(code);
+      throw ChecksumMismatchException(
+        modelId: model.id,
+        expectedSha256: model.sha256,
+        actualSha256: calculatedSha256,
+      );
+    }
+
+    // Atomic rename: .part -> .bin
+    if (await finalFile.exists()) {
+      await finalFile.delete();
+    }
+    await partFile.rename(finalFile.path);
+
+    // Write install metadata JSON
+    final metadata = {
+      'id': model.id,
+      'engine': model.engine,
+      'file': p.basename(model.file),
+      'language_codes': model.languageCodes,
+      'display_name': model.displayName,
+      'size_bytes': model.sizeBytes,
+      'sha256': model.sha256,
+      'installed_at': DateTime.now().toIso8601String(),
+      'catalog_version': catalog.catalogVersion,
+    };
+    await metaFile.writeAsString(jsonEncode(metadata));
+
+    _activeTokens.remove(code);
+
+    yield DownloadProgress(
+      languageCode: code,
+      downloadedBytes: model.sizeBytes,
+      totalBytes: model.sizeBytes,
+      speedBytesPerSec: 0,
+      estimatedTimeRemaining: Duration.zero,
+      state: DownloadState.complete,
+    );
   }
 
   /// Cancels an active download.
@@ -775,9 +944,7 @@ class R2LanguagePackService implements LanguagePackService {
     if (deletePart) {
       try {
         final catalog = await fetchManifest();
-        final model = catalog.models.firstWhere(
-          (m) => m.languageCodes.contains(code) || m.id == code,
-        );
+        final model = catalog.findModel(code);
         final dir = await modelsDirectory;
         final localPath = _resolveSafeLocalPath(dir, model.file);
         final partFile = File('$localPath.part');
@@ -793,10 +960,7 @@ class R2LanguagePackService implements LanguagePackService {
     await cancelDownload(code, deletePart: true);
 
     final catalog = await fetchManifest();
-    final model = catalog.models.firstWhere(
-      (m) => m.languageCodes.contains(code) || m.id == code,
-      orElse: () => throw ArgumentError('Language code not found: $code'),
-    );
+    final model = catalog.findModel(code);
 
     final dir = await modelsDirectory;
     final filename = p.basename(model.file);
@@ -840,6 +1004,19 @@ class R2LanguagePackService implements LanguagePackService {
 
   @override
   Future<String> detectLanguage(String audioPath) async {
+    final file = File(audioPath);
+    if (await file.exists()) {
+      try {
+        final validation = await WavHeaderValidator.validateFile(file);
+        if (!validation.isValid) {
+          debugPrint(
+            '[R2LanguagePackService] Audio verification notice: ${validation.errorMessage}',
+          );
+        }
+      } catch (e) {
+        debugPrint('[R2LanguagePackService] Audio check note: $e');
+      }
+    }
     return _cachedManifest?.defaultLanguage ?? 'en';
   }
 

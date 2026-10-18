@@ -12,13 +12,29 @@ final activeSubtitleProvider = Provider<SubtitleSegment?>((ref) {
 
   final position = playerState.position;
 
-  try {
-    // Find the segment that spans the current video position
-    return segments.firstWhere(
-      (segment) => segment.startTime <= position && segment.endTime >= position,
-    );
-  } catch (_) {
-    // No active segment at this position
+  // 1. If player is playing, strictly track playback timecode
+  if (playerState.isPlaying) {
+    for (final segment in segments) {
+      if (segment.startTime <= position && segment.endTime >= position) {
+        return segment;
+      }
+    }
     return null;
   }
+
+  // 2. When paused: if a segment is actively selected, prioritize showing it
+  // so live edits and corrections are visible in real-time on the video canvas.
+  for (final segment in segments) {
+    if (segment.isSelected) {
+      return segment;
+    }
+  }
+
+  // 3. Fallback: match by current playback position
+  for (final segment in segments) {
+    if (segment.startTime <= position && segment.endTime >= position) {
+      return segment;
+    }
+  }
+  return null;
 });

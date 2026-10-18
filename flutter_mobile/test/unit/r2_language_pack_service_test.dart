@@ -161,6 +161,107 @@ void main() {
         'https://models.captionary.co.zw/models/ggml-tiny.en.bin',
       );
     });
+
+    test('findModel strictly resolves models without substring collisions', () {
+      final manifest = CatalogManifest(
+        schemaVersion: 1,
+        catalogVersion: 1,
+        updatedAt: null,
+        baseUrl: 'https://models.captionary.co.zw',
+        defaultLanguage: 'en',
+        models: [
+          const CatalogModel(
+            id: 'tiny.en',
+            engine: 'whisper_flutter_new',
+            file: 'models/ggml-tiny.en.bin',
+            languageCodes: ['en'],
+            displayName: 'Tiny English',
+            sizeBytes: 100,
+            sha256:
+                '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+          ),
+          const CatalogModel(
+            id: 'tiny',
+            engine: 'whisper_flutter_new',
+            file: 'models/ggml-tiny.bin',
+            languageCodes: ['sn', 'en', 'zu'],
+            displayName: 'Tiny Multilingual',
+            sizeBytes: 100,
+            sha256:
+                'be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21',
+          ),
+          const CatalogModel(
+            id: 'base.en',
+            engine: 'whisper_flutter_new',
+            file: 'models/ggml-base.en.bin',
+            languageCodes: ['en'],
+            displayName: 'Base English',
+            sizeBytes: 200,
+            sha256:
+                'a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002',
+          ),
+          const CatalogModel(
+            id: 'base',
+            engine: 'whisper_flutter_new',
+            file: 'models/ggml-base.bin',
+            languageCodes: ['sn', 'en', 'zu'],
+            displayName: 'Base Multilingual',
+            sizeBytes: 200,
+            sha256:
+                '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+          ),
+          const CatalogModel(
+            id: 'small',
+            engine: 'whisper_flutter_new',
+            file: 'models/ggml-small.bin',
+            languageCodes: ['sn', 'en', 'zu'],
+            displayName: 'Small Multilingual',
+            sizeBytes: 400,
+            sha256:
+                '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+          ),
+          const CatalogModel(
+            id: 'medium',
+            engine: 'whisper_flutter_new',
+            file: 'models/ggml-medium.bin',
+            languageCodes: ['sn', 'en', 'zu'],
+            displayName: 'Medium Multilingual',
+            sizeBytes: 800,
+            sha256:
+                '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+          ),
+        ],
+      );
+
+      // 'base' must resolve 'ggml-base.bin', never 'ggml-base.en.bin'
+      expect(manifest.findModel('base').file, 'models/ggml-base.bin');
+      expect(manifest.findModel('base').id, 'base');
+
+      // 'base.en' must resolve 'ggml-base.en.bin'
+      expect(manifest.findModel('base.en').file, 'models/ggml-base.en.bin');
+      expect(manifest.findModel('base.en').id, 'base.en');
+
+      // 'tiny' must resolve 'ggml-tiny.bin', never 'ggml-tiny.en.bin'
+      expect(manifest.findModel('tiny').file, 'models/ggml-tiny.bin');
+      expect(manifest.findModel('tiny').id, 'tiny');
+
+      // 'tiny.en' must resolve 'ggml-tiny.en.bin'
+      expect(manifest.findModel('tiny.en').file, 'models/ggml-tiny.en.bin');
+      expect(manifest.findModel('tiny.en').id, 'tiny.en');
+
+      // 'small' and 'medium' must resolve correctly
+      expect(manifest.findModel('small').file, 'models/ggml-small.bin');
+      expect(manifest.findModel('small').id, 'small');
+      expect(manifest.findModel('medium').file, 'models/ggml-medium.bin');
+      expect(manifest.findModel('medium').id, 'medium');
+
+      // Filename lookups
+      expect(manifest.findModel('ggml-base.bin').file, 'models/ggml-base.bin');
+      expect(manifest.findModel('ggml-small.bin').file, 'models/ggml-small.bin');
+      expect(manifest.findModel('ggml-medium.bin').file, 'models/ggml-medium.bin');
+      expect(manifest.findModel('ggml-tiny.bin').file, 'models/ggml-tiny.bin');
+      expect(manifest.findModel('ggml-base.en.bin').file, 'models/ggml-base.en.bin');
+    });
   });
 
   group('R2LanguagePackService Network & Resumable Downloads', () {
