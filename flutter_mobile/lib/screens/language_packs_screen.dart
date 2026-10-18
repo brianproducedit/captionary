@@ -1151,9 +1151,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
         icon: Symbols.refresh,
         isFullWidth: true,
         onTap: () {
-          ref
-              .read(availableLanguagesProvider.notifier)
-              .startDownload(target);
+          ref.read(availableLanguagesProvider.notifier).startDownload(target);
         },
       );
     }
@@ -1192,9 +1190,7 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
       icon: Symbols.download,
       isFullWidth: true,
       onTap: () {
-        ref
-            .read(availableLanguagesProvider.notifier)
-            .startDownload(target);
+        ref.read(availableLanguagesProvider.notifier).startDownload(target);
       },
     );
   }
@@ -1511,8 +1507,9 @@ class _LanguagePacksScreenState extends ConsumerState<LanguagePacksScreen>
     );
 
     if (result == true && mounted) {
-      final deleteTarget =
-          pack.modelFile.isNotEmpty ? pack.modelFile : pack.code;
+      final deleteTarget = pack.modelFile.isNotEmpty
+          ? pack.modelFile
+          : pack.code;
       ref
           .read(availableLanguagesProvider.notifier)
           .deleteLanguagePack(deleteTarget);

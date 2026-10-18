@@ -278,8 +278,9 @@ class CaptionPipeline {
         ),
       );
 
-      final audioValidation =
-          await WavHeaderValidator.validateFile(File(audioPath));
+      final audioValidation = await WavHeaderValidator.validateFile(
+        File(audioPath),
+      );
       if (!audioValidation.isValid) {
         debugPrint(
           '[CaptionPipeline] Audio validation note: ${audioValidation.errorMessage}',
@@ -315,11 +316,11 @@ class CaptionPipeline {
 
       final actionDescription = translateToEnglish
           ? (isAutoDetect
-              ? 'Language: Auto-detect -> Translate to English'
-              : 'Language: $whisperLangCode -> Translate to English')
+                ? 'Language: Auto-detect -> Translate to English'
+                : 'Language: $whisperLangCode -> Translate to English')
           : (isAutoDetect
-              ? 'Language: Auto-detect (Multilingual Whisper)'
-              : 'Language: $whisperLangCode');
+                ? 'Language: Auto-detect (Multilingual Whisper)'
+                : 'Language: $whisperLangCode');
 
       _emit(
         _state.copyWith(
@@ -350,14 +351,14 @@ class CaptionPipeline {
             targetPack = availableLangs.firstWhere(
               (p) =>
                   !p.modelFile.contains('.en') &&
-                  (p.code == whisperLangCode || isAutoDetect || p.code == 'en') &&
+                  (p.code == whisperLangCode ||
+                      isAutoDetect ||
+                      p.code == 'en') &&
                   p.modelFile.toLowerCase().contains(q),
             );
           } else {
             targetPack = availableLangs.firstWhere(
-              (p) =>
-                  p.code == 'en' &&
-                  p.modelFile.toLowerCase().contains(q),
+              (p) => p.code == 'en' && p.modelFile.toLowerCase().contains(q),
             );
           }
         } catch (_) {}
@@ -566,9 +567,7 @@ class CaptionPipeline {
         if (languagePackService is R2LanguagePackService) {
           final dir = await (languagePackService as R2LanguagePackService)
               .modelsDirectory;
-          final resolvedFile = File(
-            p.join(dir.path, targetPack.modelFile),
-          );
+          final resolvedFile = File(p.join(dir.path, targetPack.modelFile));
           if (await resolvedFile.exists()) {
             modelPathToUse = resolvedFile.path;
           }

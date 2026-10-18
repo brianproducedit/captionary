@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import '../../core/wav_header_validator.dart';
+
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
@@ -196,8 +197,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 2,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
       ),
       const CatalogModel(
         id: 'tiny',
@@ -240,8 +240,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 2,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin',
       ),
       const CatalogModel(
         id: 'tiny.q5_1',
@@ -284,8 +283,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 2,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin',
       ),
       const CatalogModel(
         id: 'base.en',
@@ -301,8 +299,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 4,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin',
       ),
       const CatalogModel(
         id: 'base',
@@ -345,8 +342,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 4,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin',
       ),
       const CatalogModel(
         id: 'base.q5_1',
@@ -389,8 +385,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 21,
         recommendedRamGb: 4,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin',
       ),
       const CatalogModel(
         id: 'small',
@@ -433,8 +428,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 24,
         recommendedRamGb: 4,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin',
       ),
       const CatalogModel(
         id: 'medium',
@@ -477,8 +471,7 @@ class R2LanguagePackService implements LanguagePackService {
         minAndroidSdk: 24,
         recommendedRamGb: 6,
         license: 'MIT',
-        sourceUrl:
-            'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin',
+        sourceUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin',
       ),
     ],
   );
@@ -792,7 +785,9 @@ class R2LanguagePackService implements LanguagePackService {
           if (now.difference(lastYieldTime).inMilliseconds >= 250 ||
               downloadedBytes == totalBytes) {
             final elapsedSec = stopwatch.elapsedMilliseconds / 1000.0;
-            final speed = elapsedSec > 0 ? bytesSinceLastTick / elapsedSec : 0.0;
+            final speed = elapsedSec > 0
+                ? bytesSinceLastTick / elapsedSec
+                : 0.0;
             final remainingBytes = totalBytes - downloadedBytes;
             final eta = speed > 0
                 ? Duration(seconds: (remainingBytes / speed).ceil())
@@ -822,7 +817,8 @@ class R2LanguagePackService implements LanguagePackService {
           return;
         }
 
-        if (await partFile.exists() && (await partFile.length()) >= totalBytes) {
+        if (await partFile.exists() &&
+            (await partFile.length()) >= totalBytes) {
           isComplete = true;
           break;
         }
@@ -853,8 +849,9 @@ class R2LanguagePackService implements LanguagePackService {
             downloadedBytes: existingBytes,
             totalBytes: model.sizeBytes,
             speedBytesPerSec: 0,
-            estimatedTimeRemaining:
-                Duration(seconds: 15 * (maxRetries - retryCount + 1)),
+            estimatedTimeRemaining: Duration(
+              seconds: 15 * (maxRetries - retryCount + 1),
+            ),
             state: DownloadState.downloading,
           );
           await Future.delayed(Duration(seconds: math.min(1 << retryCount, 6)));

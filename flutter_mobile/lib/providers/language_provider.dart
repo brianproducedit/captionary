@@ -50,8 +50,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     final t = target.toLowerCase().trim();
     final pCode = p.code.toLowerCase().trim();
     final pModelBase = p.modelFile.toLowerCase().trim();
-    final pModelStripped =
-        pModelBase.replaceAll('ggml-', '').replaceAll('.bin', '');
+    final pModelStripped = pModelBase
+        .replaceAll('ggml-', '')
+        .replaceAll('.bin', '');
     return pCode == t ||
         pModelBase == t ||
         pModelBase == 'ggml-$t.bin' ||
@@ -94,8 +95,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
     // Mark as downloading for all packs sharing this model/code
     state.whenData((packs) {
       final matching = packs.where((p) => _matchesTarget(p, code));
-      final targetModelFile =
-          matching.isNotEmpty ? matching.first.modelFile : null;
+      final targetModelFile = matching.isNotEmpty
+          ? matching.first.modelFile
+          : null;
 
       state = AsyncData(
         packs.map((p) {
@@ -117,8 +119,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
       (progress) {
         state.whenData((packs) {
           final matching = packs.where((p) => _matchesTarget(p, code));
-          final targetModelFile =
-              matching.isNotEmpty ? matching.first.modelFile : null;
+          final targetModelFile = matching.isNotEmpty
+              ? matching.first.modelFile
+              : null;
 
           final status = progress.state == DownloadState.complete
               ? LanguagePackStatus.installed
@@ -148,8 +151,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
         _activeDownloads.remove(code);
         state.whenData((packs) {
           final matching = packs.where((p) => _matchesTarget(p, code));
-          final targetModelFile =
-              matching.isNotEmpty ? matching.first.modelFile : null;
+          final targetModelFile = matching.isNotEmpty
+              ? matching.first.modelFile
+              : null;
 
           state = AsyncData(
             packs.map((p) {
@@ -189,8 +193,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
 
     state.whenData((packs) {
       final matching = packs.where((p) => _matchesTarget(p, code));
-      final targetModelFile =
-          matching.isNotEmpty ? matching.first.modelFile : null;
+      final targetModelFile = matching.isNotEmpty
+          ? matching.first.modelFile
+          : null;
 
       state = AsyncData(
         packs.map((p) {
@@ -218,8 +223,9 @@ class AvailableLanguagesNotifier extends AsyncNotifier<List<LanguagePack>> {
 
     state.whenData((packs) {
       final matching = packs.where((p) => _matchesTarget(p, code));
-      final targetModelFile =
-          matching.isNotEmpty ? matching.first.modelFile : null;
+      final targetModelFile = matching.isNotEmpty
+          ? matching.first.modelFile
+          : null;
 
       state = AsyncData(
         packs.map((p) {

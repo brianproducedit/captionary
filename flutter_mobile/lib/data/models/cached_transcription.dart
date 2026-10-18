@@ -28,8 +28,8 @@ class CachedTranscription {
     this.translateToEnglish = false,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
     return {

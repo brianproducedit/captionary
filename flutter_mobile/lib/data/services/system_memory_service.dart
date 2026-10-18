@@ -253,8 +253,7 @@ class SystemMemoryService {
         chunkDuration: Duration(seconds: 15),
         threadCount: 2,
         aggressiveMemoryCleanup: true,
-        description:
-            'RAM Delegation active: 15s chunks, 2 threads (reduces peak RSS ~50%)',
+        description: 'RAM Delegation active: 15s chunks, 2 threads (reduces peak RSS ~50%)',
       );
     }
 
@@ -275,8 +274,7 @@ class SystemMemoryService {
         chunkDuration: Duration(seconds: 20),
         threadCount: 2,
         aggressiveMemoryCleanup: true,
-        description:
-            'RAM Delegation active: 20s chunks, 2 threads (prevents thermal runaway & OOM)',
+        description: 'RAM Delegation active: 20s chunks, 2 threads (prevents thermal runaway & OOM)',
       );
     }
 

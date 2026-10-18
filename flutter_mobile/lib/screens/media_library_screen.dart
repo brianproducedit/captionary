@@ -588,7 +588,10 @@ class _MediaLibraryScreenState extends ConsumerState<MediaLibraryScreen> {
                   const Expanded(
                     child: Text(
                       'Saved Captions Found',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

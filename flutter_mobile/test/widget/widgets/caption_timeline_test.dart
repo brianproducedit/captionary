@@ -105,7 +105,9 @@ void main() {
     expect(find.byType(DraggableTimelineChip), findsNWidgets(5));
   });
 
-  testWidgets('playhead handles 4-minute position and jumps to view', (tester) async {
+  testWidgets('playhead handles 4-minute position and jumps to view', (
+    tester,
+  ) async {
     await pumpTimeline(tester);
     final element = tester.element(find.byType(CaptionTimeline));
     final container = ProviderScope.containerOf(element);
@@ -120,7 +122,9 @@ void main() {
     expect(find.textContaining('04:00'), findsOneWidget);
   });
 
-  testWidgets('typing in text field updates caption text in real time', (tester) async {
+  testWidgets('typing in text field updates caption text in real time', (
+    tester,
+  ) async {
     await pumpTimeline(tester);
     final element = tester.element(find.byType(CaptionTimeline));
     final container = ProviderScope.containerOf(element);

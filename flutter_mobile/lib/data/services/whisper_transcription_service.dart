@@ -174,8 +174,7 @@ class WhisperTranscriptionService implements TranscriptionService {
         if (i > 0) {
           try {
             final chunkMemInfo = await memService.getMemoryInfo();
-            final availMb =
-                chunkMemInfo.availableRamBytes / (1024 * 1024);
+            final availMb = chunkMemInfo.availableRamBytes / (1024 * 1024);
             if (chunkMemInfo.isLowMemory || availMb < 250) {
               activeThreadCount = 1;
               cooldownDelay = const Duration(milliseconds: 150);

@@ -208,12 +208,9 @@ class _TranscriptionOptionsSheetState
           );
         } else {
           pack = langs.firstWhere(
-            (p) =>
-                p.code == 'en' &&
-                p.modelFile.toLowerCase().contains(q),
-            orElse: () => langs.firstWhere(
-              (p) => p.modelFile.toLowerCase().contains(q),
-            ),
+            (p) => p.code == 'en' && p.modelFile.toLowerCase().contains(q),
+            orElse: () =>
+                langs.firstWhere((p) => p.modelFile.toLowerCase().contains(q)),
           );
         }
       } catch (_) {
@@ -350,10 +347,7 @@ class _TranscriptionOptionsSheetState
           // Cached captions banner (if available)
           if (_cachedSegmentCount > 0) ...[
             GlassCard(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
                   Container(
@@ -393,7 +387,9 @@ class _TranscriptionOptionsSheetState
                   ),
                   TextButton.icon(
                     style: TextButton.styleFrom(
-                      backgroundColor: AppColors.tertiary.withValues(alpha: 0.12),
+                      backgroundColor: AppColors.tertiary.withValues(
+                        alpha: 0.12,
+                      ),
                       visualDensity: VisualDensity.compact,
                     ),
                     onPressed: () {

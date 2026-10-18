@@ -82,11 +82,13 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
       if (index != null) {
         _debounceTypingTimer?.cancel();
         _isTypingSession = false;
-        ref.read(subtitleProvider.notifier).updateSegmentText(
-          index,
-          _textController.text,
-          recordHistory: false,
-        );
+        ref
+            .read(subtitleProvider.notifier)
+            .updateSegmentText(
+              index,
+              _textController.text,
+              recordHistory: false,
+            );
       }
     }
   }
@@ -102,11 +104,9 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
     }
 
     // Immediately update the segment in real-time so overlay & chip reflect text
-    ref.read(subtitleProvider.notifier).updateSegmentText(
-      index,
-      value,
-      recordHistory: false,
-    );
+    ref
+        .read(subtitleProvider.notifier)
+        .updateSegmentText(index, value, recordHistory: false);
 
     _debounceTypingTimer?.cancel();
     _debounceTypingTimer = Timer(const Duration(milliseconds: 800), () {
@@ -722,8 +722,8 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                suffixIcon: _boundIndex != null &&
-                        _textController.text.isNotEmpty
+                suffixIcon:
+                    _boundIndex != null && _textController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(
                           Symbols.check_circle,
@@ -751,11 +751,9 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
     if (index == null) return;
     _debounceTypingTimer?.cancel();
     _isTypingSession = false;
-    ref.read(subtitleProvider.notifier).updateSegmentText(
-      index,
-      value,
-      recordHistory: false,
-    );
+    ref
+        .read(subtitleProvider.notifier)
+        .updateSegmentText(index, value, recordHistory: false);
     _textFocus.unfocus();
   }
 

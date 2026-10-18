@@ -177,8 +177,7 @@ void main() {
             languageCodes: ['en'],
             displayName: 'Tiny English',
             sizeBytes: 100,
-            sha256:
-                '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+            sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
           ),
           const CatalogModel(
             id: 'tiny',
@@ -187,8 +186,7 @@ void main() {
             languageCodes: ['sn', 'en', 'zu'],
             displayName: 'Tiny Multilingual',
             sizeBytes: 100,
-            sha256:
-                'be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21',
+            sha256: 'be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21',
           ),
           const CatalogModel(
             id: 'base.en',
@@ -197,8 +195,7 @@ void main() {
             languageCodes: ['en'],
             displayName: 'Base English',
             sizeBytes: 200,
-            sha256:
-                'a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002',
+            sha256: 'a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002',
           ),
           const CatalogModel(
             id: 'base',
@@ -207,8 +204,7 @@ void main() {
             languageCodes: ['sn', 'en', 'zu'],
             displayName: 'Base Multilingual',
             sizeBytes: 200,
-            sha256:
-                '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+            sha256: '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
           ),
           const CatalogModel(
             id: 'small',
@@ -217,8 +213,7 @@ void main() {
             languageCodes: ['sn', 'en', 'zu'],
             displayName: 'Small Multilingual',
             sizeBytes: 400,
-            sha256:
-                '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+            sha256: '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
           ),
           const CatalogModel(
             id: 'medium',
@@ -227,8 +222,7 @@ void main() {
             languageCodes: ['sn', 'en', 'zu'],
             displayName: 'Medium Multilingual',
             sizeBytes: 800,
-            sha256:
-                '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+            sha256: '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
           ),
         ],
       );
@@ -257,10 +251,19 @@ void main() {
 
       // Filename lookups
       expect(manifest.findModel('ggml-base.bin').file, 'models/ggml-base.bin');
-      expect(manifest.findModel('ggml-small.bin').file, 'models/ggml-small.bin');
-      expect(manifest.findModel('ggml-medium.bin').file, 'models/ggml-medium.bin');
+      expect(
+        manifest.findModel('ggml-small.bin').file,
+        'models/ggml-small.bin',
+      );
+      expect(
+        manifest.findModel('ggml-medium.bin').file,
+        'models/ggml-medium.bin',
+      );
       expect(manifest.findModel('ggml-tiny.bin').file, 'models/ggml-tiny.bin');
-      expect(manifest.findModel('ggml-base.en.bin').file, 'models/ggml-base.en.bin');
+      expect(
+        manifest.findModel('ggml-base.en.bin').file,
+        'models/ggml-base.en.bin',
+      );
     });
   });
 

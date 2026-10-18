@@ -126,10 +126,7 @@ class _SubtitleCorrectionSheetState
                       child: GlassCard(
                         padding: const EdgeInsets.all(12.0),
                         border: isSelected
-                            ? Border.all(
-                                color: AppColors.primary,
-                                width: 1.5,
-                              )
+                            ? Border.all(color: AppColors.primary, width: 1.5)
                             : null,
                         backgroundColor: isSelected
                             ? AppColors.primary.withValues(alpha: 0.1)
@@ -147,10 +144,10 @@ class _SubtitleCorrectionSheetState
                                   ),
                                   decoration: BoxDecoration(
                                     color: (isSelected
-                                            ? AppColors.primary
-                                            : AppColors.primary.withValues(
-                                                alpha: 0.15,
-                                              )),
+                                        ? AppColors.primary
+                                        : AppColors.primary.withValues(
+                                            alpha: 0.15,
+                                          )),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(

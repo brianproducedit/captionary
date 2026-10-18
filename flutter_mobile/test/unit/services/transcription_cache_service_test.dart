@@ -10,7 +10,9 @@ void main() {
   late TranscriptionCacheService cacheService;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('transcription_cache_test_');
+    tempDir = await Directory.systemTemp.createTemp(
+      'transcription_cache_test_',
+    );
     cacheService = TranscriptionCacheService(
       customDirProvider: () async => tempDir,
     );
@@ -111,31 +113,40 @@ void main() {
     );
   });
 
-  test('deleteCachedTranscription removes entry from memory and disk', () async {
-    final item = CachedTranscription(
-      videoPath: '/delete/me.mp4',
-      mediaId: 'me',
-      segments: [
-        SubtitleSegment(
-          index: 1,
-          startTime: Duration.zero,
-          endTime: const Duration(seconds: 1),
-          text: 'Delete me',
-          isSelected: false,
-        ),
-      ],
-    );
+  test(
+    'deleteCachedTranscription removes entry from memory and disk',
+    () async {
+      final item = CachedTranscription(
+        videoPath: '/delete/me.mp4',
+        mediaId: 'me',
+        segments: [
+          SubtitleSegment(
+            index: 1,
+            startTime: Duration.zero,
+            endTime: const Duration(seconds: 1),
+            text: 'Delete me',
+            isSelected: false,
+          ),
+        ],
+      );
 
-    await cacheService.saveTranscription(item);
-    expect(await cacheService.hasCachedTranscription(videoPath: '/delete/me.mp4'), isTrue);
+      await cacheService.saveTranscription(item);
+      expect(
+        await cacheService.hasCachedTranscription(videoPath: '/delete/me.mp4'),
+        isTrue,
+      );
 
-    await cacheService.deleteCachedTranscription(
-      videoPath: '/delete/me.mp4',
-      mediaId: 'me',
-    );
+      await cacheService.deleteCachedTranscription(
+        videoPath: '/delete/me.mp4',
+        mediaId: 'me',
+      );
 
-    expect(await cacheService.hasCachedTranscription(videoPath: '/delete/me.mp4'), isFalse);
-  });
+      expect(
+        await cacheService.hasCachedTranscription(videoPath: '/delete/me.mp4'),
+        isFalse,
+      );
+    },
+  );
 
   test('clearAll removes all cached transcriptions', () async {
     await cacheService.saveTranscription(
