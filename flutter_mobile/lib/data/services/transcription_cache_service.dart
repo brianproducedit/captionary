@@ -13,16 +13,16 @@ import '../models/cached_transcription.dart';
 /// Prevents redundant AI transcription runs when a video has already been
 /// transcribed in a previous session, even if the user didn't export or save.
 class TranscriptionCacheService {
-  final Future<Directory> Function()? _customDirProvider;
+  final Future<Directory> Function()? customDirProvider;
   final Map<String, CachedTranscription> _memoryCache = {};
   bool _initialized = false;
 
-  TranscriptionCacheService({this._customDirProvider});
+  TranscriptionCacheService({this.customDirProvider});
 
   Future<Directory> _getCacheDirectory() async {
     final Directory baseDir;
-    if (_customDirProvider != null) {
-      baseDir = await _customDirProvider();
+    if (customDirProvider != null) {
+      baseDir = await customDirProvider!();
     } else {
       baseDir = await getApplicationSupportDirectory();
     }
