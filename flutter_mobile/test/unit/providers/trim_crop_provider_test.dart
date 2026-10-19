@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:captionary/providers/trim_provider.dart';
 import 'package:captionary/providers/crop_provider.dart';
@@ -18,7 +19,10 @@ void main() {
         end: Duration(seconds: 8),
         isEnabled: true,
       );
-      expect(state.duration(const Duration(seconds: 10)), const Duration(seconds: 6));
+      expect(
+        state.duration(const Duration(seconds: 10)),
+        const Duration(seconds: 6),
+      );
 
       // When end is greater than total duration, clamps to total duration
       final state2 = const TrimState(
@@ -26,7 +30,10 @@ void main() {
         end: Duration(seconds: 20),
         isEnabled: true,
       );
-      expect(state2.duration(const Duration(seconds: 10)), const Duration(seconds: 8));
+      expect(
+        state2.duration(const Duration(seconds: 10)),
+        const Duration(seconds: 8),
+      );
 
       // When start >= total duration, returns Duration.zero
       final state3 = const TrimState(

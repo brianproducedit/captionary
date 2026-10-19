@@ -58,11 +58,16 @@ void main() {
       expect(PlaybackQuality.original.resolveMaxResolution(lowRam), isNull);
     });
 
-    test('MockMediaPlayerService opens with maxResolution without error', () async {
-      final mock = MockMediaPlayerService(mockDuration: const Duration(seconds: 10));
-      final handle = await mock.open('test.mp4', maxResolution: 480);
-      expect(handle.duration, const Duration(seconds: 10));
-      await mock.dispose(handle);
-    });
+    test(
+      'MockMediaPlayerService opens with maxResolution without error',
+      () async {
+        final mock = MockMediaPlayerService(
+          mockDuration: const Duration(seconds: 10),
+        );
+        final handle = await mock.open('test.mp4', maxResolution: 480);
+        expect(handle.duration, const Duration(seconds: 10));
+        await mock.dispose(handle);
+      },
+    );
   });
 }

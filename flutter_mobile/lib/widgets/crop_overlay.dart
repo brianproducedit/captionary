@@ -237,7 +237,9 @@ class _CropOverlayState extends ConsumerState<CropOverlay> {
   }
 
   void _onPanUpdate(DragUpdateDetails details, double canvasW, double canvasH) {
-    if (_activeHandle == null || _rectAtDragStart == null || _dragStart == null) {
+    if (_activeHandle == null ||
+        _rectAtDragStart == null ||
+        _dragStart == null) {
       return;
     }
 

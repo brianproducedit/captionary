@@ -29,6 +29,23 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Exception) {
                     result.error("MEMORY_ERROR", e.message, null)
                 }
+            } else if (call.method == "scanFile") {
+                try {
+                    val path = call.argument<String>("path")
+                    if (path != null) {
+                        android.media.MediaScannerConnection.scanFile(
+                            applicationContext,
+                            arrayOf(path),
+                            arrayOf("video/mp4"),
+                            null
+                        )
+                        result.success(true)
+                    } else {
+                        result.success(false)
+                    }
+                } catch (e: Exception) {
+                    result.error("SCAN_ERROR", e.message, null)
+                }
             } else {
                 result.notImplemented()
             }

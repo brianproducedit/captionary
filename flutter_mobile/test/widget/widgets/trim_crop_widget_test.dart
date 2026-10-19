@@ -9,36 +9,37 @@ import 'package:captionary/widgets/crop_overlay.dart';
 
 void main() {
   group('TrimBar Widget', () {
-    testWidgets('renders when total video duration > zero and updates trim range', (tester) async {
-      final mockPlayer = MockPlayerHandle(duration: const Duration(seconds: 30));
+    testWidgets(
+      'renders when total video duration > zero and updates trim range',
+      (tester) async {
+        final mockPlayer = MockPlayerHandle(
+          duration: const Duration(seconds: 30),
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            playerProvider.overrideWith((ref) {
-              final notifier = PlayerNotifier(MockMediaPlayerService());
-              notifier.state = PlayerState(
-                handle: mockPlayer,
-                duration: const Duration(seconds: 30),
-                position: const Duration(seconds: 5),
-                isInitialized: true,
-              );
-              return notifier;
-            }),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: TrimBar(),
-            ),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              playerProvider.overrideWith((ref) {
+                final notifier = PlayerNotifier(MockMediaPlayerService());
+                notifier.state = PlayerState(
+                  handle: mockPlayer,
+                  duration: const Duration(seconds: 30),
+                  position: const Duration(seconds: 5),
+                  isInitialized: true,
+                );
+                return notifier;
+              }),
+            ],
+            child: const MaterialApp(home: Scaffold(body: TrimBar())),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Video Trim Range'), findsOneWidget);
-      expect(find.byType(RangeSlider), findsOneWidget);
-    });
+        expect(find.text('Video Trim Range'), findsOneWidget);
+        expect(find.byType(RangeSlider), findsOneWidget);
+      },
+    );
 
     testWidgets('hidden when video duration is zero', (tester) async {
       await tester.pumpWidget(
@@ -53,11 +54,7 @@ void main() {
               return notifier;
             }),
           ],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: TrimBar(),
-            ),
-          ),
+          child: const MaterialApp(home: Scaffold(body: TrimBar())),
         ),
       );
 
@@ -72,11 +69,7 @@ void main() {
     testWidgets('hidden when crop is disabled', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: CropOverlay(),
-            ),
-          ),
+          child: MaterialApp(home: Scaffold(body: CropOverlay())),
         ),
       );
 
@@ -85,9 +78,13 @@ void main() {
       expect(find.text('1:1 (Square)'), findsNothing);
     });
 
-    testWidgets('renders preset chips and canvas when crop is enabled', (tester) async {
+    testWidgets('renders preset chips and canvas when crop is enabled', (
+      tester,
+    ) async {
       final container = ProviderContainer();
-      container.read(cropProvider.notifier).setAspectRatio(CropAspectRatio.portrait916);
+      container
+          .read(cropProvider.notifier)
+          .setAspectRatio(CropAspectRatio.portrait916);
 
       await tester.pumpWidget(
         UncontrolledProviderScope(

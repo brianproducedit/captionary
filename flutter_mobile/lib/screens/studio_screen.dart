@@ -52,6 +52,7 @@ import '../providers/crop_provider.dart';
 import '../data/models/playback_quality.dart';
 import '../providers/playback_quality_provider.dart';
 import '../providers/system_memory_provider.dart';
+import '../data/services/storage_service.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -81,8 +82,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (widget.videoPath.isNotEmpty) {
-        final memInfo =
-            await ref.read(systemMemoryServiceProvider).getMemoryInfo();
+        final memInfo = await ref
+            .read(systemMemoryServiceProvider)
+            .getMemoryInfo();
         final quality = ref.read(playbackQualityProvider);
         final maxRes = quality.resolveMaxResolution(memInfo);
         ref
@@ -287,6 +289,92 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     );
   }
 
+  void _openExportOptions() {
+    final nameWithoutExt = widget.videoPath.trim().isNotEmpty
+        ? p.basenameWithoutExtension(widget.videoPath)
+        : 'video';
+    final defaultVideoName = '${nameWithoutExt}_captioned';
+
+    ExportOptionsSheet.show(
+      context,
+      defaultFileName: defaultVideoName,
+      videoDuration: ref.read(playerProvider).duration,
+      onConfirmExport:
+          ({
+            required bool includeWatermark,
+            required int targetMaxResolution,
+            int? videoBitrateKbps,
+            String? customFileName,
+          }) async {
+            final exportService = ref.read(exportServiceProvider);
+            final segments = ref.read(subtitleProvider);
+            final style = ref.read(captionStyleProvider);
+            final duration = ref.read(playerProvider).duration;
+
+            final timestamp = DateTime.now().millisecondsSinceEpoch;
+            final baseName =
+                (customFileName != null && customFileName.trim().isNotEmpty)
+                ? customFileName.trim()
+                : defaultVideoName;
+            final storageService = ref.read(storageServiceProvider);
+            final outputPath = await storageService.resolveExportVideoPath(
+              baseName,
+            );
+
+            final stream = exportService.burnCaptions(
+              videoPath: widget.videoPath,
+              segments: segments,
+              style: style,
+              outputPath: outputPath,
+              videoDuration: duration,
+              includeWatermark: includeWatermark,
+              targetMaxResolution: targetMaxResolution,
+              videoBitrateKbps: videoBitrateKbps,
+              trimStart: ref.read(trimProvider).isEnabled
+                  ? ref.read(trimProvider).start
+                  : null,
+              trimEnd: ref.read(trimProvider).isEnabled
+                  ? ref.read(trimProvider).end
+                  : null,
+              cropRect: ref.read(cropProvider).isEnabled
+                  ? ref.read(cropProvider).cropRect
+                  : null,
+            );
+
+            final sourceFileName = p.basename(widget.videoPath);
+            final job = ExportJob(
+              id: 'export_$timestamp',
+              sourceFileName: sourceFileName.isNotEmpty
+                  ? sourceFileName
+                  : 'Source_Video.mp4',
+              outputFileName: outputPath,
+              state: ExportState.encoding,
+              progress: 0.0,
+              resolution: '${targetMaxResolution}p',
+              codec: 'h264',
+              bitrateMbps: 8,
+              estimatedTimeRemaining: const Duration(seconds: 50),
+              outputSizeBytes: 0,
+              hardwareAcceleration: true,
+            );
+
+            ref
+                .read(activeExportJobProvider.notifier)
+                .startJob(
+                  job,
+                  stream,
+                  onComplete: () {
+                    ref.read(engagementProvider.notifier).onExportCompleted();
+                  },
+                  onCancel: () => exportService.cancel(),
+                );
+            if (mounted) {
+              context.push('/export');
+            }
+          },
+    );
+  }
+
   Widget _buildPreviewModeCard(BuildContext context) {
     return GlassCard(
       padding: const EdgeInsets.all(16.0),
@@ -352,98 +440,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 child: GradientPillButton(
                   label: 'Burn to Video',
                   icon: Symbols.local_fire_department,
-                  onTap: () {
-                    final nameWithoutExt = widget.videoPath.trim().isNotEmpty
-                        ? p.basenameWithoutExtension(widget.videoPath)
-                        : 'video';
-                    final defaultVideoName = '${nameWithoutExt}_captioned';
-
-                    ExportOptionsSheet.show(
-                      context,
-                      defaultFileName: defaultVideoName,
-                      videoDuration: ref.read(playerProvider).duration,
-                      onConfirmExport:
-                          ({
-                            required bool includeWatermark,
-                            required int targetMaxResolution,
-                            int? videoBitrateKbps,
-                            String? customFileName,
-                          }) {
-                            final exportService = ref.read(
-                              exportServiceProvider,
-                            );
-                            final segments = ref.read(subtitleProvider);
-                            final style = ref.read(captionStyleProvider);
-                            final duration = ref.read(playerProvider).duration;
-
-                            final timestamp =
-                                DateTime.now().millisecondsSinceEpoch;
-                            final sourceDir = p.dirname(widget.videoPath);
-                            final baseName =
-                                (customFileName != null &&
-                                    customFileName.trim().isNotEmpty)
-                                ? customFileName.trim()
-                                : defaultVideoName;
-                            final outputPath = p.join(
-                              sourceDir,
-                              '$baseName.mp4',
-                            );
-
-                            final stream = exportService.burnCaptions(
-                              videoPath: widget.videoPath,
-                              segments: segments,
-                              style: style,
-                              outputPath: outputPath,
-                              videoDuration: duration,
-                              includeWatermark: includeWatermark,
-                              targetMaxResolution: targetMaxResolution,
-                              videoBitrateKbps: videoBitrateKbps,
-                              trimStart: ref.read(trimProvider).isEnabled
-                                  ? ref.read(trimProvider).start
-                                  : null,
-                              trimEnd: ref.read(trimProvider).isEnabled
-                                  ? ref.read(trimProvider).end
-                                  : null,
-                              cropRect: ref.read(cropProvider).isEnabled
-                                  ? ref.read(cropProvider).cropRect
-                                  : null,
-                            );
-
-                            final sourceFileName = p.basename(widget.videoPath);
-                            final job = ExportJob(
-                              id: 'export_$timestamp',
-                              sourceFileName: sourceFileName.isNotEmpty
-                                  ? sourceFileName
-                                  : 'Source_Video.mp4',
-                              outputFileName: outputPath,
-                              state: ExportState.encoding,
-                              progress: 0.0,
-                              resolution: '${targetMaxResolution}p',
-                              codec: 'h264',
-                              bitrateMbps: 8,
-                              estimatedTimeRemaining: const Duration(
-                                seconds: 50,
-                              ),
-                              outputSizeBytes: 0,
-                              hardwareAcceleration: true,
-                            );
-
-                            ref
-                                .read(activeExportJobProvider.notifier)
-                                .startJob(
-                                  job,
-                                  stream,
-                                  onComplete: () {
-                                    ref
-                                        .read(engagementProvider.notifier)
-                                        .onExportCompleted();
-                                  },
-                                  onCancel: () => exportService.cancel(),
-                                );
-                            context.push('/export');
-                          },
-                    );
-                  },
+                  onTap: _openExportOptions,
                   isFullWidth: true,
                 ),
               ),
@@ -1119,68 +1116,7 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         GradientPillButton(
           label: 'Burn Captions to Video',
           icon: Symbols.local_fire_department,
-          onTap: () {
-            // Trigger export job
-            final exportService = ref.read(exportServiceProvider);
-            final segments = ref.read(subtitleProvider);
-            final style = ref.read(captionStyleProvider);
-            final duration = ref.read(playerProvider).duration;
-
-            final timestamp = DateTime.now().millisecondsSinceEpoch;
-            final sourceDir = p.dirname(widget.videoPath);
-            final nameWithoutExt = p.basenameWithoutExtension(widget.videoPath);
-            final outputPath = p.join(
-              sourceDir,
-              '${nameWithoutExt}_captioned_$timestamp.mp4',
-            );
-
-            final stream = exportService.burnCaptions(
-              videoPath: widget.videoPath,
-              segments: segments,
-              style: style,
-              outputPath: outputPath,
-              videoDuration: duration,
-              trimStart: ref.read(trimProvider).isEnabled
-                  ? ref.read(trimProvider).start
-                  : null,
-              trimEnd: ref.read(trimProvider).isEnabled
-                  ? ref.read(trimProvider).end
-                  : null,
-              cropRect: ref.read(cropProvider).isEnabled
-                  ? ref.read(cropProvider).cropRect
-                  : null,
-            );
-
-            final sourceFileName = p.basename(widget.videoPath);
-
-            final job = ExportJob(
-              id: timestamp.toString(),
-              sourceFileName: sourceFileName.isNotEmpty
-                  ? sourceFileName
-                  : 'Source_Video.mp4',
-              outputFileName: outputPath,
-              state: ExportState.encoding,
-              progress: 0.0,
-              resolution: '1080x1920',
-              codec: 'h264',
-              bitrateMbps: 8,
-              estimatedTimeRemaining: const Duration(seconds: 50),
-              outputSizeBytes: 0,
-              hardwareAcceleration: true,
-            );
-
-            ref
-                .read(activeExportJobProvider.notifier)
-                .startJob(
-                  job,
-                  stream,
-                  onComplete: () {
-                    ref.read(engagementProvider.notifier).onExportCompleted();
-                  },
-                  onCancel: () => exportService.cancel(),
-                );
-            context.push('/export');
-          },
+          onTap: _openExportOptions,
           isFullWidth: true,
         ),
       ],

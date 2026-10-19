@@ -1,12 +1,6 @@
 import '../services/system_memory_service.dart';
 
-enum PlaybackQuality {
-  auto,
-  p360,
-  p480,
-  p720,
-  original,
-}
+enum PlaybackQuality { auto, p360, p480, p720, original }
 
 extension PlaybackQualityExt on PlaybackQuality {
   String get label {

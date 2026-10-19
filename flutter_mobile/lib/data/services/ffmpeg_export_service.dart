@@ -20,6 +20,7 @@ import '../models/caption_style.dart';
 import '../models/export_job.dart';
 import '../models/subtitle_segment.dart';
 import 'export_service.dart';
+import 'media_scanner_service.dart';
 
 typedef FFmpegAsyncRunner = Future<void> Function(
   String command,
@@ -561,6 +562,7 @@ class FfmpegExportService implements ExportService {
             finalFile.deleteSync();
           }
           partFile.renameSync(finalFile.path);
+          MediaScannerService.scanFile(finalFile.path);
 
           final int size = finalFile.existsSync() ? finalFile.lengthSync() : 0;
           controller.add(

@@ -2,24 +2,98 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/constants/app_constants.dart';
 
 class StorageService {
-  final Future<Directory> Function()? _getTempDir;
-  final Future<Directory> Function()? _getAppSupportDir;
+  final Future<Directory> Function()? getTempDir;
+  final Future<Directory> Function()? getAppSupportDir;
+  final Future<Directory> Function()? getExportDir;
 
-  StorageService({this._getTempDir, this._getAppSupportDir});
+  StorageService({this.getTempDir, this.getAppSupportDir, this.getExportDir});
 
   Future<Directory> get tempDirectory async {
-    if (_getTempDir != null) return _getTempDir();
+    if (getTempDir != null) return getTempDir!();
     return getTemporaryDirectory();
   }
 
   Future<Directory> get appSupportDirectory async {
-    if (_getAppSupportDir != null) return _getAppSupportDir();
+    if (getAppSupportDir != null) return getAppSupportDir!();
     return getApplicationSupportDirectory();
+  }
+
+  /// Resolves the dedicated export directory for videos in internal storage Download/Captionary/Output.
+  Future<Directory> getExportDirectory() async {
+    if (getExportDir != null) return getExportDir!();
+
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final publicDir = Directory(
+          '/storage/emulated/0/Download/Captionary/Output',
+        );
+
+        if (!await publicDir.exists()) {
+          await publicDir.create(recursive: true);
+        }
+
+        // Verify write access with a probe file
+        final probeFile = File(
+          p.join(
+            publicDir.path,
+            '.probe_${DateTime.now().millisecondsSinceEpoch}',
+          ),
+        );
+        await probeFile.writeAsString('probe');
+        await probeFile.delete();
+
+        return publicDir;
+      } catch (e) {
+        debugPrint(
+          '[StorageService] Error accessing public /storage/emulated/0/Download/Captionary/Output ($e), falling back',
+        );
+      }
+    }
+
+    try {
+      final dl = await getDownloadsDirectory();
+      if (dl != null) {
+        final dir = Directory(p.join(dl.path, 'Captionary', 'Output'));
+        if (!await dir.exists()) await dir.create(recursive: true);
+        return dir;
+      }
+    } catch (_) {}
+
+    final appDoc = await getApplicationDocumentsDirectory();
+    final dir = Directory(p.join(appDoc.path, 'Captionary', 'Output'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Resolves a full video export path within the Download/Captionary directory,
+  /// sanitizing the filename and appending unique timestamp if a collision exists.
+  Future<String> resolveExportVideoPath(String baseFileName) async {
+    final dir = await getExportDirectory();
+    String sanitized = baseFileName
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+        .trim();
+    if (sanitized.isEmpty) {
+      sanitized = 'captioned_video';
+    }
+    if (!sanitized.toLowerCase().endsWith('.mp4')) {
+      sanitized = '$sanitized.mp4';
+    }
+
+    var candidate = p.join(dir.path, sanitized);
+    if (File(candidate).existsSync()) {
+      final nameWithoutExt = p.basenameWithoutExtension(sanitized);
+      candidate = p.join(
+        dir.path,
+        '${nameWithoutExt}_${DateTime.now().millisecondsSinceEpoch}.mp4',
+      );
+    }
+    return candidate;
   }
 
   /// Recursively sums all file sizes within a directory in bytes.
