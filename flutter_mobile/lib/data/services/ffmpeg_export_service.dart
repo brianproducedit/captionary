@@ -111,6 +111,10 @@ class FfmpegExportService implements ExportService {
     required Duration videoDuration,
     bool includeWatermark = false,
     int targetMaxResolution = 720,
+    int? videoBitrateKbps,
+    Duration? trimStart,
+    Duration? trimEnd,
+    Rect? cropRect,
   }) {
     final StreamController<ExportJob> controller =
         StreamController<ExportJob>();
@@ -124,6 +128,10 @@ class FfmpegExportService implements ExportService {
       controller: controller,
       includeWatermark: includeWatermark,
       targetMaxResolution: targetMaxResolution,
+      videoBitrateKbps: videoBitrateKbps,
+      trimStart: trimStart,
+      trimEnd: trimEnd,
+      cropRect: cropRect,
     );
 
     return controller.stream;
@@ -149,6 +157,10 @@ class FfmpegExportService implements ExportService {
     required StreamController<ExportJob> controller,
     bool includeWatermark = false,
     int targetMaxResolution = 720,
+    int? videoBitrateKbps,
+    Duration? trimStart,
+    Duration? trimEnd,
+    Rect? cropRect,
   }) async {
     await _heavyJobLock.acquire();
     try {
@@ -323,13 +335,62 @@ class FfmpegExportService implements ExportService {
       final bool hasLogo = logoPath != null && File(logoPath).existsSync();
       final bool needsScale = outWidth != width || outHeight != height;
 
+      // Handle trim range and subtitle alignment
+      final effectiveStart = trimStart ?? Duration.zero;
+      final effectiveEnd = (trimEnd != null && trimEnd <= resolvedDuration)
+          ? trimEnd
+          : resolvedDuration;
+      final isTrimmed =
+          effectiveStart > Duration.zero ||
+          (trimEnd != null && trimEnd < resolvedDuration);
+      if (isTrimmed) {
+        resolvedDuration = (effectiveEnd - effectiveStart).isNegative
+            ? Duration.zero
+            : (effectiveEnd - effectiveStart);
+      }
+
+      final List<SubtitleSegment> exportSegments;
+      if (isTrimmed) {
+        exportSegments = [];
+        for (final seg in segments) {
+          if (seg.endTime <= effectiveStart || seg.startTime >= effectiveEnd) {
+            continue;
+          }
+          final clampedStart = seg.startTime < effectiveStart
+              ? Duration.zero
+              : seg.startTime - effectiveStart;
+          final clampedEnd = seg.endTime > effectiveEnd
+              ? resolvedDuration
+              : seg.endTime - effectiveStart;
+          if (clampedEnd > clampedStart) {
+            exportSegments.add(
+              seg.copyWith(startTime: clampedStart, endTime: clampedEnd),
+            );
+          }
+        }
+      } else {
+        exportSegments = segments;
+      }
+
+      final trimInputArg = isTrimmed
+          ? "-ss ${effectiveStart.inMilliseconds / 1000.0} -to ${effectiveEnd.inMilliseconds / 1000.0} "
+          : "";
+
+      final cropPrefix = cropRect != null
+          ? "crop=${(cropRect.width * outWidth).round().clamp(16, outWidth)}:${(cropRect.height * outHeight).round().clamp(16, outHeight)}:${(cropRect.left * outWidth).round().clamp(0, outWidth)}:${(cropRect.top * outHeight).round().clamp(0, outHeight)},"
+          : "";
+
+      final bitrateArg = videoBitrateKbps != null
+          ? " -b:v ${videoBitrateKbps}k"
+          : "";
+
       // Attempt 1: ASS burn-in
       final assFile = File('${tempDir.path}/subs_$jobId.ass');
       final srtFile = File('${tempDir.path}/subs_$jobId.srt');
 
       try {
         final assContent = AssFileWriter.generate(
-          segments: segments,
+          segments: exportSegments,
           style: style,
           playResX: outWidth,
           playResY: outHeight,
@@ -348,16 +409,16 @@ class FfmpegExportService implements ExportService {
         if (hasLogo) {
           final scalePrefix = needsScale ? "scale=$outWidth:$outHeight," : "";
           final filterComplex =
-              "[0:v]$scalePrefix$baseAssFilter[vsub];"
+              "[0:v]$cropPrefix$scalePrefix$baseAssFilter[vsub];"
               "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
               "[vsub][logo]overlay=W-w-24:24[vout]";
           command =
-              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y $trimInputArg-i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec$bitrateArg -pix_fmt yuv420p -c:a aac -b:a 192k -f mp4 \"$partOutputPath\"";
         } else {
           final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
-          final filterString = "$baseAssFilter$scaleSuffix";
+          final filterString = "$cropPrefix$baseAssFilter$scaleSuffix";
           command =
-              "-y -i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y $trimInputArg-i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec$bitrateArg -pix_fmt yuv420p -c:a aac -b:a 192k -f mp4 \"$partOutputPath\"";
         }
 
         final success = await _runFfmpeg(
@@ -397,7 +458,7 @@ class FfmpegExportService implements ExportService {
       controller.add(job);
 
       try {
-        final srtContent = CaptionExport.srt(segments);
+        final srtContent = CaptionExport.srt(exportSegments);
         await srtFile.writeAsString(srtContent);
 
         final escapedSrtPath = escapeFilterPath(srtFile.path);
@@ -419,15 +480,15 @@ class FfmpegExportService implements ExportService {
         if (hasLogo) {
           final scalePrefix = needsScale ? "scale=$outWidth:$outHeight," : "";
           final filterComplex =
-              "[0:v]$scalePrefix$baseSubtitlesFilter[vsub];"
+              "[0:v]$cropPrefix$scalePrefix$baseSubtitlesFilter[vsub];"
               "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
               "[vsub][logo]overlay=W-w-24:24[vout]";
           srtCommand =
-              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y $trimInputArg-i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec$bitrateArg -pix_fmt yuv420p -c:a aac -b:a 192k -f mp4 \"$partOutputPath\"";
         } else {
           final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
           srtCommand =
-              "-y -i \"$videoPath\" -vf \"$baseSubtitlesFilter$scaleSuffix\" -map 0:a? -c:v $videoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y $trimInputArg-i \"$videoPath\" -vf \"$cropPrefix$baseSubtitlesFilter$scaleSuffix\" -map 0:a? -c:v $videoCodec$bitrateArg -pix_fmt yuv420p -c:a aac -b:a 192k -f mp4 \"$partOutputPath\"";
         }
 
         final success = await _runFfmpeg(

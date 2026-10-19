@@ -136,8 +136,12 @@ class AssFileWriter {
     );
 
     // Compute style attributes
-    final String primaryColour = colorToAss(style.accentColor);
-    final String secondaryColour = '&H000000FF'; // default red placeholder
+    final String primaryColour = colorToAss(
+      const Color(0xFFFFFFFF),
+    ); // White text fill
+    final String secondaryColour = colorToAss(
+      style.accentColor,
+    ); // Accent for karaoke/highlight
     final String outlineColour = colorToAss(style.outlineColor);
 
     // BackColour: shadow color or background box color

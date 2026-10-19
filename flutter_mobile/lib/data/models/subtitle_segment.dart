@@ -5,6 +5,7 @@ class SubtitleSegment {
   final String text;
   final String? activeWord;
   final bool isSelected;
+  final Map<String, dynamic>? metadata;
 
   SubtitleSegment({
     required this.index,
@@ -13,6 +14,7 @@ class SubtitleSegment {
     required this.text,
     this.activeWord,
     required this.isSelected,
+    this.metadata,
   });
 
   SubtitleSegment copyWith({
@@ -22,6 +24,7 @@ class SubtitleSegment {
     String? text,
     String? activeWord,
     bool? isSelected,
+    Map<String, dynamic>? metadata,
   }) {
     return SubtitleSegment(
       index: index ?? this.index,
@@ -30,6 +33,7 @@ class SubtitleSegment {
       text: text ?? this.text,
       activeWord: activeWord ?? this.activeWord,
       isSelected: isSelected ?? this.isSelected,
+      metadata: metadata ?? this.metadata,
     );
   }
 
@@ -41,6 +45,7 @@ class SubtitleSegment {
       'text': text,
       'activeWord': activeWord,
       'isSelected': isSelected,
+      if (metadata != null) 'metadata': metadata,
     };
   }
 
@@ -52,6 +57,7 @@ class SubtitleSegment {
       text: json['text'] as String? ?? '',
       activeWord: json['activeWord'] as String?,
       isSelected: json['isSelected'] as bool? ?? false,
+      metadata: (json['metadata'] as Map?)?.cast<String, dynamic>(),
     );
   }
 }

@@ -11,6 +11,7 @@ import '../data/models/subtitle_segment.dart';
 import '../providers/player_provider.dart';
 import '../providers/subtitle_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 import 'draggable_timeline_chip.dart';
 import 'glass_card.dart';
 import 'waveform_painter.dart';
@@ -384,9 +385,42 @@ class _CaptionTimelineState extends ConsumerState<CaptionTimeline> {
                                       details.localPosition.dx,
                                     ),
                                     child: widget.waveform.displayPeaks.isEmpty
-                                        ? const ColoredBox(
+                                        ? Container(
                                             color: AppColors
-                                                .surfaceContainerHighest,
+                                                .surfaceContainerHighest
+                                                .withValues(alpha: 0.5),
+                                            alignment: Alignment.center,
+                                            child:
+                                                widget.waveform.state ==
+                                                    WaveformLoadState.loading
+                                                ? Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      const SizedBox(
+                                                        width: 12,
+                                                        height: 12,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 1.5,
+                                                              color: AppColors
+                                                                  .primary,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        'Extracting waveform…',
+                                                        style: AppTypography
+                                                            .captionCode
+                                                            .copyWith(
+                                                              color: AppColors
+                                                                  .onSurfaceVariant,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  )
+                                                : null,
                                           )
                                         : CustomPaint(
                                             painter: WaveformPainter(

@@ -198,7 +198,7 @@ void main() {
     expect(executedCommand, isNotNull);
     expect(executedCommand, contains('-vf "ass='));
     expect(executedCommand, contains(':fontsdir='));
-    expect(executedCommand, contains('$outputPath.part"'));
+    expect(executedCommand, contains('-f mp4 "$outputPath.part"'));
 
     // Verify metadata was resolved
     expect(events.any((e) => e.resolution == '720x1280'), isTrue);

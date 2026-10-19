@@ -39,6 +39,7 @@ void main() {
                           ({
                             required bool includeWatermark,
                             required int targetMaxResolution,
+                            int? videoBitrateKbps,
                             String? customFileName,
                           }) {
                             confirmed = true;
@@ -119,6 +120,7 @@ void main() {
                           ({
                             required bool includeWatermark,
                             required int targetMaxResolution,
+                            int? videoBitrateKbps,
                             String? customFileName,
                           }) {
                             exportName = customFileName;

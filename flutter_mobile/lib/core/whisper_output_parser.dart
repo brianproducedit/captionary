@@ -32,9 +32,30 @@ class WhisperOutputParser {
     caseSensitive: false,
   );
 
+  /// Checks whether [rawText] is solely or primarily a foreign language placeholder.
+  static bool isForeignLanguagePlaceholder(String rawText) {
+    final trimmed = rawText.trim().toLowerCase();
+    return trimmed.contains('speaking foreign language') ||
+        trimmed.contains('foreign speech') ||
+        trimmed.contains('foreign language');
+  }
+
+  /// Calculates the ratio of foreign-language placeholders in a list of raw texts.
+  static double foreignLanguagePlaceholderRatio(List<String> rawTexts) {
+    if (rawTexts.isEmpty) return 0.0;
+    int count = 0;
+    for (final text in rawTexts) {
+      if (isForeignLanguagePlaceholder(text)) {
+        count++;
+      }
+    }
+    return count / rawTexts.length;
+  }
+
   /// Cleans raw text from Whisper:
   /// - Strips bracketed non-speech markers (e.g. `[music] Hello` -> `Hello`).
   /// - Discards text that is solely a non-speech placeholder (e.g. `speaking foreign language`).
+  /// - Collapses repeated stutter loops.
   /// - Collapses multiple spaces.
   /// Returns cleaned string, or empty string if text has no spoken content.
   static String cleanSegmentText(String rawText) {
@@ -53,6 +74,12 @@ class WhisperOutputParser {
     if (text.isEmpty || _standaloneNonSpeechPattern.hasMatch(text)) {
       return '';
     }
+
+    // Collapse stutter or repeated consecutive identical words (3 or more)
+    text = text.replaceAll(
+      RegExp(r'\b(\w+)(?:\s+\1){2,}\b', caseSensitive: false),
+      r'$1',
+    );
 
     // Collapse whitespace
     text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -205,8 +232,18 @@ class WhisperOutputParser {
       final prev = merged.last;
 
       // 1. Deduplication: exact or near-identical text within overlap or repetition window (<= 6s apart)
+      final normPrev = prev.text
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^\w\s]'), '')
+          .trim();
+      final normCurrent = current.text
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^\w\s]'), '')
+          .trim();
       final sameText =
-          prev.text.toLowerCase().trim() == current.text.toLowerCase().trim();
+          (prev.text.toLowerCase().trim() ==
+              current.text.toLowerCase().trim()) ||
+          (normPrev.isNotEmpty && normPrev == normCurrent);
       final closeInTime =
           (current.startTime - prev.startTime).abs() <
           const Duration(seconds: 6);
@@ -216,6 +253,18 @@ class WhisperOutputParser {
           merged[merged.length - 1] = prev.copyWith(endTime: current.endTime);
         }
         continue;
+      }
+
+      // Subsume if current phrase extends or is prefix of previous phrase in overlap window
+      if (closeInTime && normPrev.isNotEmpty && normCurrent.isNotEmpty) {
+        if (normCurrent.startsWith(normPrev) &&
+            current.endTime >= prev.endTime) {
+          merged[merged.length - 1] = current.copyWith(
+            startTime: prev.startTime,
+            endTime: current.endTime,
+          );
+          continue;
+        }
       }
 
       // 2. Overlap clamp: if current starts before previous ends, clamp previous endTime

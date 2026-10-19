@@ -29,8 +29,8 @@ class WhisperChunker {
   /// Default Whisper window duration (30 seconds).
   static const Duration defaultChunkDuration = Duration(seconds: 30);
 
-  /// Default overlap between consecutive chunks (2 seconds).
-  static const Duration defaultOverlap = Duration(seconds: 2);
+  /// Default overlap between consecutive chunks (3 seconds).
+  static const Duration defaultOverlap = Duration(seconds: 3);
 
   /// Bytes per millisecond for canonical 16kHz mono 16-bit PCM audio
   /// (16000 samples/sec * 2 bytes/sample / 1000 ms = 32 bytes/ms).

@@ -208,7 +208,26 @@ class WhisperTranscriptionService implements TranscriptionService {
           },
         );
 
-        final WhisperTranscribeResponse response;
+        // --- Silence detection guard ---
+        // If chunk is silent (energy below threshold), skip Whisper inference.
+        // This avoids hallucinations and saves substantial inference time & battery.
+        if (await _isChunkSilent(chunk.file)) {
+          PerformanceLogger.recordCheckpoint(
+            'silence-skip',
+            metadata: {
+              'chunk': i + 1,
+              'durationMs': chunk.duration.inMilliseconds,
+            },
+          );
+          if (chunk.isTemporary) {
+            try {
+              if (await chunk.file.exists()) await chunk.file.delete();
+            } catch (_) {}
+          }
+          continue;
+        }
+
+        WhisperTranscribeResponse response;
 
         if (_customRunner != null) {
           response = await _customRunner(
@@ -225,6 +244,38 @@ class WhisperTranscriptionService implements TranscriptionService {
             isTranslate: isTranslate,
             threadsOverride: activeThreadCount,
           );
+        }
+
+        // Retry chunk with isTranslate: true if foreign language placeholder detected
+        if (!isTranslate &&
+            WhisperOutputParser.isForeignLanguagePlaceholder(response.text)) {
+          PerformanceLogger.recordCheckpoint(
+            'foreign-retry',
+            metadata: {'chunk': i + 1, 'text': response.text},
+          );
+          try {
+            final translated = _customRunner != null
+                ? await _customRunner(
+                    audioPath: chunk.file.path,
+                    modelPath: resolvedModelPath,
+                    languageCode: languageCode,
+                    isTranslate: true,
+                  )
+                : await _defaultRunWhisper(
+                    audioPath: chunk.file.path,
+                    modelPath: resolvedModelPath,
+                    languageCode: languageCode,
+                    isTranslate: true,
+                    threadsOverride: activeThreadCount,
+                  );
+            if (!WhisperOutputParser.isForeignLanguagePlaceholder(
+              translated.text,
+            )) {
+              response = translated;
+            }
+          } catch (e) {
+            debugPrint('Foreign language chunk retry error: $e');
+          }
         }
 
         // --- Immediate chunk file deletion ---
@@ -265,6 +316,20 @@ class WhisperTranscriptionService implements TranscriptionService {
             startIndex: allAccumulated.length,
             fallbackDuration: chunk.duration,
           );
+        }
+
+        if (chunkSegments.isNotEmpty) {
+          chunkSegments = chunkSegments
+              .map(
+                (s) => s.copyWith(
+                  metadata: {
+                    'chunkIndex': i,
+                    'language': languageCode,
+                    'isTranslated': isTranslate,
+                  },
+                ),
+              )
+              .toList();
         }
 
         allAccumulated.addAll(chunkSegments);
@@ -479,5 +544,44 @@ class WhisperTranscriptionService implements TranscriptionService {
     }
     if (lower.contains('large')) return WhisperModel.largeV1;
     return WhisperModel.base;
+  }
+
+  /// Inspects 16-bit PCM WAV chunk to determine if it is silence or negligible background noise.
+  static Future<bool> _isChunkSilent(
+    File wavFile, {
+    double rmsThreshold = 0.002,
+    int maxAmpThreshold = 180,
+  }) async {
+    try {
+      if (!await wavFile.exists()) return false;
+      final length = await wavFile.length();
+      if (length < 88) return false;
+
+      final bytes = await wavFile.readAsBytes();
+      const offset = 44;
+      final size = bytes.length - offset;
+      if (size <= 0) return true;
+
+      final byteData = ByteData.sublistView(bytes, offset, bytes.length);
+      final sampleCount = size ~/ 2;
+      if (sampleCount <= 0) return true;
+
+      int maxAmp = 0;
+      double sumSquares = 0.0;
+      int checkedSamples = 0;
+      for (int i = 0; i < sampleCount; i += 4) {
+        final val = byteData.getInt16(i * 2, Endian.little).abs();
+        if (val > maxAmp) maxAmp = val;
+        sumSquares += (val / 32768.0) * (val / 32768.0);
+        checkedSamples++;
+      }
+
+      if (maxAmp < maxAmpThreshold) return true;
+      if (checkedSamples == 0) return false;
+      final rmsSquared = sumSquares / checkedSamples;
+      return rmsSquared < (rmsThreshold * rmsThreshold);
+    } catch (_) {
+      return false;
+    }
   }
 }

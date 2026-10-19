@@ -43,6 +43,12 @@ import '../core/performance_logger.dart';
 import '../data/services/caption_pipeline.dart';
 import '../data/models/cached_transcription.dart';
 import '../providers/transcription_cache_provider.dart';
+import '../widgets/video_seek_bar.dart';
+import '../widgets/skip_indicator_overlay.dart';
+import '../widgets/trim_bar.dart';
+import '../widgets/crop_overlay.dart';
+import '../providers/trim_provider.dart';
+import '../providers/crop_provider.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -56,6 +62,10 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
   bool _isEditMode = true;
   Timer? _autoSaveTimer;
   List<SubtitleSegment>? _lastSavedSegments;
+  final GlobalKey<VideoSeekBarState> _seekBarKey =
+      GlobalKey<VideoSeekBarState>();
+  SkipDirection? _activeSkipDirection;
+  int _skipCounter = 0;
 
   @override
   void initState() {
@@ -342,10 +352,12 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                     ExportOptionsSheet.show(
                       context,
                       defaultFileName: defaultVideoName,
+                      videoDuration: ref.read(playerProvider).duration,
                       onConfirmExport:
                           ({
                             required bool includeWatermark,
                             required int targetMaxResolution,
+                            int? videoBitrateKbps,
                             String? customFileName,
                           }) {
                             final exportService = ref.read(
@@ -376,6 +388,16 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                               videoDuration: duration,
                               includeWatermark: includeWatermark,
                               targetMaxResolution: targetMaxResolution,
+                              videoBitrateKbps: videoBitrateKbps,
+                              trimStart: ref.read(trimProvider).isEnabled
+                                  ? ref.read(trimProvider).start
+                                  : null,
+                              trimEnd: ref.read(trimProvider).isEnabled
+                                  ? ref.read(trimProvider).end
+                                  : null,
+                              cropRect: ref.read(cropProvider).isEnabled
+                                  ? ref.read(cropProvider).cropRect
+                                  : null,
                             );
 
                             final sourceFileName = p.basename(widget.videoPath);
@@ -748,18 +770,21 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
     return GestureDetector(
       onTap: () {
         ref.read(playerProvider.notifier).togglePlay();
+        _seekBarKey.currentState?.showControls();
       },
       onDoubleTapDown: (details) {
         final screenWidth = MediaQuery.of(context).size.width;
-        if (details.globalPosition.dx < screenWidth / 2) {
-          ref
-              .read(playerProvider.notifier)
-              .seekRelative(const Duration(seconds: -10));
-        } else {
-          ref
-              .read(playerProvider.notifier)
-              .seekRelative(const Duration(seconds: 10));
-        }
+        final isRewind = details.globalPosition.dx < screenWidth / 2;
+        ref
+            .read(playerProvider.notifier)
+            .seekRelative(Duration(seconds: isRewind ? -10 : 10));
+        setState(() {
+          _activeSkipDirection = isRewind
+              ? SkipDirection.rewind
+              : SkipDirection.forward;
+          _skipCounter++;
+        });
+        _seekBarKey.currentState?.showControls();
       },
       child: Container(
         clipBehavior: Clip.antiAlias,
@@ -803,12 +828,6 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   color: AppColors.baseCanvas.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(4.0),
                 ),
-                // child: Text(
-                //   'Live 4K Style',
-                //   style: AppTypography.captionCode.copyWith(
-                //     color: AppColors.tertiary,
-                //   ),
-                // ),
               ),
             ),
             // Subtitles preview
@@ -864,6 +883,32 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   color: AppColors.onSurface,
                 ),
               ),
+            // Skip indicator overlay (double-tap visual feedback)
+            if (_activeSkipDirection != null)
+              Positioned(
+                left: _activeSkipDirection == SkipDirection.rewind ? 24 : null,
+                right: _activeSkipDirection == SkipDirection.forward
+                    ? 24
+                    : null,
+                child: SkipIndicatorOverlay(
+                  key: ValueKey('skip-overlay-$_skipCounter'),
+                  direction: _activeSkipDirection!,
+                  onDismissed: () {
+                    if (mounted) {
+                      setState(() {
+                        _activeSkipDirection = null;
+                      });
+                    }
+                  },
+                ),
+              ),
+            // Video seek bar with timestamps
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: VideoSeekBar(key: _seekBarKey),
+            ),
           ],
         ),
       ),
@@ -936,7 +981,55 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 isFullWidth: true,
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final crop = ref.watch(cropProvider);
+                  return OutlinedButton.icon(
+                    onPressed: () {
+                      ref.read(cropProvider.notifier).toggleEnabled();
+                    },
+                    icon: Icon(
+                      crop.isEnabled ? Symbols.crop_free : Symbols.crop,
+                      size: 18,
+                    ),
+                    label: Text(crop.isEnabled ? 'Crop On' : 'Crop'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: crop.isEnabled
+                          ? AppColors.primary
+                          : AppColors.onSurface,
+                      side: BorderSide(
+                        color: crop.isEnabled
+                            ? AppColors.primary
+                            : AppColors.surfaceContainerHigh,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
+        ),
+        const SizedBox(height: 16),
+        const TrimBar(),
+        Consumer(
+          builder: (context, ref, _) {
+            final crop = ref.watch(cropProvider);
+            if (!crop.isEnabled) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: SizedBox(
+                height: 200,
+                child: CropOverlay(
+                  videoAspectRatio: ref.watch(playerProvider).aspectRatio > 0
+                      ? ref.watch(playerProvider).aspectRatio
+                      : 16 / 9,
+                ),
+              ),
+            );
+          },
         ),
         const SizedBox(height: 16),
         GradientPillButton(
@@ -963,6 +1056,15 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
               style: style,
               outputPath: outputPath,
               videoDuration: duration,
+              trimStart: ref.read(trimProvider).isEnabled
+                  ? ref.read(trimProvider).start
+                  : null,
+              trimEnd: ref.read(trimProvider).isEnabled
+                  ? ref.read(trimProvider).end
+                  : null,
+              cropRect: ref.read(cropProvider).isEnabled
+                  ? ref.read(cropProvider).cropRect
+                  : null,
             );
 
             final sourceFileName = p.basename(widget.videoPath);

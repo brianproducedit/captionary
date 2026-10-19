@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../core/duration_format.dart';
+import '../providers/crop_provider.dart';
 import '../providers/subscription_provider.dart';
+import '../providers/trim_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_gradients.dart';
 import '../theme/app_shadows.dart';
@@ -12,9 +15,11 @@ import 'pro_teaser_sheet.dart';
 
 class ExportOptionsSheet extends ConsumerStatefulWidget {
   final String? defaultFileName;
+  final Duration? videoDuration;
   final void Function({
     required bool includeWatermark,
     required int targetMaxResolution,
+    int? videoBitrateKbps,
     String? customFileName,
   })
   onConfirmExport;
@@ -23,14 +28,17 @@ class ExportOptionsSheet extends ConsumerStatefulWidget {
     super.key,
     required this.onConfirmExport,
     this.defaultFileName,
+    this.videoDuration,
   });
 
   static Future<void> show(
     BuildContext context, {
     String? defaultFileName,
+    Duration? videoDuration,
     required void Function({
       required bool includeWatermark,
       required int targetMaxResolution,
+      int? videoBitrateKbps,
       String? customFileName,
     })
     onConfirmExport,
@@ -42,6 +50,7 @@ class ExportOptionsSheet extends ConsumerStatefulWidget {
       builder: (_) => ExportOptionsSheet(
         onConfirmExport: onConfirmExport,
         defaultFileName: defaultFileName,
+        videoDuration: videoDuration,
       ),
     );
   }
@@ -53,7 +62,32 @@ class ExportOptionsSheet extends ConsumerStatefulWidget {
 class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
   int _selectedResolution = 720;
   bool _removeWatermark = false;
+  int _selectedBitrateKbps = 8000; // Balanced default
   late final TextEditingController _fileNameController;
+
+  String get _bitrateLabel {
+    switch (_selectedBitrateKbps) {
+      case 4000:
+        return 'Small file';
+      case 8000:
+        return 'Balanced';
+      case 12000:
+        return 'Best quality';
+      default:
+        return '${_selectedBitrateKbps ~/ 1000} Mbps';
+    }
+  }
+
+  String _estimatedSize() {
+    final duration = widget.videoDuration;
+    if (duration == null || duration.inSeconds <= 0) return '';
+    final seconds = duration.inSeconds;
+    final bytesEstimate = (seconds * _selectedBitrateKbps * 1000) ~/ 8;
+    if (bytesEstimate > 1024 * 1024 * 1024) {
+      return '~${(bytesEstimate / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+    }
+    return '~${(bytesEstimate / (1024 * 1024)).toStringAsFixed(0)} MB';
+  }
 
   @override
   void initState() {
@@ -378,6 +412,127 @@ class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+
+            // Bitrate / Quality
+            Text(
+              'EXPORT QUALITY',
+              style: AppTypography.captionCode.copyWith(
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildBitrateChip(
+                  context,
+                  label: 'Small',
+                  kbps: 4000,
+                  icon: Symbols.compress,
+                ),
+                const SizedBox(width: 8),
+                _buildBitrateChip(
+                  context,
+                  label: 'Balanced',
+                  kbps: 8000,
+                  icon: Symbols.balance,
+                ),
+                const SizedBox(width: 8),
+                _buildBitrateChip(
+                  context,
+                  label: 'Best',
+                  kbps: 12000,
+                  icon: Symbols.high_quality,
+                ),
+              ],
+            ),
+            if (_estimatedSize().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Symbols.storage,
+                    size: 14,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Estimated size: ${_estimatedSize()} ($_bitrateLabel)',
+                    style: AppTypography.captionCode.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // Trim/Crop summary
+            Builder(
+              builder: (context) {
+                final trim = ref.watch(trimProvider);
+                final crop = ref.watch(cropProvider);
+                final hasTrim = trim.isEnabled;
+                final hasCrop = crop.isEnabled;
+                if (!hasTrim && !hasCrop) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withAlpha(20),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (hasTrim)
+                          Row(
+                            children: [
+                              const Icon(
+                                Symbols.content_cut,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Trim: ${formatPlayerTime(trim.start)} — ${formatPlayerTime(trim.end ?? widget.videoDuration ?? Duration.zero)}',
+                                style: AppTypography.labelMd.copyWith(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (hasCrop) ...[
+                          if (hasTrim) const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Symbols.crop,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Crop: ${crop.label}',
+                                style: AppTypography.labelMd.copyWith(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
             const SizedBox(height: 28),
 
             // Export Button
@@ -393,6 +548,7 @@ class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
                 widget.onConfirmExport(
                   includeWatermark: includeWatermark,
                   targetMaxResolution: resolution,
+                  videoBitrateKbps: _selectedBitrateKbps,
                   customFileName: _sanitizeFileName(_fileNameController.text),
                 );
               },
@@ -470,6 +626,64 @@ class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBitrateChip(
+    BuildContext context, {
+    required String label,
+    required int kbps,
+    required IconData icon,
+  }) {
+    final isSelected = _selectedBitrateKbps == kbps;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedBitrateKbps = kbps),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withAlpha(35)
+                : AppColors.surfaceContainer,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary
+                  : AppColors.surfaceContainerHigh,
+              width: isSelected ? 1.8 : 1.0,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.onSurfaceVariant,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: AppTypography.labelMd.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppColors.primary : AppColors.allWhite,
+                ),
+              ),
+              Text(
+                '${kbps ~/ 1000} Mbps',
+                style: AppTypography.captionCode.copyWith(
+                  fontSize: 10,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

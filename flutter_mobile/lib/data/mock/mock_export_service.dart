@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import '../../core/caption_export.dart';
 import '../services/export_service.dart';
 import '../models/export_job.dart';
@@ -14,6 +16,10 @@ class MockExportService implements ExportService {
     required Duration videoDuration,
     bool includeWatermark = false,
     int targetMaxResolution = 720,
+    int? videoBitrateKbps,
+    Duration? trimStart,
+    Duration? trimEnd,
+    Rect? cropRect,
   }) async* {
     _isCancelled = false;
     for (int i = 0; i <= 50; i++) {

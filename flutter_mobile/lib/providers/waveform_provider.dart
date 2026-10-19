@@ -1,19 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/waveform_data.dart';
+import '../data/services/waveform_extraction_service.dart';
+import 'transcription_provider.dart';
 
-/// Peaks come from extracted WAV (backend). Until then the timeline is honest
-/// about having no audio samples.
-final waveformProvider = Provider.family<WaveformData, String>((
+final waveformExtractionServiceProvider = Provider<WaveformExtractionService>((
   ref,
-  videoPath,
 ) {
-  if (videoPath.isEmpty) {
-    return WaveformData.noAudio(
-      'No media loaded. Timeline uses caption times.',
-    );
-  }
-  return WaveformData.noAudio(
-    'Waveform peaks are not extracted yet. Playhead and captions still follow time.',
-  );
+  final audioService = ref.watch(audioExtractionServiceProvider);
+  return WaveformExtractionService(audioExtractionService: audioService);
 });
+
+class WaveformNotifier extends StateNotifier<WaveformData> {
+  final WaveformExtractionService _service;
+  final String videoPath;
+
+  WaveformNotifier(this._service, this.videoPath)
+    : super(
+        videoPath.isEmpty
+            ? WaveformData.noAudio(
+                'No media loaded. Timeline uses caption times.',
+              )
+            : WaveformData.loading(),
+      ) {
+    if (videoPath.isNotEmpty) {
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final result = await _service.extractWaveform(videoPath);
+    if (mounted) {
+      state = result;
+    }
+  }
+}
+
+final waveformProvider =
+    StateNotifierProvider.family<WaveformNotifier, WaveformData, String>((
+      ref,
+      videoPath,
+    ) {
+      final service = ref.watch(waveformExtractionServiceProvider);
+      return WaveformNotifier(service, videoPath);
+    });

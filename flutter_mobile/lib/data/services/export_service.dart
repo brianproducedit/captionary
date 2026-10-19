@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import '../../core/caption_export.dart';
 import '../models/subtitle_segment.dart';
 import '../models/caption_style.dart';
@@ -12,6 +14,10 @@ abstract class ExportService {
     required Duration videoDuration,
     bool includeWatermark = false,
     int targetMaxResolution = 720,
+    int? videoBitrateKbps,
+    Duration? trimStart,
+    Duration? trimEnd,
+    Rect? cropRect,
   });
   Future<String> exportSRT(List<SubtitleSegment> segments);
   Future<String> exportVTT(List<SubtitleSegment> segments);

@@ -112,7 +112,10 @@ void main() {
     expect(assContent, contains('PlayResX: 1080'));
     expect(assContent, contains('PlayResY: 1920'));
     expect(assContent, contains('[V4+ Styles]'));
-    expect(assContent, contains('Style: Default,Lexend,28,'));
+    expect(
+      assContent,
+      contains('Style: Default,Lexend,28,&H00FFFFFF,&H0000FF00,'),
+    );
     expect(assContent, contains('[Events]'));
 
     // Verify ASS color formatting &HAABBGGRR:
