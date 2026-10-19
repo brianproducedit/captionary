@@ -5,11 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/statistics.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/ffprobe_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new/statistics.dart';
+import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
 
 import '../../core/async_lock.dart';
 import '../../core/ass_file_writer.dart';
@@ -55,6 +56,7 @@ class FfmpegExportService implements ExportService {
   FFmpegSession? _activeSession;
   int? _activeSessionId;
   bool _cancelRequested = false;
+  String? _lastFfmpegError;
 
   FfmpegExportService({
     this.ffmpegAsyncRunner,
@@ -215,6 +217,7 @@ class FfmpegExportService implements ExportService {
         return;
       }
 
+      _lastFfmpegError = null;
       controller.add(job);
 
       // Resolve directories and files
@@ -295,9 +298,21 @@ class FfmpegExportService implements ExportService {
       controller.add(job);
 
       // Prepare font directory (Lexend)
+      // Configure Fontconfig font directory for libass/subtitles on Android & mobile
       final String? fontsDir = fontDirResolver != null
           ? await fontDirResolver!()
           : await _ensureFontExtracted(tempDir);
+
+      if (fontsDir != null && fontsDir.isNotEmpty) {
+        try {
+          await FFmpegKitConfig.setFontDirectoryList(
+            [fontsDir, '/system/fonts'],
+            {'Lexend': 'Lexend-VariableFont_wght.ttf'},
+          );
+        } catch (e) {
+          debugPrint('FfmpegExportService: setFontDirectoryList error: $e');
+        }
+      }
 
       // Prepare logo file if watermark requested
       final String? logoPath = includeWatermark
@@ -337,12 +352,12 @@ class FfmpegExportService implements ExportService {
               "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
               "[vsub][logo]overlay=W-w-24:24[vout]";
           command =
-              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $preferredVideoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
         } else {
           final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
           final filterString = "$baseAssFilter$scaleSuffix";
           command =
-              "-y -i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -vf \"$filterString\" -map 0:a? -c:v $preferredVideoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
         }
 
         final success = await _runFfmpeg(
@@ -390,7 +405,11 @@ class FfmpegExportService implements ExportService {
           style.position,
           style.textAlign,
         );
-        final forceStyle = 'FontSize=${style.fontSize},Alignment=$alignment';
+        // Commas inside filter options must be escaped in FFmpeg filtergraph
+        final forceStyle = 'FontSize=${style.fontSize}\\,Alignment=$alignment';
+        final baseSubtitlesFilter = fontsDir != null && fontsDir.isNotEmpty
+            ? "subtitles='$escapedSrtPath':force_style='$forceStyle':fontsdir='${escapeFilterPath(fontsDir)}'"
+            : "subtitles='$escapedSrtPath':force_style='$forceStyle'";
 
         // Use mpeg4 fallback if preferred codec failed
         final videoCodec = preferredVideoCodec == 'libx264'
@@ -400,15 +419,15 @@ class FfmpegExportService implements ExportService {
         if (hasLogo) {
           final scalePrefix = needsScale ? "scale=$outWidth:$outHeight," : "";
           final filterComplex =
-              "[0:v]${scalePrefix}subtitles='$escapedSrtPath':force_style='$forceStyle'[vsub];"
+              "[0:v]$scalePrefix$baseSubtitlesFilter[vsub];"
               "[1:v]scale=36:36:force_original_aspect_ratio=decrease,format=rgba,colorchannelmixer=aa=0.85[logo];"
               "[vsub][logo]overlay=W-w-24:24[vout]";
           srtCommand =
-              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -i \"$logoPath\" -filter_complex \"$filterComplex\" -map \"[vout]\" -map 0:a? -c:v $videoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
         } else {
           final scaleSuffix = needsScale ? ",scale=$outWidth:$outHeight" : "";
           srtCommand =
-              "-y -i \"$videoPath\" -vf \"subtitles='$escapedSrtPath':force_style='$forceStyle'$scaleSuffix\" -map 0:a? -c:v $videoCodec -c:a aac -b:a 192k \"$partOutputPath\"";
+              "-y -i \"$videoPath\" -vf \"$baseSubtitlesFilter$scaleSuffix\" -map 0:a? -c:v $videoCodec -pix_fmt yuv420p -c:a aac -b:a 192k \"$partOutputPath\"";
         }
 
         final success = await _runFfmpeg(
@@ -435,7 +454,13 @@ class FfmpegExportService implements ExportService {
       if (_cancelRequested) {
         controller.add(job.copyWith(state: ExportState.cancelled));
       } else {
-        controller.add(job.copyWith(state: ExportState.error));
+        final errorMsg =
+            (_lastFfmpegError != null && _lastFfmpegError!.isNotEmpty)
+            ? 'Export failed: $_lastFfmpegError'
+            : 'An error occurred during video processing.';
+        controller.add(
+          job.copyWith(state: ExportState.error, fallbackReason: errorMsg),
+        );
       }
       controller.close();
     } finally {
@@ -505,6 +530,30 @@ class FfmpegExportService implements ExportService {
           completer.complete(false);
           return;
         }
+      }
+
+      if (!ReturnCode.isSuccess(returnCode)) {
+        try {
+          final logs = await session.getAllLogsAsString();
+          final failStackTrace = await session.getFailStackTrace();
+          debugPrint(
+            'FfmpegExportService: FFmpeg failed with returnCode $returnCode',
+          );
+          debugPrint('FfmpegExportService: Command: $command');
+          debugPrint('FfmpegExportService: Logs: $logs');
+          if (failStackTrace != null) {
+            debugPrint(
+              'FfmpegExportService: Fail stack trace: $failStackTrace',
+            );
+          }
+          if (logs != null && logs.trim().isNotEmpty) {
+            final lines = logs.trim().split('\n');
+            _lastFfmpegError = lines.lastWhere(
+              (line) => line.trim().isNotEmpty,
+              orElse: () => '',
+            );
+          }
+        } catch (_) {}
       }
 
       _cleanupPart(partFile);

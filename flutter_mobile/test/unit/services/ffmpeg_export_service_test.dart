@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/statistics.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new/statistics.dart';
 import 'package:captionary/data/models/caption_style.dart';
 import 'package:captionary/data/models/export_job.dart';
 import 'package:captionary/data/models/subtitle_segment.dart';
@@ -24,6 +24,12 @@ class FakeSession implements FFmpegSession {
 
   @override
   Future<void> cancel() async {}
+
+  @override
+  Future<String?> getAllLogsAsString([int? waitTimeout]) async => '';
+
+  @override
+  Future<String?> getFailStackTrace() async => null;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

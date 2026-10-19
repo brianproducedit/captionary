@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:material_symbols_icons/symbols.dart';
+
 import '../core/caption_export.dart';
 import '../core/subtitle_file_store.dart';
 import '../data/models/subtitle_segment.dart';
@@ -13,7 +15,8 @@ import '../widgets/ghost_pill_button.dart';
 import '../widgets/gradient_pill_button.dart';
 
 class CaptionExportSheet extends ConsumerStatefulWidget {
-  const CaptionExportSheet({super.key});
+  final String? initialFileName;
+  const CaptionExportSheet({super.key, this.initialFileName});
 
   @override
   ConsumerState<CaptionExportSheet> createState() => _CaptionExportSheetState();
@@ -22,6 +25,28 @@ class CaptionExportSheet extends ConsumerStatefulWidget {
 class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
   CaptionExportFormat _format = CaptionExportFormat.srt;
   bool _busy = false;
+  late final TextEditingController _fileNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _fileNameController = TextEditingController(
+      text: widget.initialFileName?.trim().isNotEmpty == true
+          ? widget.initialFileName!.trim()
+          : 'captions',
+    );
+  }
+
+  @override
+  void dispose() {
+    _fileNameController.dispose();
+    super.dispose();
+  }
+
+  String _sanitizeFileName(String name) {
+    final sanitized = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+    return sanitized.isEmpty ? 'captions' : sanitized;
+  }
 
   Future<void> _export(List<SubtitleSegment> segments) async {
     final reason = CaptionExport.blockReason(segments);
@@ -43,8 +68,8 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
           content = await service.exportSRT(segments);
           break;
       }
-      final fileName =
-          'captions_${DateTime.now().millisecondsSinceEpoch}.${_format.fileExtension}';
+      final safeName = _sanitizeFileName(_fileNameController.text);
+      final fileName = '$safeName.${_format.fileExtension}';
       final file = await ref
           .read(subtitleFileStoreProvider)
           .write(fileName: fileName, content: content);
@@ -116,6 +141,52 @@ class _CaptionExportSheetState extends ConsumerState<CaptionExportSheet> {
                 'Writes an SRT, VTT, or styled ASS file and opens the system share sheet.',
                 style: Theme.of(context).textTheme.bodySmall
                     ?.copyWith(color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(16.0),
+                  border: Border.all(color: AppColors.surfaceContainerHigh),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14.0,
+                  vertical: 4.0,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Symbols.drive_file_rename_outline,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _fileNameController,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.allWhite,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'Enter caption file name',
+                          hintStyle: TextStyle(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '.${_format.fileExtension}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               Wrap(

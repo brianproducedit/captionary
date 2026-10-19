@@ -737,7 +737,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
         ),
         const SizedBox(height: 8),
         Text(
-          'An error occurred during video processing.',
+          job.fallbackReason?.isNotEmpty == true
+              ? job.fallbackReason!
+              : 'An error occurred during video processing.',
           style: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AppColors.onSurfaceVariant),
           textAlign: TextAlign.center,

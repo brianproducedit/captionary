@@ -544,7 +544,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  '• FFmpeg (ffmpeg_kit_flutter_new_min_gpl): Licensed under GNU General Public License v3.0 (GPL-3.0).\n'
+                  '• FFmpeg (ffmpeg_kit_flutter_new): Licensed under GNU General Public License v3.0 (GPL-3.0).\n'
                   '• Whisper (whisper_flutter_new): Licensed under GNU General Public License v3.0 (GPL-3.0).',
                   style: TextStyle(color: AppColors.onSurfaceVariant),
                 ),

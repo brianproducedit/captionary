@@ -39,6 +39,7 @@ void main() {
                           ({
                             required bool includeWatermark,
                             required int targetMaxResolution,
+                            String? customFileName,
                           }) {
                             confirmed = true;
                             selectedRes = targetMaxResolution;
@@ -89,6 +90,61 @@ void main() {
       expect(confirmed, isTrue);
       expect(selectedRes, 720);
       expect(withWatermark, isTrue);
+    },
+  );
+
+  testWidgets(
+    'ExportOptionsSheet allows customizing file name and sanitizes special characters',
+    (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      String? exportName;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    ExportOptionsSheet.show(
+                      context,
+                      defaultFileName: 'initial_name',
+                      onConfirmExport:
+                          ({
+                            required bool includeWatermark,
+                            required int targetMaxResolution,
+                            String? customFileName,
+                          }) {
+                            exportName = customFileName;
+                          },
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('initial_name'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'my:special/video?name*');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Export in 720p (Free Beta)'));
+      await tester.pumpAndSettle();
+
+      expect(exportName, 'my_special_video_name_');
     },
   );
 }

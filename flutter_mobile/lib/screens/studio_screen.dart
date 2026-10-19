@@ -314,11 +314,15 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                 child: GhostPillButton(
                   label: 'Export Captions',
                   onTap: () {
+                    final defaultName = widget.videoPath.trim().isNotEmpty
+                        ? '${p.basenameWithoutExtension(widget.videoPath)}_captions'
+                        : 'captions';
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
-                      builder: (_) => const CaptionExportSheet(),
+                      builder: (_) =>
+                          CaptionExportSheet(initialFileName: defaultName),
                     );
                   },
                   isFullWidth: true,
@@ -330,12 +334,19 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   label: 'Burn to Video',
                   icon: Symbols.local_fire_department,
                   onTap: () {
+                    final nameWithoutExt = widget.videoPath.trim().isNotEmpty
+                        ? p.basenameWithoutExtension(widget.videoPath)
+                        : 'video';
+                    final defaultVideoName = '${nameWithoutExt}_captioned';
+
                     ExportOptionsSheet.show(
                       context,
+                      defaultFileName: defaultVideoName,
                       onConfirmExport:
                           ({
                             required bool includeWatermark,
                             required int targetMaxResolution,
+                            String? customFileName,
                           }) {
                             final exportService = ref.read(
                               exportServiceProvider,
@@ -347,12 +358,14 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                             final timestamp =
                                 DateTime.now().millisecondsSinceEpoch;
                             final sourceDir = p.dirname(widget.videoPath);
-                            final nameWithoutExt = p.basenameWithoutExtension(
-                              widget.videoPath,
-                            );
+                            final baseName =
+                                (customFileName != null &&
+                                    customFileName.trim().isNotEmpty)
+                                ? customFileName.trim()
+                                : defaultVideoName;
                             final outputPath = p.join(
                               sourceDir,
-                              '${nameWithoutExt}_captioned_$timestamp.mp4',
+                              '$baseName.mp4',
                             );
 
                             final stream = exportService.burnCaptions(

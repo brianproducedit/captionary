@@ -6,8 +6,8 @@ import 'package:captionary/data/models/caption_style.dart';
 import 'package:captionary/data/models/export_job.dart';
 import 'package:captionary/data/models/subtitle_segment.dart';
 import 'package:captionary/data/services/ffmpeg_export_service.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/return_code.dart';
-import 'package:ffmpeg_kit_flutter_new_min_gpl/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_session.dart';
 
 class _FakeSession implements FFmpegSession {
   final int _id;

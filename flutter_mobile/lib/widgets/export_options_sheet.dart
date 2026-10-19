@@ -11,19 +11,27 @@ import 'gradient_pill_button.dart';
 import 'pro_teaser_sheet.dart';
 
 class ExportOptionsSheet extends ConsumerStatefulWidget {
+  final String? defaultFileName;
   final void Function({
     required bool includeWatermark,
     required int targetMaxResolution,
+    String? customFileName,
   })
   onConfirmExport;
 
-  const ExportOptionsSheet({super.key, required this.onConfirmExport});
+  const ExportOptionsSheet({
+    super.key,
+    required this.onConfirmExport,
+    this.defaultFileName,
+  });
 
   static Future<void> show(
     BuildContext context, {
+    String? defaultFileName,
     required void Function({
       required bool includeWatermark,
       required int targetMaxResolution,
+      String? customFileName,
     })
     onConfirmExport,
   }) {
@@ -31,7 +39,10 @@ class ExportOptionsSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ExportOptionsSheet(onConfirmExport: onConfirmExport),
+      builder: (_) => ExportOptionsSheet(
+        onConfirmExport: onConfirmExport,
+        defaultFileName: defaultFileName,
+      ),
     );
   }
 
@@ -42,6 +53,28 @@ class ExportOptionsSheet extends ConsumerStatefulWidget {
 class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
   int _selectedResolution = 720;
   bool _removeWatermark = false;
+  late final TextEditingController _fileNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _fileNameController = TextEditingController(
+      text: widget.defaultFileName?.trim().isNotEmpty == true
+          ? widget.defaultFileName!.trim()
+          : 'captioned_video',
+    );
+  }
+
+  @override
+  void dispose() {
+    _fileNameController.dispose();
+    super.dispose();
+  }
+
+  String _sanitizeFileName(String name) {
+    final sanitized = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+    return sanitized.isEmpty ? 'captioned_video' : sanitized;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +137,61 @@ class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 24),
+
+            // Export File Name
+            Text(
+              'EXPORT FILE NAME',
+              style: AppTypography.captionCode.copyWith(
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer,
+                borderRadius: BorderRadius.circular(16.0),
+                border: Border.all(color: AppColors.surfaceContainerHigh),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14.0,
+                vertical: 4.0,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Symbols.drive_file_rename_outline,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _fileNameController,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.allWhite,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Enter file name',
+                        hintStyle: TextStyle(color: AppColors.onSurfaceVariant),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '.mp4',
+                    style: AppTypography.captionCode.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -305,6 +393,7 @@ class _ExportOptionsSheetState extends ConsumerState<ExportOptionsSheet> {
                 widget.onConfirmExport(
                   includeWatermark: includeWatermark,
                   targetMaxResolution: resolution,
+                  customFileName: _sanitizeFileName(_fileNameController.text),
                 );
               },
               isFullWidth: true,

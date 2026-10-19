@@ -168,4 +168,71 @@ void main() {
     expect(content, contains('[V4+ Styles]'));
     expect(content, contains('Styled caption'));
   });
+
+  testWidgets(
+    'exporting SRT with custom file name sanitizes and uses custom name',
+    (tester) async {
+      final dir = Directory.systemTemp.createTempSync(
+        'captionary_sheet_custom',
+      );
+      addTearDown(() {
+        try {
+          dir.deleteSync(recursive: true);
+        } catch (e) {
+          // Ignore file lock errors on Windows during test teardown
+        }
+      });
+      CaptionShareRequest? shared;
+
+      tester.view.physicalSize = const Size(1080, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            subtitleFileStoreProvider.overrideWith(
+              (ref) => SubtitleFileStore(directory: dir),
+            ),
+            captionShareHandlerProvider.overrideWith((ref) {
+              return (request) async {
+                shared = request;
+              };
+            }),
+            subtitleProvider.overrideWith(
+              (ref) => SubtitleNotifier([
+                SubtitleSegment(
+                  index: 1,
+                  startTime: Duration.zero,
+                  endTime: const Duration(seconds: 1),
+                  text: 'Testing custom name',
+                  isSelected: false,
+                ),
+              ]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const Scaffold(
+              body: SizedBox.expand(
+                child: CaptionExportSheet(initialFileName: 'custom_subs'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('custom_subs'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'my:export/subs?file');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Export SRT'));
+      await tester.pumpAndSettle();
+
+      expect(shared, isNotNull);
+      expect(shared!.fileName, 'my_export_subs_file.srt');
+    },
+  );
 }
