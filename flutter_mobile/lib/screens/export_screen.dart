@@ -309,7 +309,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Bitrate: ${activeJob.bitrateMbps} Mbps, ${activeJob.codec.toUpperCase()} High',
+                      'Bitrate: ${activeJob.bitrateMbps} Mbps, ${activeJob.codec.toUpperCase()} High${activeJob.outputSizeBytes > 0 ? " • ${(activeJob.outputSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB" : ""}',
                       style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: AppColors.onSurfaceVariant),
                     ),

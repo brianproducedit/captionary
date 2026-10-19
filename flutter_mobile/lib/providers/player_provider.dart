@@ -78,6 +78,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
   final Duration initTimeout;
   final UserPreferences Function()? readPreferences;
   double _volumeBeforeMute = 1.0;
+  String? _currentVideoPath;
+  int? _currentMaxResolution;
 
   final List<StreamSubscription> _subscriptions = [];
   PlayerHandle? _currentHandle;
@@ -107,7 +109,9 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     super.dispose();
   }
 
-  Future<void> initPlayer(String videoPath) async {
+  Future<void> initPlayer(String videoPath, {int? maxResolution}) async {
+    _currentVideoPath = videoPath;
+    _currentMaxResolution = maxResolution;
     _cancelSubscriptions();
     if (state.handle != null) {
       await _mediaPlayerService.dispose(state.handle!);
@@ -122,7 +126,7 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
 
     try {
       final handle = await _mediaPlayerService
-          .open(videoPath)
+          .open(videoPath, maxResolution: maxResolution)
           .timeout(initTimeout);
 
       final prefs = readPreferences?.call() ?? UserPreferences.defaults;
@@ -285,6 +289,23 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     final index = playbackSpeeds.indexOf(state.playbackSpeed);
     final next = playbackSpeeds[(index + 1) % playbackSpeeds.length];
     await setPlaybackSpeed(next);
+  }
+
+  int? get currentMaxResolution => _currentMaxResolution;
+  String? get currentVideoPath => _currentVideoPath;
+
+  Future<void> switchPlaybackQuality(int? maxResolution) async {
+    final path = _currentVideoPath;
+    if (path == null || path.isEmpty) return;
+    final currentPos = state.position;
+    final wasPlaying = state.isPlaying;
+    await initPlayer(path, maxResolution: maxResolution);
+    if (state.isInitialized && state.handle != null) {
+      await state.handle!.seekTo(currentPos);
+      if (wasPlaying) {
+        await state.handle!.play();
+      }
+    }
   }
 }
 

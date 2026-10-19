@@ -7,7 +7,7 @@ import 'package:captionary/providers/player_provider.dart';
 
 class _HangingMediaPlayerService implements MediaPlayerService {
   @override
-  Future<PlayerHandle> open(String videoPath) {
+  Future<PlayerHandle> open(String videoPath, {int? maxResolution}) {
     return Completer<PlayerHandle>().future;
   }
 
@@ -17,7 +17,7 @@ class _HangingMediaPlayerService implements MediaPlayerService {
 
 class _FailingMediaPlayerService implements MediaPlayerService {
   @override
-  Future<PlayerHandle> open(String videoPath) {
+  Future<PlayerHandle> open(String videoPath, {int? maxResolution}) {
     throw Exception('unsupported format');
   }
 

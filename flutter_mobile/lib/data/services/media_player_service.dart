@@ -108,13 +108,13 @@ class MediaKitPlayerHandle implements PlayerHandle {
 }
 
 abstract class MediaPlayerService {
-  Future<PlayerHandle> open(String videoPath);
+  Future<PlayerHandle> open(String videoPath, {int? maxResolution});
   Future<void> dispose(PlayerHandle handle);
 }
 
 class MediaKitMediaService implements MediaPlayerService {
   @override
-  Future<PlayerHandle> open(String videoPath) async {
+  Future<PlayerHandle> open(String videoPath, {int? maxResolution}) async {
     if (videoPath.trim().isEmpty) {
       throw const FormatException('No video selected.');
     }
@@ -129,7 +129,16 @@ class MediaKitMediaService implements MediaPlayerService {
     }
 
     final player = Player();
-    final controller = VideoController(player);
+    final VideoControllerConfiguration config;
+    if (maxResolution != null && maxResolution > 0) {
+      config = VideoControllerConfiguration(
+        width: (maxResolution * 16) ~/ 9,
+        height: maxResolution,
+      );
+    } else {
+      config = const VideoControllerConfiguration();
+    }
+    final controller = VideoController(player, configuration: config);
 
     await player.open(Media(videoPath), play: false);
 

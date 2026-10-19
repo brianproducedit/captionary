@@ -102,7 +102,7 @@ class MockMediaPlayerService implements MediaPlayerService {
   MockMediaPlayerService({this.mockDuration});
 
   @override
-  Future<PlayerHandle> open(String videoPath) async {
+  Future<PlayerHandle> open(String videoPath, {int? maxResolution}) async {
     if (videoPath.trim().isEmpty) {
       throw const FormatException('No video selected.');
     }

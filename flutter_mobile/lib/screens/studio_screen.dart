@@ -49,6 +49,9 @@ import '../widgets/trim_bar.dart';
 import '../widgets/crop_overlay.dart';
 import '../providers/trim_provider.dart';
 import '../providers/crop_provider.dart';
+import '../data/models/playback_quality.dart';
+import '../providers/playback_quality_provider.dart';
+import '../providers/system_memory_provider.dart';
 
 class StudioScreen extends ConsumerStatefulWidget {
   final String videoPath;
@@ -76,9 +79,15 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
         metadata: {'video': p.basename(widget.videoPath)},
       );
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (widget.videoPath.isNotEmpty) {
-        ref.read(playerProvider.notifier).initPlayer(widget.videoPath);
+        final memInfo =
+            await ref.read(systemMemoryServiceProvider).getMemoryInfo();
+        final quality = ref.read(playbackQualityProvider);
+        final maxRes = quality.resolveMaxResolution(memInfo);
+        ref
+            .read(playerProvider.notifier)
+            .initPlayer(widget.videoPath, maxResolution: maxRes);
         _tryAutoRecoverFromCache();
       }
       // Start listening for subtitle edits to auto-save
@@ -512,6 +521,9 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Quality control (RAM optimization)
+                _buildQualitySelector(context),
+                const SizedBox(width: 4),
                 // Speed control
                 _buildSpeedSelector(context, playerState, playerNotifier),
                 const SizedBox(width: 4),
@@ -544,6 +556,78 @@ class _StudioScreenState extends ConsumerState<StudioScreen> {
                   },
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQualitySelector(BuildContext context) {
+    final quality = ref.watch(playbackQualityProvider);
+    final memInfo = ref.watch(systemMemoryInfoProvider).asData?.value;
+    final resolvedRes = quality.resolveMaxResolution(memInfo);
+
+    return PopupMenuButton<PlaybackQuality>(
+      tooltip: 'Playback Preview Quality',
+      initialValue: quality,
+      onSelected: (selected) {
+        ref.read(playbackQualityProvider.notifier).state = selected;
+        final res = selected.resolveMaxResolution(memInfo);
+        ref.read(playerProvider.notifier).switchPlaybackQuality(res);
+      },
+      itemBuilder: (context) => [
+        for (final q in PlaybackQuality.values)
+          PopupMenuItem(
+            value: q,
+            child: Row(
+              children: [
+                Icon(
+                  q == quality ? Symbols.check : Symbols.videocam,
+                  size: 16,
+                  color: q == quality
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  q == PlaybackQuality.auto
+                      ? 'Auto (${resolvedRes ?? "Original"}p)'
+                      : q.label,
+                  style: TextStyle(
+                    fontWeight: q == quality
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: q == quality
+                        ? AppColors.primary
+                        : AppColors.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Symbols.tune,
+              size: 12,
+              color: AppColors.onSurfaceVariant,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              quality == PlaybackQuality.auto ? 'Auto' : quality.shortLabel,
+              style: AppTypography.captionCode.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
             ),
           ],
         ),
